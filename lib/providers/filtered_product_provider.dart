@@ -3,6 +3,7 @@ import 'product_provider.dart';
 import 'filter_providers.dart';
 import '../search/search_state.dart';
 import '../models/product.dart';
+import 'sort_provider.dart';
 
 final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
   final productsAsync = ref.watch(productsProvider);
@@ -10,6 +11,8 @@ final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
   final selectedCategory = ref.watch(categoryFilterProvider);
   final selectedSubcategory = ref.watch(subcategoryFilterProvider);
   final searchQuery = ref.watch(searchQueryProvider).trim().toLowerCase();
+  final sortOption = ref.watch(sortOptionProvider);
+
 
   return productsAsync.when(
     data: (products) {
@@ -34,6 +37,22 @@ final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
         filtered = filtered
             .where((p) => p.name.toLowerCase().contains(searchQuery))
             .toList();
+      }
+
+      // Apply sorting
+      switch (sortOption) {
+        case SortOption.alphabeticalStore:
+          filtered.sort((a, b) => a.store.compareTo(b.store));
+          break;
+        case SortOption.alphabetical:
+          filtered.sort((a, b) => a.name.compareTo(b.name));
+          break;
+        case SortOption.priceLowToHigh:
+          filtered.sort((a, b) => a.currentPrice.compareTo(b.currentPrice));
+          break;
+        case SortOption.discountHighToLow:
+          filtered.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage));
+          break;
       }
 
       return AsyncValue.data(filtered);

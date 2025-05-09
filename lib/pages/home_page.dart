@@ -5,22 +5,57 @@ import '../filters/filter_sheet.dart';
 import '../providers/product_provider.dart';
 import '../search/search_bar.dart';
 import '../providers/filtered_product_provider.dart';
-
-
+import '../providers/sort_provider.dart'; // <-- Make sure this import exists
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch filtered products as AsyncValue<List<Product>>
     final filteredProductsAsync = ref.watch(filteredProductsProvider);
+    final sortOption = ref.watch(sortOptionProvider);
+    final sortNotifier = ref.read(sortOptionProvider.notifier);
 
     return Scaffold(
       backgroundColor: Colors.deepPurple[100],
       body: Column(
         children: [
           const SearchBarWidget(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                const Text('Sort by: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                DropdownButton<SortOption>(
+                  value: sortOption,
+                  onChanged: (value) {
+                    if (value != null) {
+                      sortNotifier.state = value;
+                    }
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                      value: SortOption.alphabeticalStore,
+                      child: Text('Alphabetical by Store'),
+                    ),
+                    DropdownMenuItem(
+                      value: SortOption.alphabetical,
+                      child: Text('Alphabetical'),
+                    ),
+                    DropdownMenuItem(
+                      value: SortOption.priceLowToHigh,
+                      child: Text('Price: Low → High'),
+                    ),
+                    DropdownMenuItem(
+                      value: SortOption.discountHighToLow,
+                      child: Text('Discount: High → Low'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: filteredProductsAsync.when(
               data: (products) {
