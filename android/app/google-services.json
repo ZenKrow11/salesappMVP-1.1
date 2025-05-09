@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "307296886319",
+    "project_id": "sales-app-mvp",
+    "storage_bucket": "sales-app-mvp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307296886319:android:f34de661ae14ae44a7f0da",
+        "android_client_info": {
+          "package_name": "com.example.sales_app_mvp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "307296886319-48mgnkuihjsvdu9ssetrl4vellreek09.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWesQwEagHhGCksIsq4IFGi9jtN_ymBqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "307296886319-48mgnkuihjsvdu9ssetrl4vellreek09.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

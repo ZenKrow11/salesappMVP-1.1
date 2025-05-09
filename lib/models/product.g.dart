@@ -1,0 +1,68 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'product.dart';
+
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class ProductAdapter extends TypeAdapter<Product> {
+  @override
+  final int typeId = 0;
+
+  @override
+  Product read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Product(
+      id: fields[0] as String,
+      store: fields[1] as String,
+      name: fields[2] as String,
+      currentPrice: fields[3] as double,
+      normalPrice: fields[4] as double,
+      discountPercentage: fields[5] as String,
+      category: fields[6] as String,
+      subcategory: fields[7] as String,
+      url: fields[8] as String,
+      imageUrl: fields[9] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Product obj) {
+    writer
+      ..writeByte(10)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.store)
+      ..writeByte(2)
+      ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.currentPrice)
+      ..writeByte(4)
+      ..write(obj.normalPrice)
+      ..writeByte(5)
+      ..write(obj.discountPercentage)
+      ..writeByte(6)
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.subcategory)
+      ..writeByte(8)
+      ..write(obj.url)
+      ..writeByte(9)
+      ..write(obj.imageUrl);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProductAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
