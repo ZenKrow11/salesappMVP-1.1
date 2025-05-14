@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/secondary_app_screen.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
-import 'package:sales_app_mvp/pages/favorites_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sales_app_mvp/pages/account_page.dart';
 
 
 class MainAppScreen extends StatefulWidget {
@@ -18,14 +18,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   final List<Widget> _pages = [
     HomePage(),
-    FavoritesPage(),
     ShoppingListPage(),
+    AccountPage(),
   ];
 
   final List<String> _titles = [
     'All Sales',
-    'Favorites',
-    'Grocery Lists',
+    'Lists',
+    'Account',
   ];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -33,6 +33,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
   void _openDrawer() {
     _scaffoldKey.currentState?.openEndDrawer();
   }
+
+  //Drawer Menu
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +147,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
           ],
         ),
       ),
+
+      // Bottom Navigation Bar
+
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.deepPurple,
@@ -155,10 +160,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.attach_money,
           size: 36,), label: 'Sales'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite,
-          size: 36,), label: 'Favorites'),
           BottomNavigationBarItem(icon: Icon(Icons.list,
-          size: 36,), label: 'Grocery List'),
+          size: 36,), label: 'Lists'),
+          BottomNavigationBarItem(icon: Icon(Icons.person,
+          size: 36,), label: 'Account'),
         ],
       ),
     );

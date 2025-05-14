@@ -9,6 +9,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/product.dart';
 import 'services/hive_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'models/named_list.dart';
 
 
 final hiveStorageService = HiveStorageService.instance; // Optional global instance
@@ -19,6 +20,8 @@ void main() async {
   final appDocumentDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
   Hive.registerAdapter(ProductAdapter());
+  Hive.registerAdapter(NamedListAdapter());
+
 
   await HiveStorageService.instance.init();
 

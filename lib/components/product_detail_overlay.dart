@@ -15,8 +15,8 @@ class ProductDetailOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final favoritesNotifier = ref.read(favoritesProvider.notifier);
-    final isFavorite = ref.watch(favoritesProvider).any((p) => p.id == product.id);
+    /*final favoritesNotifier = ref.read(favoritesProvider.notifier);
+    final isFavorite = ref.watch(favoritesProvider).any((p) => p.id == product.id);*/
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(), // dismiss when tapping outside
       behavior: HitTestBehavior.opaque,
@@ -164,7 +164,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                                 }
                               },
                             ),
-
+/*
                             _SquareButton(
                               icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                               onPressed: () {
@@ -177,7 +177,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                                 );
                               },
                             ),
-
+*/
                             _SquareButton(
                               icon: Icons.view_list,
                               onPressed: () {
@@ -186,10 +186,12 @@ class ProductDetailOverlay extends ConsumerWidget {
                                   builder: (_) => ShoppingListDialog(
                                     product: product,
                                     onConfirm: (listName) {
-                                      ref.read(shoppingListsProvider.notifier).addItemToList(listName, product);
+                                      // Optional: Snackbar already shown in ShoppingListDialog, but can keep for consistency
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Added to "$listName"'),
-                                          duration: const Duration(seconds: 1),),
+                                        SnackBar(
+                                          content: Text('Added to "$listName"'),
+                                          duration: const Duration(seconds: 1),
+                                        ),
                                       );
                                     },
                                   ),

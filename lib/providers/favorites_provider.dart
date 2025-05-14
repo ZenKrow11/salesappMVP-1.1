@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+/*import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import '../services/hive_storage_service.dart';
 
@@ -32,3 +32,4 @@ final favoritesProvider = StateNotifierProvider<FavoritesNotifier, List<Product>
   final hiveService = ref.watch(hiveStorageServiceProvider);
   return FavoritesNotifier(hiveService);
 });
+*/
