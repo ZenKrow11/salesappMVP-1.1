@@ -68,7 +68,7 @@ class ProductTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${product.normalPrice.toStringAsFixed(2)}.-',
+                      '${product.normalPrice.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -92,7 +92,7 @@ class ProductTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '-${product.discountPercentage}%',
+                        '${product.discountPercentage}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -119,7 +119,7 @@ class ProductTile extends StatelessWidget {
                         ],
                       ),
                       child: Text(
-                        '${product.currentPrice.toStringAsFixed(2)}.-',
+                        '${product.currentPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

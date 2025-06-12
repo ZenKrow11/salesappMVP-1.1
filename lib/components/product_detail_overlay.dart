@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/product.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/favorites_provider.dart';
 import 'shopping_list_dialog.dart';
-import '../providers/shopping_list_provider.dart';
+
 
 
 
@@ -108,7 +107,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _PriceBox(
-                              value: '${product.normalPrice.toStringAsFixed(2)}.-',
+                              value: product.normalPrice.toStringAsFixed(2),
                               bgColor: Colors.grey.shade200,
                               textStyle: const TextStyle(
                                 fontSize: 22,
@@ -117,7 +116,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '-${product.discountPercentage}%',
+                              value: '${product.discountPercentage}',
                               bgColor: Colors.redAccent,
                               textStyle: const TextStyle(
                                 fontSize: 24,
@@ -126,7 +125,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '${product.currentPrice.toStringAsFixed(2)}.-',
+                              value: '${product.currentPrice.toStringAsFixed(2)}',
                               bgColor: Colors.yellow,
                               textStyle: const TextStyle(
                                 fontSize: 26,

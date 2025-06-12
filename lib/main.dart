@@ -33,6 +33,8 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
+//Application
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -45,6 +47,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
 
 class AuthGate extends StatelessWidget {
   @override
