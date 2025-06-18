@@ -1,129 +1,112 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-import 'product_detail_overlay.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProductScreen extends StatelessWidget {
-  final List<Product> products;
+class ProductTile extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
 
-  const ProductScreen({super.key, required this.products});
+  const ProductTile({super.key, required this.product, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      padding: const EdgeInsets.all(8),
-      children: products.map((product) => _buildProductTile(context, product)).toList(),
-    );
-  }
-
-  Widget _buildProductTile(BuildContext context, Product product) {
-    void _showProductDetail() {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => Consumer(
-          builder: (context, ref, _) {
-            return ProductDetailOverlay(product: product);
-          },
-        ),
-      );
-    }
-
     return GestureDetector(
-      onTap: _showProductDetail,
+      onTap: onTap,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
-        margin: const EdgeInsets.all(0), // Margin handled by GridView padding
+        margin: EdgeInsets.zero,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // First row: Store name and Product name
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
+            // Title row
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Text(
                     product.store,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                  const Spacer(),
+                  Expanded(
                     child: Text(
                       product.name,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                       textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
-            ),
-            // Second row: Product image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: double.infinity,
-                height: 100, // Fixed height for the image
-                child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
-                    ? const Center(child: Text("Placeholder Picture", style: TextStyle(color: Colors.grey)))
-                    : Image.network(
-                        product.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(child: Text("Placeholder Picture", style: TextStyle(color: Colors.grey)));
-                        },
-                      ),
+                ],
               ),
             ),
-            // Third row: Price details
+            // Image
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
+                      ? const Center(child: Text("Placeholder Picture"))
+                      : Image.network(
+                    product.imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => const Center(child: Text("Image error")),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Prices
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items with space between
+              child: Row(
                 children: [
-                  // Normal price
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Text(
-                      '${product.normalPrice.toStringAsFixed(2)}',
+                      product.normalPrice.toStringAsFixed(2),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: Colors.black54,
                         decoration: TextDecoration.lineThrough,
                       ),
-                      textAlign: TextAlign.left,
                     ),
                   ),
-                  // Discount percentage
+                  const SizedBox(width: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text('${product.discountPercentage}%',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  ),
-                  // Current price
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.yellow,
-                        borderRadius: BorderRadius.circular(8),
+                    child: Text(
+                      '${product.discountPercentage}%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      child: Text(
-                        product.currentPrice.toStringAsFixed(2),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                        textAlign: TextAlign.right,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.yellow[600],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      product.currentPrice.toStringAsFixed(2),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ),
