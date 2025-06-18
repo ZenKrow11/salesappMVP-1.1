@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'search_state.dart';
 
 class SearchBarWidget extends ConsumerStatefulWidget {
@@ -41,7 +42,7 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
             borderRadius: BorderRadius.circular(12),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.cardBackground,
         ),
       ),
     );

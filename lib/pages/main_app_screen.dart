@@ -67,7 +67,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               width: double.infinity,
               child: DrawerHeader(
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: AppColors.secondary,
                 ),
                 child: Text(
                   'User Avatar',
