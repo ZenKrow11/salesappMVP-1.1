@@ -49,7 +49,6 @@ class MyApp extends StatelessWidget {
 }
 
 
-
 class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -116,7 +116,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '${product.discountPercentage}',
+                              value: '${product.discountPercentage}%',
                               bgColor: Colors.redAccent,
                               textStyle: const TextStyle(
                                 fontSize: 24,

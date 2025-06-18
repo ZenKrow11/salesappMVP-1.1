@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'product_provider.dart';
-import '../models/product.dart';
 
 /// --- FILTER STATE PROVIDERS ---
 

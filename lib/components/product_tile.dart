@@ -3,135 +3,134 @@ import '../models/product.dart';
 import 'product_detail_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProductTile extends StatelessWidget {
-  final Product product;
+class ProductScreen extends StatelessWidget {
+  final List<Product> products;
 
-  const ProductTile({super.key, required this.product});
-
-  void _showProductDetail(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Consumer(
-        builder: (context, ref, _) {
-          return ProductDetailOverlay(product: product);
-        },
-      ),
-    );
-  }
+  const ProductScreen({super.key, required this.products});
 
   @override
   Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      padding: const EdgeInsets.all(8),
+      children: products.map((product) => _buildProductTile(context, product)).toList(),
+    );
+  }
+
+  Widget _buildProductTile(BuildContext context, Product product) {
+    void _showProductDetail() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => Consumer(
+          builder: (context, ref, _) {
+            return ProductDetailOverlay(product: product);
+          },
+        ),
+      );
+    }
+
     return GestureDetector(
-      onTap: () => _showProductDetail(context),
+      onTap: _showProductDetail,
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
-                      ? const Center(child: Text("Placeholder Picture"))
-                      : Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(child: Text("Placeholder Picture"));
-                    },
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        margin: const EdgeInsets.all(0), // Margin handled by GridView padding
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // First row: Store name and Product name
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    product.store,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.store,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
                       product.name,
-                      style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      textAlign: TextAlign.right,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
+                  ),
+                ),
+              ],
+            ),
+            // Second row: Product image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: double.infinity,
+                height: 100, // Fixed height for the image
+                child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
+                    ? const Center(child: Text("Placeholder Picture", style: TextStyle(color: Colors.grey)))
+                    : Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(child: Text("Placeholder Picture", style: TextStyle(color: Colors.grey)));
+                        },
+                      ),
+              ),
+            ),
+            // Third row: Price details
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items with space between
+                children: [
+                  // Normal price
+                  Expanded(
+                    child: Text(
                       '${product.normalPrice.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                         color: Colors.grey,
                         decoration: TextDecoration.lineThrough,
                       ),
+                      textAlign: TextAlign.left,
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 80,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  ),
+                  // Discount percentage
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('${product.discountPercentage}%',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                  // Current price
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Colors.yellow,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${product.discountPercentage}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        product.currentPrice.toStringAsFixed(2),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        textAlign: TextAlign.right,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 38,
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.yellow,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.4),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        '${product.currentPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
