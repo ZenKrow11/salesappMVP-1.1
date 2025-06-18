@@ -4,6 +4,7 @@ import 'package:sales_app_mvp/pages/secondary_app_screen.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 
 class MainAppScreen extends StatefulWidget {
@@ -34,25 +35,25 @@ class _MainAppScreenState extends State<MainAppScreen> {
     _scaffoldKey.currentState?.openEndDrawer();
   }
 
-  //Drawer Menu
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(_titles[_currentIndex],
-        style: TextStyle(
-          color: Colors.greenAccent,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,),
+        title: Text(
+          _titles[_currentIndex],
+          style: const TextStyle(
+            color: AppColors.active,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: AppColors.primary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.account_circle,),
+            icon: const Icon(Icons.account_circle),
             iconSize: 40,
-            color: Colors.greenAccent,
+            color: AppColors.active,
             onPressed: _openDrawer,
           ),
         ],
@@ -61,16 +62,18 @@ class _MainAppScreenState extends State<MainAppScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            SizedBox(
+            const SizedBox(
               height: 119,
               width: double.infinity,
-              child: const DrawerHeader(
+              child: DrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple,
+                  color: AppColors.background,
                 ),
                 child: Text(
                   'User Avatar',
-                  style: TextStyle(color: Colors.greenAccent, fontSize: 24,
+                  style: TextStyle(
+                    color: AppColors.active,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -78,45 +81,40 @@ class _MainAppScreenState extends State<MainAppScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.person,
-              color: Colors.deepPurple,
-              size: 40),
+                  color: AppColors.active, size: 40),
               title: const Text('Account',
-              style: TextStyle(
-                color: Colors.deepPurple,
-                fontSize: 24,
-              ),
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 24,
+                ),
               ),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => SecondaryAppScreen(initialIndex: 0),
                 ));
-
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings,
-                color: Colors.deepPurple,
-                size: 40),
+                  color: AppColors.active, size: 40),
               title: const Text('Settings',
                 style: TextStyle(
-                  color: Colors.deepPurple,
+                  color: AppColors.active,
                   fontSize: 24,
-          ),
-        ),
+                ),
+              ),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => SecondaryAppScreen(initialIndex: 1),
                 ));
-
               },
             ),
             ListTile(
               leading: const Icon(Icons.help_outline,
-                  color: Colors.deepPurple,
-                  size: 40),
+                  color: AppColors.active, size: 40),
               title: const Text('Contact',
                 style: TextStyle(
-                  color: Colors.deepPurple,
+                  color: AppColors.active,
                   fontSize: 24,
                 ),
               ),
@@ -124,46 +122,46 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => SecondaryAppScreen(initialIndex: 2),
                 ));
-
               },
             ),
             ListTile(
               leading: const Icon(Icons.logout,
-                  color: Colors.deepPurple,
-                  size: 40),
+                  color: AppColors.active, size: 40),
               title: const Text('Logout',
                 style: TextStyle(
-                  color: Colors.deepPurple,
+                  color: AppColors.active,
                   fontSize: 24,
                 ),
               ),
               onTap: () async {
                 Navigator.pop(context);
                 await FirebaseAuth.instance.signOut();
-                // Navigate to login screen or splash
                 Navigator.of(context).pushReplacementNamed('/login');
               },
             ),
           ],
         ),
       ),
-
-      // Bottom Navigation Bar
-
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: AppColors.primary,
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.greenAccent,
-        unselectedItemColor: Colors.grey[300],
+        selectedItemColor: AppColors.active,
+        unselectedItemColor: AppColors.inactive,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money,
-          size: 36,), label: 'Sales'),
-          BottomNavigationBarItem(icon: Icon(Icons.list,
-          size: 36,), label: 'Lists'),
-          BottomNavigationBarItem(icon: Icon(Icons.person,
-          size: 36,), label: 'Account'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money, size: 36),
+            label: 'Sales',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list, size: 36),
+            label: 'Lists',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, size: 36),
+            label: 'Account',
+          ),
         ],
       ),
     );

@@ -8,6 +8,7 @@ import '../providers/product_provider.dart';
 import '../providers/filtered_product_provider.dart';
 import '../providers/sort_provider.dart';
 import '../search/search_bar.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -19,7 +20,7 @@ class HomePage extends ConsumerWidget {
     final sortNotifier = ref.read(sortOptionProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.deepPurple[100],
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           const SearchBarWidget(),
