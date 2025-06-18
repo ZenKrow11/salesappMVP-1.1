@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 
@@ -16,23 +17,24 @@ class ProductTile extends StatelessWidget {
         elevation: 2,
         margin: EdgeInsets.zero,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Title row
+            // Top row: Store and product name
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  Text(
-                    product.store,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      product.store,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
                   ),
-                  const Spacer(),
                   Expanded(
                     child: Text(
                       product.name,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -40,74 +42,49 @@ class ProductTile extends StatelessWidget {
                 ],
               ),
             ),
-            // Image
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
-                      ? const Center(child: Text("Placeholder Picture"))
-                      : Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => const Center(child: Text("Image error")),
-                  ),
-                ),
+
+            // Image with aspect-ratio check
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: AspectRatioFittingImage(
+                imageUrl: product.imageUrl,
+                maxHeight: 100,
+                maxWidth: double.infinity,
               ),
             ),
-            const SizedBox(height: 8),
-            // Prices
+
+            // Price details
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.normalPrice.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        decoration: TextDecoration.lineThrough,
-                      ),
+                  _priceBox(
+                    text: product.normalPrice.toStringAsFixed(2),
+                    bgColor: Colors.grey[300],
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      decoration: TextDecoration.lineThrough,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${product.discountPercentage}%',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                  _priceBox(
+                    text: '${product.discountPercentage}%',
+                    bgColor: Colors.red,
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.yellow[600],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.currentPrice.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                  const SizedBox(width: 4),
+                  _priceBox(
+                    text: product.currentPrice.toStringAsFixed(2),
+                    bgColor: Colors.yellow[600],
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
                 ],
@@ -115,6 +92,88 @@ class ProductTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _priceBox({required String text, required Color? bgColor, required TextStyle textStyle}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: textStyle,
+        ),
+      ),
+    );
+  }
+}
+
+class AspectRatioFittingImage extends StatelessWidget {
+  final String imageUrl;
+  final double maxHeight;
+  final double maxWidth;
+
+  const AspectRatioFittingImage({
+    super.key,
+    required this.imageUrl,
+    required this.maxHeight,
+    required this.maxWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl.isEmpty || !(Uri.tryParse(imageUrl)?.hasAbsolutePath ?? false)) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: Text("No Image")),
+      );
+    }
+
+    return FutureBuilder<Image>(
+      future: _getSizedImage(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done || !snapshot.hasData) {
+          return const SizedBox(
+            height: 100,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          );
+        }
+        return snapshot.data!;
+      },
+    );
+  }
+
+  Future<Image> _getSizedImage() async {
+    final image = Image.network(imageUrl);
+    final completer = Completer<ImageInfo>();
+    final stream = image.image.resolve(const ImageConfiguration());
+
+    final listener = ImageStreamListener((ImageInfo info, bool _) {
+      completer.complete(info);
+    });
+
+    stream.addListener(listener);
+    final info = await completer.future;
+    stream.removeListener(listener);
+
+    final width = info.image.width.toDouble();
+    final height = info.image.height.toDouble();
+    final isWide = width >= height;
+
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.contain,
+      width: isWide ? maxWidth : null,
+      height: isWide ? null : maxHeight,
+      errorBuilder: (context, error, stackTrace) => const SizedBox(
+        height: 100,
+        child: Center(child: Text("No Image")),
       ),
     );
   }
