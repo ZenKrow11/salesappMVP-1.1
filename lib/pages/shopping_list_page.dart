@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
+import '../widgets/theme_color.dart';
 
 const String favoritesListName = 'Favorites';
 
@@ -25,7 +26,7 @@ class ShoppingListPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: Colors.deepPurple[100],
+      backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Compute otherLists here for _showAddListDialog to ensure it's up-to-date
@@ -35,8 +36,8 @@ class ShoppingListPage extends ConsumerWidget {
             ..sort((a, b) => a.index.compareTo(b.index));
           _showAddListDialog(context, shoppingListNotifier, otherLists);
         },
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Color(0xFF00ADB5),),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 10),
