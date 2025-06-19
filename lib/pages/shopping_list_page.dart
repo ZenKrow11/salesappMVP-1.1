@@ -103,13 +103,15 @@ class ShoppingListPage extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: ExpansionTile(
-        backgroundColor: Colors.white,
-        collapsedBackgroundColor: Colors.white,
+        backgroundColor: AppColors.inactive,
+        collapsedBackgroundColor: AppColors.primary,
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
         title: Text(
           list.name,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: AppColors.active,
+              fontSize: 18, fontWeight: FontWeight.bold),
         ),
         trailing: allowDelete
             ? IconButton(

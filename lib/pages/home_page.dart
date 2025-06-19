@@ -119,6 +119,8 @@ class HomePage extends ConsumerWidget {
           );
         },
         child: const Icon(Icons.filter_alt),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.active,
       ),
     );
   }
