@@ -10,7 +10,7 @@ import 'models/product.dart';
 import 'services/hive_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/named_list.dart';
-
+import 'package:sales_app_mvp/widgets/splash_screen.dart';
 
 final hiveStorageService = HiveStorageService.instance; // Optional global instance
 
@@ -22,7 +22,6 @@ void main() async {
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(NamedListAdapter());
 
-
   await HiveStorageService.instance.init();
 
   // Initialize Firebase
@@ -33,8 +32,6 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-//Application
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -43,13 +40,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sales App',
       theme: ThemeData(useMaterial3: true),
-      home: AuthGate(), // This checks login status
+      home: const SplashScreen(), // Set SplashScreen as home
     );
   }
 }
 
-
 class AuthGate extends StatelessWidget {
+  const AuthGate({super.key}); // Add constructor with key
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -58,9 +56,9 @@ class AuthGate extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasData) {
-          return MainAppScreen(); // Signed in
+          return const MainAppScreen(); // Signed in
         } else {
-          return LoginScreen(); // Not signed in
+          return const LoginScreen(); // Not signed in
         }
       },
     );

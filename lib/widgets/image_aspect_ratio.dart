@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ImageWithAspectRatio extends StatelessWidget {
   final String imageUrl;
@@ -15,41 +16,13 @@ class ImageWithAspectRatio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Image>(
-      future: _getImage(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done || !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final image = snapshot.data!;
-        return image;
-      },
-    );
-  }
-
-  Future<Image> _getImage() async {
-    final image = Image.network(imageUrl);
-    final completer = Completer<ImageInfo>();
-    final stream = image.image.resolve(const ImageConfiguration());
-
-    final listener = ImageStreamListener((ImageInfo info, bool _) {
-      completer.complete(info);
-    });
-
-    stream.addListener(listener);
-    final info = await completer.future;
-    stream.removeListener(listener);
-
-    final width = info.image.width.toDouble();
-    final height = info.image.height.toDouble();
-
-    final isWide = width >= height;
-    return Image.network(
-      imageUrl,
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.contain,
-      height: isWide ? null : maxHeight,
-      width: isWide ? maxWidth : null,
+      height: maxHeight,
+      width: maxWidth,
+      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+      errorWidget: (context, url, error) => const Center(child: Icon(Icons.error)),
     );
   }
 }
