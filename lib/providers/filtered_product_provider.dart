@@ -6,7 +6,7 @@ import '../models/product.dart';
 import 'sort_provider.dart';
 
 final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
-  final productsAsync = ref.watch(productsProvider);
+  final productsAsync = ref.watch(paginatedProductsProvider);
   final selectedStore = ref.watch(storeFilterProvider);
   final selectedCategory = ref.watch(categoryFilterProvider);
   final selectedSubcategory = ref.watch(subcategoryFilterProvider);
