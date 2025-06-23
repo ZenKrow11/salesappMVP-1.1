@@ -41,14 +41,17 @@ class ProductTile extends StatelessWidget {
   Widget _buildCollapsedContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
       children: [
         _buildHeaderRow(),
         const SizedBox(height: 6),
-        ClipRect(
-          child: ImageWithAspectRatio(
-            imageUrl: product.imageUrl,
-            maxHeight: 90,
-            maxWidth: double.infinity,
+        Expanded(
+          child: ClipRect(
+            child: ImageWithAspectRatio(
+              imageUrl: product.imageUrl,
+              maxHeight: double.infinity, // Allow image to take available height
+              maxWidth: double.infinity,
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -60,14 +63,17 @@ class ProductTile extends StatelessWidget {
   Widget _buildExpandedContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
       children: [
         _buildHeaderRow(),
         const SizedBox(height: 6),
-        ClipRect(
-          child: ImageWithAspectRatio(
-            imageUrl: product.imageUrl,
-            maxHeight: 90,
-            maxWidth: double.infinity,
+        Expanded(
+          child: ClipRect(
+            child: ImageWithAspectRatio(
+              imageUrl: product.imageUrl,
+              maxHeight: double.infinity, // Allow image to take available height
+              maxWidth: double.infinity,
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -123,16 +129,6 @@ class ProductTile extends StatelessWidget {
   Widget _buildPriceRow({double fontSize = 12}) {
     return Row(
       children: [
-        _priceBox(
-          text: product.normalPrice.toStringAsFixed(2),
-          bgColor: Colors.grey[300],
-          textStyle: TextStyle(
-            fontSize: fontSize,
-            color: Colors.black54,
-            decoration: TextDecoration.lineThrough,
-          ),
-        ),
-        const SizedBox(width: 4),
         _priceBox(
           text: '${product.discountPercentage}%',
           bgColor: Colors.red,
