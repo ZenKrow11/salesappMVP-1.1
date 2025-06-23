@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart'; // Ensure this path is correct
 import 'package:sales_app_mvp/providers/product_provider.dart'; // Ensure this path is correct
-import 'package:sales_app_mvp/components/product_tile.dart'; // Ensure this path is correct
+import 'package:sales_app_mvp/components/product_tile.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -84,9 +84,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           padding: const EdgeInsets.all(8),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.8, // You may need to adjust this for your ProductTile
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+            childAspectRatio: 0.85, // You may need to adjust this for your ProductTile
+            crossAxisSpacing: 15,
+            mainAxisSpacing: 15,
           ),
           itemCount: products.length,
           itemBuilder: (context, index) {
