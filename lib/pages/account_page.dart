@@ -6,6 +6,7 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.deepPurple[100],
       body: const Center(
         child: Text('Account info will be shown here.'),
       ),

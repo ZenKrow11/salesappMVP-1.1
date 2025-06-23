@@ -1,138 +1,199 @@
 import 'package:flutter/material.dart';
+import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import '../models/product.dart';
-import 'product_detail_overlay.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ProductTile extends StatelessWidget {
   final Product product;
+  final bool isExpanded;
+  final VoidCallback onTap;
 
-  const ProductTile({super.key, required this.product});
-
-  void _showProductDetail(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Consumer(
-        builder: (context, ref, _) {
-          return ProductDetailOverlay(product: product);
-        },
-      ),
-    );
-  }
+  const ProductTile({
+    super.key,
+    required this.product,
+    required this.isExpanded,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showProductDetail(context),
+      onTap: onTap,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 4,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: (product.imageUrl.isEmpty || !(Uri.tryParse(product.imageUrl)?.hasAbsolutePath ?? false))
-                      ? const Center(child: Text("Placeholder Picture"))
-                      : Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(child: Text("Placeholder Picture"));
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.store,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      product.name,
-                      style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${product.normalPrice.toStringAsFixed(2)}.-',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 80,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '-${product.discountPercentage}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 38,
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.yellow,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.4),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        '${product.currentPrice.toStringAsFixed(2)}.-',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        elevation: 6,
+        margin: EdgeInsets.zero,
+        child: Container(
+          height: isExpanded ? 240 : 180,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+          ),
+          child: isExpanded
+              ? _buildExpandedContent(context)
+              : _buildCollapsedContent(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        _buildHeaderRow(),
+        const SizedBox(height: 6),
+        Expanded(
+          child: ClipRect(
+            child: ImageWithAspectRatio(
+              imageUrl: product.imageUrl,
+              maxHeight: double.infinity, // Allow image to take available height
+              maxWidth: double.infinity,
+            ),
           ),
         ),
+        const SizedBox(height: 6),
+        _buildPriceRow(),
+      ],
+    );
+  }
+
+  Widget _buildExpandedContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        _buildHeaderRow(),
+        const SizedBox(height: 6),
+        Expanded(
+          child: ClipRect(
+            child: ImageWithAspectRatio(
+              imageUrl: product.imageUrl,
+              maxHeight: double.infinity, // Allow image to take available height
+              maxWidth: double.infinity,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _categoryChip(product.category, Colors.orangeAccent),
+            const SizedBox(width: 6),
+            _categoryChip(product.subcategory, Colors.orangeAccent.shade100),
+          ],
+        ),
+        const SizedBox(height: 6),
+        _buildPriceRow(fontSize: 14),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _squareButton(Icons.open_in_new, () {
+              print('Open URL: ${product.url}');
+            }),
+            _squareButton(Icons.view_list, () {
+              print('Add to shopping list');
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            product.store,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            product.name,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceRow({double fontSize = 12}) {
+    return Row(
+      children: [
+        _priceBox(
+          text: '${product.discountPercentage}%',
+          bgColor: Colors.red,
+          textStyle: TextStyle(
+            fontSize: fontSize,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 4),
+        _priceBox(
+          text: product.currentPrice.toStringAsFixed(2),
+          bgColor: Colors.yellow[600],
+          textStyle: TextStyle(
+            fontSize: fontSize + 2,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _priceBox({
+    required String text,
+    required Color? bgColor,
+    required TextStyle textStyle,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: textStyle,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Widget _categoryChip(String label, Color bgColor) {
+    return Chip(
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      backgroundColor: bgColor,
+      labelStyle: const TextStyle(color: Colors.black),
+    );
+  }
+
+  Widget _squareButton(IconData icon, VoidCallback onPressed) {
+    return SizedBox(
+      width: 60,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.zero,
+          backgroundColor: Colors.deepPurple,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Icon(icon, size: 24, color: Colors.white),
       ),
     );
   }

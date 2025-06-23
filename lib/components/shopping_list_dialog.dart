@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import '../providers/shopping_list_provider.dart';
 
+const String favoritesListName = 'Favorites';
+
 class ShoppingListDialog extends ConsumerStatefulWidget {
   final Product product;
   final void Function(String selectedListName) onConfirm;
@@ -59,9 +61,10 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
                       : SizedBox(
                     height: 200, // Set a fixed height for scrollable list
                     child: ListView.builder(
-                      itemCount: shoppingLists.keys.length,
+                      itemCount: shoppingLists.length,
                       itemBuilder: (context, index) {
-                        final listName = shoppingLists.keys.elementAt(index);
+                        final list = shoppingLists[index];
+                        final listName = list.name;
                         return ListTile(
                           title: Text(listName),
                           selected: _selectedList == listName,
@@ -85,11 +88,13 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
                               ),
                             ),
                             onPressed: () {
-                              shoppingListNotifier.addItemToList(listName, widget.product);
+                              shoppingListNotifier.addToList(listName, widget.product);
                               widget.onConfirm(listName);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Added to "$listName"'),
-                                  duration: const Duration(seconds: 1),),
+                                SnackBar(
+                                  content: Text('Added to "$listName"'),
+                                  duration: const Duration(seconds: 1),
+                                ),
                               );
                               Navigator.of(context).pop();
                             },
@@ -126,19 +131,38 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
                 : _selectedList;
 
             if (listName != null && listName.isNotEmpty) {
-              if (_newListController.text.isNotEmpty && shoppingLists.containsKey(listName)) {
+              if (_newListController.text.isNotEmpty &&
+                  shoppingLists.any((list) => list.name == listName)) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('List name already exists'),
-                    duration: const Duration(seconds: 1),),
+                  const SnackBar(
+                    content: Text('List name already exists'),
+                    duration: const Duration(seconds: 1),
+                  ),
                 );
                 return;
               }
+              if (_newListController.text.isNotEmpty) {
+                // Create new list and add item
+                shoppingListNotifier.addEmptyList(listName);
+                shoppingListNotifier.addToList(listName, widget.product);
+              } else {
+                // Add to selected existing list (already handled in trailing button)
+                shoppingListNotifier.addToList(listName, widget.product);
+              }
               widget.onConfirm(listName);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Added to "$listName"'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
               Navigator.of(context).pop();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please enter or select a list name'),
-                  duration: const Duration(seconds: 1),),
+                const SnackBar(
+                  content: Text('Please enter or select a list name'),
+                  duration: const Duration(seconds: 1),
+                ),
               );
             }
           },

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'product_provider.dart';
-import '../models/product.dart';
 
 /// --- FILTER STATE PROVIDERS ---
 
@@ -22,7 +21,7 @@ class StoreFilterNotifier extends StateNotifier<String?> {
   }
 
   void _validateSubcategory() {
-    final allProducts = ref.read(productsProvider).maybeWhen(
+    final allProducts = ref.read(paginatedProductsProvider).maybeWhen(
       data: (products) => products,
       orElse: () => [],
     );
@@ -59,7 +58,7 @@ class CategoryFilterNotifier extends StateNotifier<String?> {
   }
 
   void _validateSubcategory() {
-    final allProducts = ref.read(productsProvider).maybeWhen(
+    final allProducts = ref.read(paginatedProductsProvider).maybeWhen(
       data: (products) => products,
       orElse: () => [],
     );
@@ -86,7 +85,7 @@ final subcategoryFilterProvider = StateProvider<String?>((ref) => null);
 
 // Store options
 final storeListProvider = Provider<List<String>>((ref) {
-  return ref.watch(productsProvider).maybeWhen(
+  return ref.watch(paginatedProductsProvider).maybeWhen(
     data: (products) {
       final stores = products.map((p) => p.store).toSet().toList()..sort();
       return stores;
@@ -97,7 +96,7 @@ final storeListProvider = Provider<List<String>>((ref) {
 
 // Category options
 final categoryListProvider = Provider<List<String>>((ref) {
-  return ref.watch(productsProvider).maybeWhen(
+  return ref.watch(paginatedProductsProvider).maybeWhen(
     data: (products) {
       final categories = products.map((p) => p.category).toSet().toList()..sort();
       return categories;
@@ -111,7 +110,7 @@ final subcategoryListProvider = Provider<List<String>>((ref) {
   final selectedStore = ref.watch(storeFilterProvider);
   final selectedCategory = ref.watch(categoryFilterProvider);
 
-  return ref.watch(productsProvider).maybeWhen(
+  return ref.watch(paginatedProductsProvider).maybeWhen(
     data: (products) {
       final subcategories = products
           .where((p) =>

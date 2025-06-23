@@ -8,7 +8,7 @@ class FilterSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(productsProvider);
+    final productsAsync = ref.watch(paginatedProductsProvider);
 
     return SafeArea(
       child: SizedBox(
@@ -83,7 +83,7 @@ class FilterSheet extends ConsumerWidget {
                 children: [
                   Text('Error loading filters: $error'),
                   ElevatedButton(
-                    onPressed: () => ref.refresh(productsProvider),
+                    onPressed: () => ref.refresh(paginatedProductsProvider),
                     child: const Text('Retry'),
                   ),
                 ],

@@ -1,21 +1,33 @@
-allprojects {
+buildscript {
     repositories {
         google()
-        mavenCentral()
+        mavenCentral() // Add this line
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.3.0")
+        classpath("com.google.gms:google-services:4.4.2") // Added Firebase plugin
     }
 }
 
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+allprojects {
+    repositories {
+        google()
+        mavenCentral() // Add this line
+    }
+}
 
+rootProject.buildDir = file("../build") // Use file() for path resolution
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    project.buildDir = File(rootProject.buildDir, project.name) // Use File constructor
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+    afterEvaluate {
+        project.tasks.findByName("lint")?.let { lintTask ->
+            lintTask.dependsOn("clean")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+    delete(rootProject.buildDir)
 }

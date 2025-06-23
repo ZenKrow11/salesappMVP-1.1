@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/product.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/favorites_provider.dart';
 import 'shopping_list_dialog.dart';
-import '../providers/shopping_list_provider.dart';
+
 
 
 
@@ -15,8 +14,8 @@ class ProductDetailOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final favoritesNotifier = ref.read(favoritesProvider.notifier);
-    final isFavorite = ref.watch(favoritesProvider).any((p) => p.id == product.id);
+    /*final favoritesNotifier = ref.read(favoritesProvider.notifier);
+    final isFavorite = ref.watch(favoritesProvider).any((p) => p.id == product.id);*/
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(), // dismiss when tapping outside
       behavior: HitTestBehavior.opaque,
@@ -108,7 +107,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _PriceBox(
-                              value: '${product.normalPrice.toStringAsFixed(2)}.-',
+                              value: product.normalPrice.toStringAsFixed(2),
                               bgColor: Colors.grey.shade200,
                               textStyle: const TextStyle(
                                 fontSize: 22,
@@ -117,7 +116,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '-${product.discountPercentage}%',
+                              value: '${product.discountPercentage}%',
                               bgColor: Colors.redAccent,
                               textStyle: const TextStyle(
                                 fontSize: 24,
@@ -126,7 +125,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '${product.currentPrice.toStringAsFixed(2)}.-',
+                              value: '${product.currentPrice.toStringAsFixed(2)}',
                               bgColor: Colors.yellow,
                               textStyle: const TextStyle(
                                 fontSize: 26,
@@ -164,7 +163,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                                 }
                               },
                             ),
-
+/*
                             _SquareButton(
                               icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                               onPressed: () {
@@ -177,7 +176,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                                 );
                               },
                             ),
-
+*/
                             _SquareButton(
                               icon: Icons.view_list,
                               onPressed: () {
@@ -186,10 +185,12 @@ class ProductDetailOverlay extends ConsumerWidget {
                                   builder: (_) => ShoppingListDialog(
                                     product: product,
                                     onConfirm: (listName) {
-                                      ref.read(shoppingListsProvider.notifier).addItemToList(listName, product);
+                                      // Optional: Snackbar already shown in ShoppingListDialog, but can keep for consistency
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Added to "$listName"'),
-                                          duration: const Duration(seconds: 1),),
+                                        SnackBar(
+                                          content: Text('Added to "$listName"'),
+                                          duration: const Duration(seconds: 1),
+                                        ),
                                       );
                                     },
                                   ),

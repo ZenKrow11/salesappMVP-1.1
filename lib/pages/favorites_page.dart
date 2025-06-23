@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/favorites_provider.dart';
 import '../models/product.dart';
@@ -97,3 +97,4 @@ class FavoriteItemTile extends StatelessWidget {
     );
   }
 }
+*/

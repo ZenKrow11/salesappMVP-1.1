@@ -1,66 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../components/product_tile.dart';
-import '../filters/filter_sheet.dart';
-import '../providers/product_provider.dart';
-import '../search/search_bar.dart';
-import '../providers/filtered_product_provider.dart';
+import 'package:sales_app_mvp/models/product.dart'; // Ensure this path is correct
+import 'package:sales_app_mvp/providers/product_provider.dart'; // Ensure this path is correct
+import 'package:sales_app_mvp/components/product_tile.dart'; // Ensure this path is correct
 
-
-
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Watch filtered products as AsyncValue<List<Product>>
-    final filteredProductsAsync = ref.watch(filteredProductsProvider);
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.deepPurple[100],
-      body: Column(
-        children: [
-          const SearchBarWidget(),
-          Expanded(
-            child: filteredProductsAsync.when(
-              data: (products) {
-                if (products.isEmpty) {
-                  return const Center(child: Text('No sales items available.'));
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    return ProductTile(product: products[index]);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Error loading products: $error'),
-                    ElevatedButton(
-                      onPressed: () => ref.refresh(productsProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
+class _HomePageState extends ConsumerState<HomePage> {
+  // The scroll controller is still needed to detect when the user reaches the end.
+  final ScrollController _scrollController = ScrollController();
+
+  // The state for expanded tiles is UI-specific, so it's fine to keep it here.
+  final Map<String, bool> _expandedStates = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // We check if the user has scrolled to 80% of the bottom of the page.
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
+      // We use ref.read to call a method on our notifier.
+      // This triggers the data fetching but doesn't cause this widget to rebuild.
+      // The rebuild will happen automatically when the provider's state changes.
+      ref.read(paginatedProductsProvider.notifier).loadMoreProducts();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. Watch the provider. This is the only line needed to connect the UI to the state.
+    // Riverpod will automatically handle rebuilding this widget when `productsAsync` changes.
+    final productsAsync = ref.watch(paginatedProductsProvider);
+
+    // 2. Use the `when` method to easily handle all possible states: loading, error, and data.
+    return productsAsync.when(
+      loading: () {
+        // State 1: Initial loading. Show a centered spinner.
+        return const Center(child: CircularProgressIndicator());
+      },
+      error: (error, stackTrace) {
+        // State 2: An error occurred during fetching.
+        print(stackTrace); // Good for debugging
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Failed to load products. Please check your connection.\nError: $error',
+              textAlign: TextAlign.center,
             ),
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            builder: (context) => const FilterSheet(),
+        );
+      },
+      data: (products) {
+        // State 3: We have data!
+        if (products.isEmpty) {
+          // A sub-case of data: the list is empty.
+          return const Center(
+            child: Text(
+              'No products found.',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
           );
-        },
-        child: const Icon(Icons.filter_alt),
-      ),
+        }
+
+        // Build the main UI with the list of products.
+        return GridView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(8),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.8, // You may need to adjust this for your ProductTile
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: products.length,
+          itemBuilder: (context, index) {
+            final product = products[index];
+            return ProductTile(
+              product: product,
+              isExpanded: _expandedStates[product.id] ?? false,
+              onTap: () {
+                // `setState` is fine here as it only affects the local `_expandedStates` map.
+                setState(() {
+                  // Toggle the expanded state for the specific product tile.
+                  _expandedStates[product.id] = !(_expandedStates[product.id] ?? false);
+                });
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
