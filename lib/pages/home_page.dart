@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/models/product.dart'; // Ensure this path is correct
-import 'package:sales_app_mvp/providers/product_provider.dart'; // Ensure this path is correct
+import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/providers/product_provider.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
+import 'package:sales_app_mvp/pages/details_screen.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -12,11 +14,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  // The scroll controller is still needed to detect when the user reaches the end.
   final ScrollController _scrollController = ScrollController();
-
-  // The state for expanded tiles is UI-specific, so it's fine to keep it here.
-  final Map<String, bool> _expandedStates = {};
 
   @override
   void initState() {
@@ -32,30 +30,34 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onScroll() {
-    // We check if the user has scrolled to 80% of the bottom of the page.
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
-      // We use ref.read to call a method on our notifier.
-      // This triggers the data fetching but doesn't cause this widget to rebuild.
-      // The rebuild will happen automatically when the provider's state changes.
+    // Prevent multiple calls if already loading more or no more items
+    final notifier = ref.read(paginatedProductsProvider.notifier);
+    // Assuming your notifier has a way to check if it's currently loading or has more items
+    // For example, if it's a StateNotifier<AsyncValue<List<Product>>> or has a custom isLoadingMore flag.
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 && !ref.read(paginatedProductsProvider).isLoading) { // Example check
       ref.read(paginatedProductsProvider.notifier).loadMoreProducts();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Watch the provider. This is the only line needed to connect the UI to the state.
-    // Riverpod will automatically handle rebuilding this widget when `productsAsync` changes.
     final productsAsync = ref.watch(paginatedProductsProvider);
+    // It's good practice to also listen to the notifier if you need to react to its state changes
+    // for things like showing a loading indicator at the bottom during pagination.
+    // final productNotifier = ref.watch(paginatedProductsProvider.notifier);
 
-    // 2. Use the `when` method to easily handle all possible states: loading, error, and data.
+    // Handle case where maxScrollExtent might be 0 initially if content is less than viewport
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (productsAsync is AsyncData && productsAsync.value!.isNotEmpty && _scrollController.position.maxScrollExtent == 0) {
+        // Potentially trigger loadMore if initial content doesn't fill screen and more might be available
+        // This depends on your exact pagination logic.
+      }
+    });
+
     return productsAsync.when(
-      loading: () {
-        // State 1: Initial loading. Show a centered spinner.
-        return const Center(child: CircularProgressIndicator());
-      },
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) {
-        // State 2: An error occurred during fetching.
-        print(stackTrace); // Good for debugging
+        print(stackTrace);
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -67,9 +69,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         );
       },
       data: (products) {
-        // State 3: We have data!
         if (products.isEmpty) {
-          // A sub-case of data: the list is empty.
           return const Center(
             child: Text(
               'No products found.',
@@ -78,31 +78,47 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         }
 
-        // Build the main UI with the list of products.
-        return GridView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(8),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.85, // You may need to adjust this for your ProductTile
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return ProductTile(
-              product: product,
-              isExpanded: _expandedStates[product.id] ?? false,
-              onTap: () {
-                // `setState` is fine here as it only affects the local `_expandedStates` map.
-                setState(() {
-                  // Toggle the expanded state for the specific product tile.
-                  _expandedStates[product.id] = !(_expandedStates[product.id] ?? false);
-                });
-              },
-            );
-          },
+        // Consider adding a loading indicator at the bottom if paginating
+        // final isLoadingMore = productNotifier.isLoadingMore; // Assuming your notifier exposes this
+
+        return Column(
+          children: [
+            Expanded(
+              child: GridView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.85,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                ),
+                itemCount: products.length, // + (isLoadingMore ? 1 : 0) if showing loading item
+                itemBuilder: (context, index) {
+                  // if (isLoadingMore && index == products.length) {
+                  //   return const Center(child: CircularProgressIndicator());
+                  // }
+                  final product = products[index];
+                  return ProductTile(
+                    product: product,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsScreen(product: product),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            // if (productsAsync.isLoading) // Or a specific isLoadingMore flag from your notifier
+            //   const Padding(
+            //     padding: EdgeInsets.all(8.0),
+            //     child: CircularProgressIndicator(),
+            //   ),
+          ],
         );
       },
     );

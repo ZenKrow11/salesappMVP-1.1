@@ -4,41 +4,37 @@ import '../models/product.dart';
 
 class ProductTile extends StatelessWidget {
   final Product product;
-  final bool isExpanded;
   final VoidCallback onTap;
 
   const ProductTile({
     super.key,
     required this.product,
-    required this.isExpanded,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Card(
+        onTap: onTap,
+        child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 6,
-        margin: EdgeInsets.zero,
-        child: Container(
-          height: isExpanded ? 240 : 180,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-          ),
-          child: isExpanded
-              ? _buildExpandedContent(context)
-              : _buildCollapsedContent(context),
-        ),
-      ),
+    elevation: 6,
+    margin: EdgeInsets.zero,
+    child: Container(
+    height: 180,
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+    ),
+    child: _buildContent(context),
+    ),
+    ),
     );
-  }
+    }
 
-  Widget _buildCollapsedContent(BuildContext context) {
+  Widget _buildContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
@@ -48,57 +44,14 @@ class ProductTile extends StatelessWidget {
         Expanded(
           child: ClipRect(
             child: ImageWithAspectRatio(
-              imageUrl: product.imageUrl,
-              maxHeight: double.infinity, // Allow image to take available height
-              maxWidth: double.infinity,
+                imageUrl: product.imageUrl,
+                maxHeight: double.infinity,
+                maxWidth: double.infinity,
             ),
           ),
         ),
         const SizedBox(height: 6),
         _buildPriceRow(),
-      ],
-    );
-  }
-
-  Widget _buildExpandedContent(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        _buildHeaderRow(),
-        const SizedBox(height: 6),
-        Expanded(
-          child: ClipRect(
-            child: ImageWithAspectRatio(
-              imageUrl: product.imageUrl,
-              maxHeight: double.infinity, // Allow image to take available height
-              maxWidth: double.infinity,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            _categoryChip(product.category, Colors.orangeAccent),
-            const SizedBox(width: 6),
-            _categoryChip(product.subcategory, Colors.orangeAccent.shade100),
-          ],
-        ),
-        const SizedBox(height: 6),
-        _buildPriceRow(fontSize: 14),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _squareButton(Icons.open_in_new, () {
-              print('Open URL: ${product.url}');
-            }),
-            _squareButton(Icons.view_list, () {
-              print('Add to shopping list');
-            }),
-          ],
-        ),
       ],
     );
   }
@@ -170,30 +123,6 @@ class ProductTile extends StatelessWidget {
           style: textStyle,
           overflow: TextOverflow.ellipsis,
         ),
-      ),
-    );
-  }
-
-  Widget _categoryChip(String label, Color bgColor) {
-    return Chip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: bgColor,
-      labelStyle: const TextStyle(color: Colors.black),
-    );
-  }
-
-  Widget _squareButton(IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 60,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: Colors.deepPurple,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Icon(icon, size: 24, color: Colors.white),
       ),
     );
   }

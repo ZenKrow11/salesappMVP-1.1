@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -6,7 +7,7 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.deepPurple[100],
+      backgroundColor: AppColors.background,
       body: const Center(
         child: Text('Account info will be shown here.'),
       ),
