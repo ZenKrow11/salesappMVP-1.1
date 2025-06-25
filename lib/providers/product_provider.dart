@@ -12,7 +12,7 @@ AsyncNotifierProvider<PaginatedProductsNotifier, List<Product>>(() {
 class PaginatedProductsNotifier extends AsyncNotifier<List<Product>> {
   DocumentSnapshot? _lastDoc;
   bool _isLoadingMore = false;
-  static const int _limit = 20; // Let's use a smaller limit for testing pagination
+  static const int _limit = 250;
 
   // `build` is called automatically to get the first page.
   // Riverpod handles showing a loading spinner while this Future is running.

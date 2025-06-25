@@ -5,6 +5,7 @@ import 'package:sales_app_mvp/providers/product_provider.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/pages/details_screen.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:sales_app_mvp/providers/sort_provider.dart'; // Import sort_provider
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -30,61 +31,107 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onScroll() {
-    // Prevent multiple calls if already loading more or no more items
     final notifier = ref.read(paginatedProductsProvider.notifier);
-    // Assuming your notifier has a way to check if it's currently loading or has more items
-    // For example, if it's a StateNotifier<AsyncValue<List<Product>>> or has a custom isLoadingMore flag.
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 && !ref.read(paginatedProductsProvider).isLoading) { // Example check
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 && !ref.read(paginatedProductsProvider).isLoading) {
       ref.read(paginatedProductsProvider.notifier).loadMoreProducts();
     }
+  }
+
+  // Helper function to sort products based on the selected sort option
+  List<Product> _sortProducts(List<Product> products, SortOption sortOption) {
+    final sortedProducts = List<Product>.from(products); // Create a copy to avoid mutating the original
+    switch (sortOption) {
+      case SortOption.alphabeticalStore:
+        sortedProducts.sort((a, b) => a.store.compareTo(b.store)); // Adjust field name if needed
+        break;
+      case SortOption.alphabetical:
+        sortedProducts.sort((a, b) => a.name.compareTo(b.name)); // Adjust field name if needed
+        break;
+      case SortOption.priceLowToHigh:
+        sortedProducts.sort((a, b) => a.currentPrice.compareTo(b.currentPrice)); // Adjust field name if needed
+        break;
+      case SortOption.discountHighToLow:
+        sortedProducts.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage)); // Adjust field name if needed
+        break;
+    }
+    return sortedProducts;
   }
 
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(paginatedProductsProvider);
-    // It's good practice to also listen to the notifier if you need to react to its state changes
-    // for things like showing a loading indicator at the bottom during pagination.
-    // final productNotifier = ref.watch(paginatedProductsProvider.notifier);
+    final sortOption = ref.watch(sortOptionProvider); // Watch the sort option
 
     // Handle case where maxScrollExtent might be 0 initially if content is less than viewport
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (productsAsync is AsyncData && productsAsync.value!.isNotEmpty && _scrollController.position.maxScrollExtent == 0) {
-        // Potentially trigger loadMore if initial content doesn't fill screen and more might be available
-        // This depends on your exact pagination logic.
+        // Potentially trigger loadMore if initial content doesn't fill screen
       }
     });
 
-    return productsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) {
-        print(stackTrace);
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Failed to load products. Please check your connection.\nError: $error',
-              textAlign: TextAlign.center,
-            ),
+    return Column(
+      children: [
+        // Sorting dropdown
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              DropdownButton<SortOption>(
+                value: sortOption,
+                items: SortOption.values.map((SortOption option) {
+                  return DropdownMenuItem<SortOption>(
+                    value: option,
+                    child: Text(
+                      option == SortOption.alphabeticalStore
+                          ? 'Sort by Store'
+                          : option == SortOption.alphabetical
+                          ? 'Sort by Name'
+                          : option == SortOption.priceLowToHigh
+                          ? 'Price: Low to High'
+                          : 'Discount: High to Low',
+                      style: const TextStyle(color: AppColors.primary),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (SortOption? newValue) {
+                  if (newValue != null) {
+                    ref.read(sortOptionProvider.notifier).state = newValue;
+                  }
+                },
+              ),
+            ],
           ),
-        );
-      },
-      data: (products) {
-        if (products.isEmpty) {
-          return const Center(
-            child: Text(
-              'No products found.',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          );
-        }
+        ),
+        Expanded(
+          child: productsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stackTrace) {
+              print(stackTrace);
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Failed to load products. Please check your connection.\nError: $error',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            },
+            data: (products) {
+              if (products.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No products found.',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                );
+              }
 
-        // Consider adding a loading indicator at the bottom if paginating
-        // final isLoadingMore = productNotifier.isLoadingMore; // Assuming your notifier exposes this
+              // Sort the products based on the selected sort option
+              final sortedProducts = _sortProducts(products, sortOption);
 
-        return Column(
-          children: [
-            Expanded(
-              child: GridView.builder(
+              return GridView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(8),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -93,12 +140,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                 ),
-                itemCount: products.length, // + (isLoadingMore ? 1 : 0) if showing loading item
+                itemCount: sortedProducts.length,
                 itemBuilder: (context, index) {
-                  // if (isLoadingMore && index == products.length) {
-                  //   return const Center(child: CircularProgressIndicator());
-                  // }
-                  final product = products[index];
+                  final product = sortedProducts[index];
                   return ProductTile(
                     product: product,
                     onTap: () {
@@ -111,16 +155,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     },
                   );
                 },
-              ),
-            ),
-            // if (productsAsync.isLoading) // Or a specific isLoadingMore flag from your notifier
-            //   const Padding(
-            //     padding: EdgeInsets.all(8.0),
-            //     child: CircularProgressIndicator(),
-            //   ),
-          ],
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

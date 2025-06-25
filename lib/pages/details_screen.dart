@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/components/product_details.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class DetailsScreen extends StatelessWidget {
   final Product product;
@@ -14,14 +15,14 @@ class DetailsScreen extends StatelessWidget {
         title: Text(
           product.name,
           style: const TextStyle(
-            color: Colors.greenAccent,
+            color: AppColors.secondary,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: AppColors.primary,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.secondary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
