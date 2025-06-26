@@ -76,7 +76,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
               onPressed: () {
                 Navigator.pop(context); // Close the bottom sheet
               },
-              child: const Text('DONE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('DONE', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
             ),
           ),
           const SizedBox(height: 10), // Padding for gesture area
@@ -140,11 +140,11 @@ class FilterSortBottomSheet extends ConsumerWidget {
           isExpanded: true,
           value: ref.watch(sortOptionProvider),
           iconEnabledColor: AppColors.primary,
-          dropdownColor: AppColors.background,
+          dropdownColor: AppColors.primary,
           items: SortOption.values.map((SortOption option) {
             return DropdownMenuItem<SortOption>(
               value: option,
-              child: Text(option.name, style: const TextStyle(color: AppColors.primary)),
+              child: Text(option.name, style: const TextStyle(color: AppColors.inactive)),
             );
           }).toList(),
           onChanged: (SortOption? newValue) {
