@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/product_provider.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
-import 'package:sales_app_mvp/pages/details_screen.dart';
+import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
-import 'package:sales_app_mvp/providers/sort_provider.dart'; // Import sort_provider
+import 'package:sales_app_mvp/providers/sort_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -133,23 +133,44 @@ class _HomePageState extends ConsumerState<HomePage> {
 
               return GridView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.85,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
                 ),
-                itemCount: sortedProducts.length,
+                itemCount: sortedProducts.length + (ref.read(paginatedProductsProvider).isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == sortedProducts.length && ref.read(paginatedProductsProvider).isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
                   final product = sortedProducts[index];
                   return ProductTile(
                     product: product,
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => DetailsScreen(product: product),
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              ProductSwiperScreen(
+                            products: sortedProducts,
+                            initialIndex: index,
+                          ),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            final tween = Tween<Offset>(
+                              begin: const Offset(0.0, 1.0),
+                              end: Offset.zero,
+                            );
+                            final curvedAnimation = CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            );
+                            return SlideTransition(
+                              position: tween.animate(curvedAnimation),
+                              child: child,
+                            );
+                          },
                         ),
                       );
                     },
