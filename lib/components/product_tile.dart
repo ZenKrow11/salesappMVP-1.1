@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 import '../models/product.dart';
 
 class ProductTile extends StatelessWidget {
@@ -18,13 +19,12 @@ class ProductTile extends StatelessWidget {
         onTap: onTap,
         child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    elevation: 6,
     margin: EdgeInsets.zero,
     child: Container(
     height: 180,
     padding: const EdgeInsets.all(8),
     decoration: BoxDecoration(
-    color: Colors.white,
+    color: AppColors.primary,
     borderRadius: BorderRadius.circular(16),
     boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
     ),
@@ -62,14 +62,16 @@ class ProductTile extends StatelessWidget {
         Expanded(
           child: Text(
             product.store,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary),
             overflow: TextOverflow.ellipsis,
           ),
         ),
         Expanded(
           child: Text(
             product.name,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary),
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

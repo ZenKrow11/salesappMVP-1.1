@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/product_provider.dart';
+import 'package:sales_app_mvp/providers/filtered_product_provider.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
-import 'package:sales_app_mvp/providers/sort_provider.dart';
+import 'package:sales_app_mvp/widgets/search_bar.dart';
+import 'package:sales_app_mvp/widgets/filter_sort_bottom_sheet.dart';
+
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -32,155 +34,120 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _onScroll() {
     final notifier = ref.read(paginatedProductsProvider.notifier);
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 && !ref.read(paginatedProductsProvider).isLoading) {
-      ref.read(paginatedProductsProvider.notifier).loadMoreProducts();
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 &&
+        !ref.read(paginatedProductsProvider).isLoading) {
+      notifier.loadMoreProducts();
     }
   }
 
-  // Helper function to sort products based on the selected sort option
-  List<Product> _sortProducts(List<Product> products, SortOption sortOption) {
-    final sortedProducts = List<Product>.from(products); // Create a copy to avoid mutating the original
-    switch (sortOption) {
-      case SortOption.alphabeticalStore:
-        sortedProducts.sort((a, b) => a.store.compareTo(b.store)); // Adjust field name if needed
-        break;
-      case SortOption.alphabetical:
-        sortedProducts.sort((a, b) => a.name.compareTo(b.name)); // Adjust field name if needed
-        break;
-      case SortOption.priceLowToHigh:
-        sortedProducts.sort((a, b) => a.currentPrice.compareTo(b.currentPrice)); // Adjust field name if needed
-        break;
-      case SortOption.discountHighToLow:
-        sortedProducts.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage)); // Adjust field name if needed
-        break;
-    }
-    return sortedProducts;
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      isScrollControlled: true, // Allows the sheet to be taller
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return const FilterSortBottomSheet();
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(paginatedProductsProvider);
-    final sortOption = ref.watch(sortOptionProvider); // Watch the sort option
+    final productsAsync = ref.watch(filteredProductsProvider);
+    final isPaginating = ref.watch(paginatedProductsProvider).isLoading;
 
-    // Handle case where maxScrollExtent might be 0 initially if content is less than viewport
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (productsAsync is AsyncData && productsAsync.value!.isNotEmpty && _scrollController.position.maxScrollExtent == 0) {
-        // Potentially trigger loadMore if initial content doesn't fill screen
-      }
-    });
+    // We now use a Scaffold to host the FloatingActionButton
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showFilterSheet,
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.filter_list, color: AppColors.secondary),
+      ),
+      body: Column(
+        children: [
+          // Search bar remains at the top
+          const SearchBarWidget(),
 
-    return Column(
-      children: [
-        // Sorting dropdown
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              DropdownButton<SortOption>(
-                value: sortOption,
-                items: SortOption.values.map((SortOption option) {
-                  return DropdownMenuItem<SortOption>(
-                    value: option,
-                    child: Text(
-                      option == SortOption.alphabeticalStore
-                          ? 'Sort by Store'
-                          : option == SortOption.alphabetical
-                          ? 'Sort by Name'
-                          : option == SortOption.priceLowToHigh
-                          ? 'Price: Low to High'
-                          : 'Discount: High to Low',
-                      style: const TextStyle(color: AppColors.primary),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (SortOption? newValue) {
-                  if (newValue != null) {
-                    ref.read(sortOptionProvider.notifier).state = newValue;
-                  }
-                },
+          // The filter and sort dropdowns have been removed from here
+
+          Expanded(
+            child: productsAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.active),
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: productsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) {
-              print(stackTrace);
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Failed to load products. Please check your connection.\nError: $error',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-            data: (products) {
-              if (products.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No products found.',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+              error: (error, stackTrace) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Failed to load products.\nPlease check your connection.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: AppColors.inactive),
+                    ),
                   ),
                 );
-              }
-
-              // Sort the products based on the selected sort option
-              final sortedProducts = _sortProducts(products, sortOption);
-
-              return GridView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(8.0),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 8.0,
-                  mainAxisSpacing: 8.0,
-                ),
-                itemCount: sortedProducts.length + (ref.read(paginatedProductsProvider).isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == sortedProducts.length && ref.read(paginatedProductsProvider).isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final product = sortedProducts[index];
-                  return ProductTile(
-                    product: product,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) =>
-                              ProductSwiperScreen(
-                            products: sortedProducts,
-                            initialIndex: index,
-                          ),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                            final tween = Tween<Offset>(
-                              begin: const Offset(0.0, 1.0),
-                              end: Offset.zero,
-                            );
-                            final curvedAnimation = CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            );
-                            return SlideTransition(
-                              position: tween.animate(curvedAnimation),
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
-                    },
+              },
+              data: (products) {
+                if (products.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No products match your criteria.',
+                      style: TextStyle(fontSize: 18, color: AppColors.inactive),
+                    ),
                   );
-                },
-              );
-            },
+                }
+
+                return GridView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0), // Add padding at bottom for FAB
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
+                  ),
+                  itemCount: products.length + (isPaginating ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == products.length) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.active),
+                      );
+                    }
+                    final product = products[index];
+                    return ProductTile(
+                      product: product,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                ProductSwiperScreen(
+                                  products: products,
+                                  initialIndex: index,
+                                ),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              final tween = Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero);
+                              final curvedAnimation = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+                              return SlideTransition(
+                                position: tween.animate(curvedAnimation),
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

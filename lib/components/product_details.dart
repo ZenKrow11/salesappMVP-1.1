@@ -12,8 +12,6 @@ class ProductDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The widget is no longer a 'Card'. It's a layout for the full screen.
-    // The background color is now controlled by the parent Scaffold.
     return Padding(
       padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0), // Padding adjusted for app bar
       child: Column(
