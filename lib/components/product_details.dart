@@ -15,7 +15,7 @@ class ProductDetails extends StatelessWidget {
     // The widget is no longer a 'Card'. It's a layout for the full screen.
     // The background color is now controlled by the parent Scaffold.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0), // Padding adjusted for app bar
+      padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0), // Padding adjusted for app bar
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,10 +172,9 @@ class ProductDetails extends StatelessWidget {
       ),
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.secondary,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 4,
       ),
     );
   }
