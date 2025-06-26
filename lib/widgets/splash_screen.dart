@@ -2,51 +2,54 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import '../main.dart'; // For AuthGate
 import '../providers/storage_providers.dart'; // For hiveInitializationProvider
-import '../providers/product_provider.dart'; // For paginatedProductsProvider
 
-/// This new provider acts as a "gatekeeper" for the splash screen.
-/// It waits for all necessary startup tasks to complete.
-final splashReadyProvider = FutureProvider<void>((ref) async {
-  // Define all the futures that must complete before the app is ready.
-  final allInitializations = [
-    // 1. Wait for Hive to be fully initialized.
-    ref.watch(hiveInitializationProvider.future),
-
-    // 2. Wait for the first page of products to be fetched from Firestore.
-    ref.watch(paginatedProductsProvider.future),
-
-    // 3. Wait for a minimum display time of 2 seconds (for better UX).
-    Future.delayed(const Duration(seconds: 2)),
-  ];
-
-  // Wait for all of them to finish in parallel.
-  await Future.wait(allInitializations);
+/// A stream provider that tells us the current user's auth state.
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
 });
+
+/// This provider now only waits for services that are TRULY essential
+/// for the app to function at all (like Hive).
+final coreServicesReadyProvider = FutureProvider<void>((ref) async {
+  await ref.watch(hiveInitializationProvider.future);
+});
+
 
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We 'listen' to the provider. The listener callback is only called when
-    // the provider's state changes (e.g., from loading to data/error).
-    // This is perfect for one-time actions like navigation.
-    ref.listen<AsyncValue<void>>(
-      splashReadyProvider,
-          (previous, next) {
-        // When the state is no longer loading, navigate.
-        if (!next.isLoading) {
+    // We now watch the core services provider.
+    final coreServices = ref.watch(coreServicesReadyProvider);
+
+    // When the core services are ready, navigate to the AuthGate.
+    // AuthGate will then decide whether to show HomeScreen or LoginScreen.
+    coreServices.when(
+      data: (_) {
+        // Use addPostFrameCallback to avoid "setState during build" errors.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AuthGate()),
           );
-        }
+        });
+      },
+      loading: () {
+        // While loading, we show the splash UI. This part is unchanged.
+      },
+      error: (err, stack) {
+        // If core services fail (e.g., Hive can't initialize), show an error.
+        // This is a critical failure, so the app can't proceed.
+        return Center(
+          child: Text("Critical Error: $err"),
+        );
       },
     );
 
-    // This is the UI that is displayed while the splashReadyProvider is running.
-    // It's simple, declarative, and doesn't contain any complex logic.
+    // This is the UI that is displayed while coreServicesReadyProvider is running.
     return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -55,7 +58,7 @@ class SplashScreen extends ConsumerWidget {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 20),
-            Text("Getting things ready..."),
+            Text("Initializing..."),
           ],
         ),
       ),

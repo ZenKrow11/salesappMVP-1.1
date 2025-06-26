@@ -1,12 +1,21 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-// Your other imports
-import 'firebase_options.dart'; // Make sure you have this file from FlutterFire CLI
-import 'widgets/splash_screen.dart'; // We start with the splash screen
+// Import your other files
+import 'firebase_options.dart';
+import 'widgets/splash_screen.dart';
+import 'pages/home_page.dart';
+import 'widgets/login_screen.dart';
+import 'pages/main_app_screen.dart';
 
+//============================================================================
+//  MAIN FUNCTION - The App's Entry Point
+//============================================================================
 Future<void> main() async {
   // Ensure Flutter engine is ready
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,20 +25,20 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Hive's file system path. This is fast and required.
-  // We no longer open boxes here; Riverpod will handle that.
+  // Initialize Hive's file system path
   await Hive.initFlutter();
 
-  // NOTE: You no longer need to call a custom HiveService.init() here.
-
+  // Run the app within a ProviderScope for Riverpod
   runApp(
-    // ProviderScope is what makes Riverpod work throughout your app
     const ProviderScope(
       child: MyApp(),
     ),
   );
 }
 
+//============================================================================
+//  ROOT WIDGET
+//============================================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -46,14 +55,45 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// NOTE: I'm assuming you have an AuthGate widget. It remains unchanged.
-// For context, it might look something like this:
-class AuthGate extends StatelessWidget {
+//============================================================================
+//  AUTH STATE PROVIDER & AUTH GATE
+//============================================================================
+
+/// A stream provider that tells us the current user's auth state.
+/// This is the single source of truth for authentication in the app.
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
+
+/// This widget listens to the auth state and decides which screen to show.
+class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    // This would listen to your Firebase Auth state and show either
-    // the HomeScreen or the LoginScreen. This logic is unchanged.
-    return const Scaffold(body: Center(child: Text("Main App Area")));
+  Widget build(BuildContext context, WidgetRef ref) {
+    // We watch the auth state provider.
+    final authState = ref.watch(authStateChangesProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user != null) {
+          // User is logged in, show the home page.
+          return const MainAppScreen();
+        } else {
+          // User is logged out, show the login screen.
+          return const LoginScreen();
+        }
+      },
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (err, stack) => Scaffold(
+        body: Center(
+          child: Text("Auth Error: $err"),
+        ),
+      ),
+    );
   }
 }
