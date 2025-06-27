@@ -9,7 +9,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 // Import your other files
 import 'firebase_options.dart';
 import 'widgets/splash_screen.dart';
-import 'pages/home_page.dart';
 import 'widgets/login_screen.dart';
 import 'pages/main_app_screen.dart';
 
