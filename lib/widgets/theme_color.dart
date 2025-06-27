@@ -6,6 +6,7 @@ class AppColors {
   static const secondary = Color(0xFF00ADB5);
   static const active = Color(0xFF00ADB5);
   static const inactive = Color(0xFFB2F8FB);
+  static const accent = Color(0xFFFF6F61);
   static const textPrimary = Color(0xFF00ADB5);
   static const textSecondary = Color(0xFFB2F8FB);
   static const textWhite = Colors.white;

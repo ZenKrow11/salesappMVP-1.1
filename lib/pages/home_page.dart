@@ -64,8 +64,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         onPressed: _showFilterSheet,
-        backgroundColor: AppColors.background,
-        child: const Icon(Icons.filter_alt, color: AppColors.primary),
+        backgroundColor: AppColors.accent,
+        child: const Icon(Icons.filter_alt,
+            size: 32,
+            color: AppColors.primary),
       ),
       body: Column(
         children: [

@@ -36,8 +36,10 @@ class ShoppingListPage extends ConsumerWidget {
             ..sort((a, b) => a.index.compareTo(b.index));
           _showAddListDialog(context, shoppingListNotifier, otherLists);
         },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Color(0xFF00ADB5),),
+        backgroundColor: AppColors.accent,
+        child: const Icon(Icons.add,
+          size: 32,
+          color: AppColors.primary,),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 10),
