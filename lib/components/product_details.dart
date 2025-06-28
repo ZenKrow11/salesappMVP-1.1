@@ -69,7 +69,7 @@ class ProductDetails extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _priceBox(
-                '€${product.normalPrice.toStringAsFixed(2)}',
+                '${product.normalPrice.toStringAsFixed(2)}',
                 Colors.grey.shade300,
                 const TextStyle(
                   fontSize: 16,
@@ -87,7 +87,7 @@ class ProductDetails extends StatelessWidget {
                 ),
               ),
               _priceBox(
-                '€${product.currentPrice.toStringAsFixed(2)}',
+                '${product.currentPrice.toStringAsFixed(2)}',
                 Colors.yellow.shade600,
                 const TextStyle(
                   fontSize: 20,
