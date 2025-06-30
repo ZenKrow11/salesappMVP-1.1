@@ -66,7 +66,7 @@ class ProductDetails extends StatelessWidget {
       '$label: $value',
       style: TextStyle(
         fontSize: 14,
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withValues(alpha: 0.85),
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -90,7 +90,7 @@ class ProductDetails extends StatelessWidget {
       children: [
         Expanded(
           child: _priceBox(
-            '${product.normalPrice.toStringAsFixed(2)}',
+            product.normalPrice.toStringAsFixed(2),
             Colors.grey.shade300,
             const TextStyle(
               fontSize: 30,
@@ -115,7 +115,7 @@ class ProductDetails extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _priceBox(
-            '${product.currentPrice.toStringAsFixed(2)}',
+            product.currentPrice.toStringAsFixed(2),
             Colors.yellow.shade600,
             const TextStyle(
               fontSize: 30,

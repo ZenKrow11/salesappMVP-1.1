@@ -125,7 +125,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               ),
                             ),
                             _PriceBox(
-                              value: '${product.currentPrice.toStringAsFixed(2)}',
+                              value: product.currentPrice.toStringAsFixed(2),
                               bgColor: Colors.yellow,
                               textStyle: const TextStyle(
                                 fontSize: 26,

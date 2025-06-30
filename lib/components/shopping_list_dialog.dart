@@ -68,7 +68,7 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
                         return ListTile(
                           title: Text(listName),
                           selected: _selectedList == listName,
-                          selectedTileColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           onTap: () {
                             setState(() {
                               _newListController.clear();
@@ -136,7 +136,7 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('List name already exists'),
-                    duration: const Duration(seconds: 1),
+                    duration: Duration(seconds: 1),
                   ),
                 );
                 return;
@@ -161,7 +161,7 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> with Si
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Please enter or select a list name'),
-                  duration: const Duration(seconds: 1),
+                  duration: Duration(seconds: 1),
                 ),
               );
             }

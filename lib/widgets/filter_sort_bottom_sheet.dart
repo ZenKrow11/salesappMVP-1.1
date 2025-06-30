@@ -21,7 +21,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
             children: [
               const Text(
                 'Filter & Sort',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: AppColors.inactive),
@@ -32,7 +32,8 @@ class FilterSortBottomSheet extends ConsumerWidget {
           const Divider(thickness: 1, height: 24),
 
           // Filter Section (now using ExpansionTiles)
-          const Text('FILTERS', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold, fontSize: 12)),
+          const Text('FILTERS', style: TextStyle(color: AppColors.inactive,
+              fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 8),
 
           _buildFilterExpansionTile(
@@ -58,7 +59,8 @@ class FilterSortBottomSheet extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sort Section
-          const Text('SORT BY', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold, fontSize: 12)),
+          const Text('SORT BY', style: TextStyle(color: AppColors.inactive,
+              fontWeight: FontWeight.bold, fontSize: 12)),
           _buildSortDropdown(ref),
           const SizedBox(height: 24),
 
@@ -76,7 +78,9 @@ class FilterSortBottomSheet extends ConsumerWidget {
                   ref.read(categoryFilterProvider.notifier).state = [];
                   ref.read(subcategoryFilterProvider.notifier).state = [];
                 },
-                child: const Text('CLEAR ALL', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                child: const Text('CLEAR ALL', style: TextStyle(color: AppColors.inactive,
+                    fontWeight: FontWeight.bold)
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -87,7 +91,8 @@ class FilterSortBottomSheet extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('DONE', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
+                  child: const Text('DONE', style: TextStyle(color: AppColors.inactive,
+                      fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -125,14 +130,15 @@ class FilterSortBottomSheet extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: AppColors.inactive.withOpacity(0.5)),
+        border: Border.all(color: AppColors.inactive.withValues(alpha: 0.5)),
       ),
       child: ExpansionTile(
         title: Text(
           getTitleText(),
-          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.normal),
+          style: const TextStyle(color: AppColors.inactive,
+              fontWeight: FontWeight.normal),
         ),
-        collapsedIconColor: AppColors.primary,
+        collapsedIconColor: AppColors.inactive,
         iconColor: AppColors.accent,
         childrenPadding: const EdgeInsets.only(bottom: 8),
         children: options.map((item) {
@@ -166,7 +172,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: AppColors.inactive.withOpacity(0.5)),
+        border: Border.all(color: AppColors.inactive..withValues(alpha: 0.5)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<SortOption>(

@@ -8,7 +8,7 @@ import '../widgets/theme_color.dart';
 const String favoritesListName = 'Favorites';
 
 class ShoppingListPage extends ConsumerWidget {
-  const ShoppingListPage({Key? key}) : super(key: key);
+  const ShoppingListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -242,11 +242,11 @@ class ShoppingListItemTile extends StatelessWidget {
   final VoidCallback onRemove;
 
   const ShoppingListItemTile({
-    Key? key,
+    super.key,
     required this.product,
     required this.listName,
     required this.onRemove,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

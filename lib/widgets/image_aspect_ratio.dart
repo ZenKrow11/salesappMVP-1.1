@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ImageWithAspectRatio extends StatelessWidget {
