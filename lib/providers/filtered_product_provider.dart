@@ -1,45 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/product_provider.dart';
-import 'filter_providers.dart';
+import 'filter_provider.dart';
 import 'search_state.dart';
 import '../models/product.dart';
 import 'sort_provider.dart';
 
 final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
   final productsAsync = ref.watch(paginatedProductsProvider);
-  final selectedStore = ref.watch(storeFilterProvider);
-  final selectedCategory = ref.watch(categoryFilterProvider);
-  final selectedSubcategory = ref.watch(subcategoryFilterProvider);
+  // These are now lists of strings: List<String>
+  final selectedStores = ref.watch(storeFilterProvider);
+  final selectedCategories = ref.watch(categoryFilterProvider);
+  final selectedSubcategories = ref.watch(subcategoryFilterProvider);
   final searchQuery = ref.watch(searchQueryProvider).trim().toLowerCase();
   final sortOption = ref.watch(sortOptionProvider);
-
 
   return productsAsync.when(
     data: (products) {
       var filtered = products;
 
-      if (selectedStore != null) {
+      // --- NEW FILTERING LOGIC ---
+      // If the list of selected stores is not empty, filter by it.
+      if (selectedStores.isNotEmpty) {
         filtered = filtered
-            .where((p) => p.store.toLowerCase() == selectedStore.toLowerCase())
+            .where((p) => selectedStores.contains(p.store))
             .toList();
       }
-      if (selectedCategory != null) {
+      // If the list of selected categories is not empty, filter by it.
+      if (selectedCategories.isNotEmpty) {
         filtered = filtered
-            .where((p) => p.category.toLowerCase() == selectedCategory.toLowerCase())
+            .where((p) => selectedCategories.contains(p.category))
             .toList();
       }
-      if (selectedSubcategory != null) {
+      // If the list of selected subcategories is not empty, filter by it.
+      if (selectedSubcategories.isNotEmpty) {
         filtered = filtered
-            .where((p) => p.subcategory.toLowerCase() == selectedSubcategory.toLowerCase())
+            .where((p) => selectedSubcategories.contains(p.subcategory))
             .toList();
       }
+      // Search query logic remains the same.
       if (searchQuery.isNotEmpty) {
         filtered = filtered
             .where((p) => p.name.toLowerCase().contains(searchQuery))
             .toList();
       }
 
-      // Apply sorting
+      // Apply sorting (no changes needed here)
       switch (sortOption) {
         case SortOption.alphabeticalStore:
           filtered.sort((a, b) => a.store.compareTo(b.store));

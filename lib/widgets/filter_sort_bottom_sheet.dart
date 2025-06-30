@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/providers/filter_providers.dart';
+import 'package:sales_app_mvp/providers/filter_provider.dart';
 import 'package:sales_app_mvp/providers/sort_provider.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
@@ -21,7 +21,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
             children: [
               const Text(
                 'Filter & Sort',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: AppColors.inactive),
@@ -31,31 +31,29 @@ class FilterSortBottomSheet extends ConsumerWidget {
           ),
           const Divider(thickness: 1, height: 24),
 
-          // Filter Section
+          // Filter Section (now using ExpansionTiles)
           const Text('FILTERS', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 8),
-          _buildFilterDropdown(
+
+          _buildFilterExpansionTile(
             ref: ref,
-            hint: 'Store',
-            value: ref.watch(storeFilterProvider),
-            items: ref.watch(storeListProvider),
-            onChanged: (value) => ref.read(storeFilterProvider.notifier).state = value,
+            title: 'Store', // Singular title for logic
+            options: ref.watch(storeListProvider),
+            selectedProvider: storeFilterProvider,
           ),
           const SizedBox(height: 8),
-          _buildFilterDropdown(
+          _buildFilterExpansionTile(
             ref: ref,
-            hint: 'Category',
-            value: ref.watch(categoryFilterProvider),
-            items: ref.watch(categoryListProvider),
-            onChanged: (value) => ref.read(categoryFilterProvider.notifier).state = value,
+            title: 'Category',
+            options: ref.watch(categoryListProvider),
+            selectedProvider: categoryFilterProvider,
           ),
           const SizedBox(height: 8),
-          _buildFilterDropdown(
+          _buildFilterExpansionTile(
             ref: ref,
-            hint: 'Subcategory',
-            value: ref.watch(subcategoryFilterProvider),
-            items: ref.watch(subcategoryListProvider),
-            onChanged: (value) => ref.read(subcategoryFilterProvider.notifier).state = value,
+            title: 'Subcategory',
+            options: ref.watch(subcategoryListProvider),
+            selectedProvider: subcategoryFilterProvider,
           ),
           const SizedBox(height: 24),
 
@@ -64,70 +62,105 @@ class FilterSortBottomSheet extends ConsumerWidget {
           _buildSortDropdown(ref),
           const SizedBox(height: 24),
 
-          // Done Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          // Action Buttons
+          Row(
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  ref.read(storeFilterProvider.notifier).state = [];
+                  ref.read(categoryFilterProvider.notifier).state = [];
+                  ref.read(subcategoryFilterProvider.notifier).state = [];
+                },
+                child: const Text('CLEAR ALL', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
               ),
-              onPressed: () {
-                Navigator.pop(context); // Close the bottom sheet
-              },
-              child: const Text('DONE', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
-            ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('DONE', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10), // Padding for gesture area
+          const SizedBox(height: 10),
         ],
       ),
     );
   }
 
-  // Helper for filter dropdowns
-  Widget _buildFilterDropdown({
+  // NEW Helper for expandable filter sections
+  Widget _buildFilterExpansionTile({
     required WidgetRef ref,
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
+    required String title,
+    required List<String> options,
+    required StateProvider<List<String>> selectedProvider,
   }) {
-    if (items.isEmpty && hint != 'Store') {
+    final selectedItems = ref.watch(selectedProvider);
+
+    if (options.isEmpty && title != 'Store') {
       return const SizedBox.shrink();
     }
+
+    // Determine the text for the collapsed tile
+    String getTitleText() {
+      if (selectedItems.isEmpty) {
+        return 'All ${title}s';
+      } else if (selectedItems.length == 1) {
+        return selectedItems.first;
+      } else {
+        return '${title}s (${selectedItems.length} selected)';
+      }
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.0),
         border: Border.all(color: AppColors.inactive.withOpacity(0.5)),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: value,
-          hint: Text(hint, style: const TextStyle(color: AppColors.inactive)),
-          iconEnabledColor: AppColors.primary,
-          dropdownColor: AppColors.background,
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child: Text('All ${hint}s', style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.inactive)),
-            ),
-            ...items.map((item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item, style: const TextStyle(color: AppColors.primary)),
-              );
-            }).toList(),
-          ],
-          onChanged: onChanged,
+      child: ExpansionTile(
+        title: Text(
+          getTitleText(),
+          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.normal),
         ),
+        collapsedIconColor: AppColors.primary,
+        iconColor: AppColors.accent,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        children: options.map((item) {
+          return CheckboxListTile(
+            // Move checkbox to the right
+            controlAffinity: ListTileControlAffinity.trailing,
+            title: Text(item, style: const TextStyle(color: AppColors.primary)),
+            value: selectedItems.contains(item),
+            onChanged: (bool? isSelected) {
+              final currentSelection = List<String>.from(ref.read(selectedProvider));
+              if (isSelected == true) {
+                currentSelection.add(item);
+              } else {
+                currentSelection.remove(item);
+              }
+              ref.read(selectedProvider.notifier).state = currentSelection;
+            },
+            activeColor: AppColors.accent,
+            checkColor: AppColors.primary,
+            dense: true,
+            contentPadding: const EdgeInsets.only(left: 16.0, right: 8.0),
+          );
+        }).toList(),
       ),
     );
   }
 
-  // Helper for sort dropdown
+  // Helper for sort dropdown (unchanged)
   Widget _buildSortDropdown(WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
@@ -158,7 +191,6 @@ class FilterSortBottomSheet extends ConsumerWidget {
   }
 }
 
-// Remember to add this extension to the file or a shared location if you haven't already.
 extension SortOptionExtension on SortOption {
   String get name {
     switch (this) {
