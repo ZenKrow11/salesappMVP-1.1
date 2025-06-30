@@ -61,33 +61,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      // The FloatingActionButton has been removed from here.
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar now contains the Search Bar and the Filter/Sort button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 8.0, 8.0, 8.0),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: SearchBarWidget(),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _showFilterSheet,
-                    icon: const Icon(Icons.filter_list,
-                    size: 30,
-                    color: AppColors.secondary,
-                    ),
-                    color: AppColors.primary,
-                    iconSize: 28,
-                    tooltip: 'Filter & Sort',
-                  ),
-                ],
-              ),
-            ),
-
+            // --- CHANGE 1: The Product Grid is now the first item in the Column ---
             Expanded(
               child: productsAsync.when(
                 loading: () => const Center(
@@ -117,8 +94,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                   return GridView.builder(
                     controller: _scrollController,
-                    // Adjusted padding, removed extra space from the bottom
-                    padding: const EdgeInsets.fromLTRB(12.0, 4.0, 12.0, 12.0),
+                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0), // Adjusted padding
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.7,
@@ -159,6 +135,36 @@ class _HomePageState extends ConsumerState<HomePage> {
                     },
                   );
                 },
+              ),
+            ),
+
+            // --- CHANGE 2: The Search Bar and Filter are now at the bottom and shorter ---
+            Container(
+              // Shrinking the height. A typical AppBar is ~56px, this is about 25% smaller.
+              height: 56.0,
+              color: AppColors.background, // Ensures content doesn't scroll underneath it
+              padding: const EdgeInsets.fromLTRB(10.0, 0, 8.0, 0), // Reduced vertical padding
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Expanded(
+                    // Note: You may need to adjust your custom SearchBarWidget
+                    // to have less internal padding to fit this new height perfectly.
+                    // For a TextField, this would involve using isDense: true and
+                    // smaller contentPadding in its InputDecoration.
+                    child: SearchBarWidget(),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _showFilterSheet,
+                    icon: const Icon(
+                      Icons.filter_alt,
+                      size: 30.0, // Slightly smaller icon to fit the new height
+                      color: AppColors.secondary,
+                    ),
+                    tooltip: 'Filter & Sort',
+                  ),
+                ],
               ),
             ),
           ],
