@@ -46,7 +46,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: AppColors.background,
       isScrollControlled: true, // Allows the sheet to be taller
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
       ),
       builder: (context) {
         return const FilterSortBottomSheet();
@@ -59,96 +59,110 @@ class _HomePageState extends ConsumerState<HomePage> {
     final productsAsync = ref.watch(filteredProductsProvider);
     final isPaginating = ref.watch(paginatedProductsProvider).isLoading;
 
-    // We now use a Scaffold to host the FloatingActionButton
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showFilterSheet,
-        backgroundColor: AppColors.accent,
-        child: const Icon(Icons.filter_alt,
-            size: 32,
-            color: AppColors.primary,),
-      ),
-      body: Column(
-        children: [
-          // Search bar remains at the top
-          const SearchBarWidget(),
-
-          // The filter and sort dropdowns have been removed from here
-
-          Expanded(
-            child: productsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.active),
-              ),
-              error: (error, stackTrace) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Failed to load products.\nPlease check your connection.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: AppColors.inactive),
-                    ),
+      // The FloatingActionButton has been removed from here.
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar now contains the Search Bar and the Filter/Sort button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 8.0, 8.0, 8.0),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: SearchBarWidget(),
                   ),
-                );
-              },
-              data: (products) {
-                if (products.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No products match your criteria.',
-                      style: TextStyle(fontSize: 18, color: AppColors.inactive),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _showFilterSheet,
+                    icon: const Icon(Icons.filter_list,
+                    size: 30,
+                    color: AppColors.secondary,
+                    ),
+                    color: AppColors.primary,
+                    iconSize: 28,
+                    tooltip: 'Filter & Sort',
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: productsAsync.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.active),
+                ),
+                error: (error, stackTrace) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Failed to load products.\nPlease check your connection.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: AppColors.inactive),
+                      ),
                     ),
                   );
-                }
-
-                return GridView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0), // Add padding at bottom for FAB
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.7,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: products.length + (isPaginating ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == products.length) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: AppColors.active),
-                      );
-                    }
-                    final product = products[index];
-                    return ProductTile(
-                      product: product,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                ProductSwiperScreen(
-                                  products: products,
-                                  initialIndex: index,
-                                ),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              final tween = Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero);
-                              final curvedAnimation = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-                              return SlideTransition(
-                                position: tween.animate(curvedAnimation),
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      },
+                },
+                data: (products) {
+                  if (products.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No products match your criteria.',
+                        style: TextStyle(fontSize: 18, color: AppColors.inactive),
+                      ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return GridView.builder(
+                    controller: _scrollController,
+                    // Adjusted padding, removed extra space from the bottom
+                    padding: const EdgeInsets.fromLTRB(12.0, 4.0, 12.0, 12.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: products.length + (isPaginating ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == products.length) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: AppColors.active),
+                        );
+                      }
+                      final product = products[index];
+                      return ProductTile(
+                        product: product,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) =>
+                                  ProductSwiperScreen(
+                                    products: products,
+                                    initialIndex: index,
+                                  ),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                final tween = Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero);
+                                final curvedAnimation = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+                                return SlideTransition(
+                                  position: tween.animate(curvedAnimation),
+                                  child: child,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

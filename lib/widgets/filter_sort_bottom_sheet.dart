@@ -21,7 +21,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
             children: [
               const Text(
                 'Filter & Sort',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: AppColors.inactive),
