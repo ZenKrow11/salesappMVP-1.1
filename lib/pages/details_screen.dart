@@ -20,7 +20,7 @@ class DetailsScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.secondary),
           onPressed: () => Navigator.of(context).pop(),

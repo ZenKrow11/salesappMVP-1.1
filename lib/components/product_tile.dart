@@ -16,23 +16,26 @@ class ProductTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onTap,
-        child: Card(
+      onTap: onTap,
+      child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    margin: EdgeInsets.zero,
-    child: Container(
-    height: 180,
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-    color: AppColors.primary,
-    borderRadius: BorderRadius.circular(16),
-    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-    ),
-    child: _buildContent(context),
-    ),
-    ),
+        margin: EdgeInsets.zero,
+        child: Container(
+          height: 180,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.primary, // Use your custom color here
+              width: 1.5, // Set border width as needed
+            ),
+          ),
+          child: _buildContent(context),
+        ),
+      ),
     );
-    }
+  }
 
   Widget _buildContent(BuildContext context) {
     return Column(
@@ -58,20 +61,29 @@ class ProductTile extends StatelessWidget {
 
   Widget _buildHeaderRow() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align to top
       children: [
         Expanded(
+          flex: 1,
           child: Text(
             product.store,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
         Expanded(
+          flex: 3,
           child: Text(
             product.name,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -80,6 +92,8 @@ class ProductTile extends StatelessWidget {
       ],
     );
   }
+
+
 
   Widget _buildPriceRow({double fontSize = 12}) {
     return Row(

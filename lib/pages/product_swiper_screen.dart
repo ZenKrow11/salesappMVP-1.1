@@ -64,7 +64,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text(
             widget.products[_currentIndex].name,

@@ -67,7 +67,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         backgroundColor: AppColors.accent,
         child: const Icon(Icons.filter_alt,
             size: 32,
-            color: AppColors.primary),
+            color: AppColors.primary,),
       ),
       body: Column(
         children: [
@@ -109,8 +109,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.7,
-                    crossAxisSpacing: 8.0,
-                    mainAxisSpacing: 8.0,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                   ),
                   itemCount: products.length + (isPaginating ? 1 : 0),
                   itemBuilder: (context, index) {
