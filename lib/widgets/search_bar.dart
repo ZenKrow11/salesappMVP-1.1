@@ -40,7 +40,7 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
         },
         style: const TextStyle(color: AppColors.textWhite), // Themed text color
         decoration: InputDecoration(
-          hintText: 'Search products by name or store...',
+          hintText: 'Search products...',
           hintStyle: const TextStyle(color: AppColors.inactive), // Themed hint text
           prefixIcon: const Icon(Icons.search, color: AppColors.secondary), // Themed icon
           filled: true,

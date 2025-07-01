@@ -8,7 +8,6 @@ import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/filter_sort_bottom_sheet.dart';
 
-
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -44,7 +43,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.background,
-      isScrollControlled: true, // Allows the sheet to be taller
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
       ),
@@ -62,9 +61,75 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
+        top: false, // Remove top padding to move search bar higher
         child: Column(
           children: [
-            // --- CHANGE 1: The Product Grid is now the first item in the Column ---
+            // Search Bar at the very top
+            const SearchBarWidget(),
+            const SizedBox(height: 8),
+
+            // Horizontal row of Filter & Sort and Quicksave buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
+                children: [
+                  // Quicksave Button
+                  Expanded(
+                    flex: 1,
+                    child: TextButton(
+                      onPressed: () {}, // Empty for now, as per request
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          side: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.list, color: AppColors.secondary, size: 24.0),
+                          SizedBox(width: 4.0),
+                          Text(
+                            'Quicksave',
+                            style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Filter & Sort Button
+                  Expanded(
+                    flex: 1,
+                    child: TextButton(
+                      onPressed: _showFilterSheet,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          side: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
+                          SizedBox(width: 4.0),
+                          Text(
+                            'Filter and Sort',
+                            style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Product Grid
             Expanded(
               child: productsAsync.when(
                 loading: () => const Center(
@@ -94,7 +159,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                   return GridView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0), // Adjusted padding
+                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.7,
@@ -135,36 +200,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     },
                   );
                 },
-              ),
-            ),
-
-            // --- CHANGE 2: The Search Bar and Filter are now at the bottom and shorter ---
-            Container(
-              // Shrinking the height. A typical AppBar is ~56px, this is about 25% smaller.
-              height: 56.0,
-              color: AppColors.background, // Ensures content doesn't scroll underneath it
-              padding: const EdgeInsets.fromLTRB(10.0, 0, 8.0, 0), // Reduced vertical padding
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Expanded(
-                    // Note: You may need to adjust your custom SearchBarWidget
-                    // to have less internal padding to fit this new height perfectly.
-                    // For a TextField, this would involve using isDense: true and
-                    // smaller contentPadding in its InputDecoration.
-                    child: SearchBarWidget(),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _showFilterSheet,
-                    icon: const Icon(
-                      Icons.filter_alt,
-                      size: 30.0, // Slightly smaller icon to fit the new height
-                      color: AppColors.secondary,
-                    ),
-                    tooltip: 'Filter & Sort',
-                  ),
-                ],
               ),
             ),
           ],

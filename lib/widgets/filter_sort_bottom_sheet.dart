@@ -20,7 +20,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Filter & Sort',
+                'Filter and Sort',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
               ),
               IconButton(
@@ -103,7 +103,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
     );
   }
 
-  // NEW Helper for expandable filter sections
+  // Helper for expandable filter sections with fixed height
   Widget _buildFilterExpansionTile({
     required WidgetRef ref,
     required String title,
@@ -141,27 +141,36 @@ class FilterSortBottomSheet extends ConsumerWidget {
         collapsedIconColor: AppColors.inactive,
         iconColor: AppColors.accent,
         childrenPadding: const EdgeInsets.only(bottom: 8),
-        children: options.map((item) {
-          return CheckboxListTile(
-            // Move checkbox to the right
-            controlAffinity: ListTileControlAffinity.trailing,
-            title: Text(item, style: const TextStyle(color: AppColors.primary)),
-            value: selectedItems.contains(item),
-            onChanged: (bool? isSelected) {
-              final currentSelection = List<String>.from(ref.read(selectedProvider));
-              if (isSelected == true) {
-                currentSelection.add(item);
-              } else {
-                currentSelection.remove(item);
-              }
-              ref.read(selectedProvider.notifier).state = currentSelection;
-            },
-            activeColor: AppColors.accent,
-            checkColor: AppColors.primary,
-            dense: true,
-            contentPadding: const EdgeInsets.only(left: 16.0, right: 8.0),
-          );
-        }).toList(),
+        children: [
+          // Cap the height of the expanded content to 250px with a scrollable list
+          Container(
+            constraints: const BoxConstraints(maxHeight: 250.0),
+            child: SingleChildScrollView(
+              child: Column(
+                children: options.map((item) {
+                  return CheckboxListTile(
+                    controlAffinity: ListTileControlAffinity.trailing,
+                    title: Text(item, style: const TextStyle(color: AppColors.primary)),
+                    value: selectedItems.contains(item),
+                    onChanged: (bool? isSelected) {
+                      final currentSelection = List<String>.from(ref.read(selectedProvider));
+                      if (isSelected == true) {
+                        currentSelection.add(item);
+                      } else {
+                        currentSelection.remove(item);
+                      }
+                      ref.read(selectedProvider.notifier).state = currentSelection;
+                    },
+                    activeColor: AppColors.accent,
+                    checkColor: AppColors.primary,
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -172,27 +181,27 @@ class FilterSortBottomSheet extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: AppColors.inactive..withValues(alpha: 0.5)),
+        border: Border.all(color: AppColors.inactive.withValues(alpha: 0.5)),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<SortOption>(
-          isExpanded: true,
-          value: ref.watch(sortOptionProvider),
-          iconEnabledColor: AppColors.primary,
-          dropdownColor: AppColors.primary,
-          items: SortOption.values.map((SortOption option) {
-            return DropdownMenuItem<SortOption>(
-              value: option,
-              child: Text(option.name, style: const TextStyle(color: AppColors.inactive)),
-            );
-          }).toList(),
-          onChanged: (SortOption? newValue) {
-            if (newValue != null) {
-              ref.read(sortOptionProvider.notifier).state = newValue;
-            }
-          },
-        ),
-      ),
+    child: DropdownButton<SortOption>(
+      isExpanded: true,
+      value: ref.watch(sortOptionProvider),
+      iconEnabledColor: AppColors.primary,
+      dropdownColor: AppColors.primary,
+      items: SortOption.values.map((SortOption option) {
+        return DropdownMenuItem<SortOption>(
+          value: option,
+          child: Text(option.name, style: const TextStyle(color: AppColors.inactive)),
+        );
+      }).toList(),
+      onChanged: (SortOption? newValue) {
+        if (newValue != null) {
+          ref.read(sortOptionProvider.notifier).state = newValue;
+        }
+      },
+    ),
+    ),
     );
   }
 }

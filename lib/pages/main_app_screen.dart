@@ -14,38 +14,34 @@ class MainAppScreen extends StatefulWidget {
 class _MainAppScreenState extends State<MainAppScreen> {
   int _currentIndex = 0;
 
-  // The AccountPage is now the third tab in the main navigation.
   final List<Widget> _pages = [
     const HomePage(),
     const ShoppingListPage(),
     const AccountPage(),
   ];
 
-  final List<String> _titles = [
-    'All Sales',
-    'Lists',
-    'Account',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // We get the top padding (the height of the status bar) from the MediaQuery.
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+
     return Scaffold(
-      // The key and endDrawer have been removed.
-      appBar: AppBar(
-        // The title now correctly reflects the current page.
-        title: Text(
-          _titles[_currentIndex],
-          style: const TextStyle(
-            color: AppColors.active,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+      // We set the Scaffold's body to a Column to stack our widgets vertically.
+      body: Column(
+        children: [
+          // 1. A Container for the colored safe area at the top.
+          // Its height is set to the status bar height, and it has the primary color.
+          Container(
+            height: statusBarHeight,
+            color: AppColors.primary,
           ),
-        ),
-        backgroundColor: AppColors.primary,
-        // The actions list with the drawer button has been removed.
-        actions: const [],
+          // 2. An Expanded widget that takes up all the remaining vertical space.
+          // This is where your actual page content will be displayed.
+          Expanded(
+            child: _pages[_currentIndex],
+          ),
+        ],
       ),
-      body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: AppColors.primary,
         currentIndex: _currentIndex,
