@@ -1,10 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import for persistence
+
 import '../models/named_list.dart';
 import '../models/product.dart';
 
+// Note: Ensure you have `shared_preferences` in your pubspec.yaml
+// dependencies:
+//   shared_preferences: ^2.0.15
+
 const String favoritesListName = 'Favorites';
 
+// --- STORAGE SERVICE (No changes needed, this is well-structured) ---
+// This class is responsible for all low-level communication with the Hive database.
 class HiveStorageService {
   static final HiveStorageService instance = HiveStorageService._internal();
   final Box<NamedList> _namedListsBox = Hive.box<NamedList>('namedLists');
@@ -12,42 +20,26 @@ class HiveStorageService {
   HiveStorageService._internal();
 
   Map<String, NamedList> getShoppingLists() {
-    final lists = _namedListsBox.toMap().cast<String, NamedList>();
-    print('[ShoppingLists] Loaded ${lists.length} lists');
-    return lists;
-  }
-
-  NamedList? getListByName(String listName) {
-    final list = _namedListsBox.get(listName);
-    print('[ShoppingLists] Retrieved list "$listName" with ${list?.items.length ?? 0} items');
-    return list;
+    return _namedListsBox.toMap().cast<String, NamedList>();
   }
 
   Future<void> createShoppingList(String listName, int index) async {
     if (!_namedListsBox.containsKey(listName)) {
       final newList = NamedList(name: listName, items: [], index: index);
       await _namedListsBox.put(listName, newList);
-      print('[ShoppingLists] Created empty list: $listName');
     }
   }
 
   Future<void> deleteShoppingList(String listName) async {
     await _namedListsBox.delete(listName);
-    print('[ShoppingLists] Deleted list: $listName');
   }
 
   Future<void> addToShoppingList(String listName, Product product) async {
     final namedList = _namedListsBox.get(listName);
     if (namedList != null) {
-      final currentItems = namedList.items;
-      final alreadyExists = currentItems.any((p) => p.id == product.id);
-      if (!alreadyExists) {
-        final updatedItems = [...currentItems, product];
-        final updatedList = namedList.copyWith(items: updatedItems);
-        await _namedListsBox.put(listName, updatedList);
-        print('[ShoppingLists] Added "${product.name}" to "$listName"');
-      } else {
-        print('[ShoppingLists] "${product.name}" already exists in "$listName"');
+      if (!namedList.items.any((p) => p.id == product.id)) {
+        final updatedItems = [...namedList.items, product];
+        await _namedListsBox.put(listName, namedList.copyWith(items: updatedItems));
       }
     }
   }
@@ -56,39 +48,26 @@ class HiveStorageService {
     final namedList = _namedListsBox.get(listName);
     if (namedList != null) {
       final updatedItems = namedList.items.where((p) => p.id != productId).toList();
-      final updatedList = namedList.copyWith(items: updatedItems);
-      await _namedListsBox.put(listName, updatedList);
-      print('[ShoppingLists] Removed product ID $productId from "$listName"');
+      await _namedListsBox.put(listName, namedList.copyWith(items: updatedItems));
     }
-  }
-
-  Future<void> updateList(String listName, NamedList updatedList) async {
-    await _namedListsBox.put(listName, updatedList);
-    print('[ShoppingLists] Updated list: $listName');
   }
 
   Future<void> reorderLists(List<NamedList> lists) async {
-    // Use a batch operation for better performance
-    final batch = <Future<void>>[];
-
     for (int i = 0; i < lists.length; i++) {
       final list = lists[i];
-      batch.add(_namedListsBox.put(list.name, list.copyWith(index: i)));
+      await _namedListsBox.put(list.name, list.copyWith(index: i));
     }
-
-    await Future.wait(batch);
-    print('[ShoppingLists] Reordered lists');
   }
 }
 
-// --- Shopping Lists Notifier---
-
+// --- SHOPPING LISTS NOTIFIER (No changes needed, this is well-structured) ---
+// This notifier manages the state for the ENTIRE collection of shopping lists.
 class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   final HiveStorageService _storageService;
 
   ShoppingListNotifier(this._storageService) : super([]) {
-    ensureFavoritesList(); // Ensure Favorites list on creation
-    _loadLists(); // Load initial state
+    ensureFavoritesList();
+    _loadLists();
   }
 
   void _loadLists() {
@@ -97,11 +76,9 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   }
 
   void ensureFavoritesList() {
-    final map = _storageService.getShoppingLists();
-    if (!map.containsKey(favoritesListName)) {
-      _storageService.createShoppingList(favoritesListName, -1); // Modifies Hive box
-      _loadLists(); // Updates state
-      print('[ShoppingLists] Ensured Favorites list exists');
+    if (!_storageService.getShoppingLists().containsKey(favoritesListName)) {
+      _storageService.createShoppingList(favoritesListName, -1);
+      _loadLists();
     }
   }
 
@@ -113,31 +90,23 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   }
 
   Future<void> deleteList(String listName) async {
-    if (listName != favoritesListName) {
-      // First delete the list
-      await _storageService.deleteShoppingList(listName);
+    if (listName == favoritesListName) return;
 
-      // Now get the current state after deletion
-      final currentLists = _storageService.getShoppingLists().values.toList();
+    await _storageService.deleteShoppingList(listName);
+    final nonFavoritesLists = _storageService
+        .getShoppingLists()
+        .values
+        .where((list) => list.name != favoritesListName)
+        .toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
 
-      // Filter out favorites and sort by current index
-      final nonFavoritesLists = currentLists
-          .where((list) => list.name != favoritesListName)
-          .toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
-
-      // Reindex all non-favorites lists
-      final updatedLists = <NamedList>[];
-      for (int i = 0; i < nonFavoritesLists.length; i++) {
-        updatedLists.add(nonFavoritesLists[i].copyWith(index: i));
-      }
-
-      // Save all reindexed lists
-      await _storageService.reorderLists(updatedLists);
-
-      // Reload the state to reflect changes
-      _loadLists();
+    final reindexedLists = <NamedList>[];
+    for (int i = 0; i < nonFavoritesLists.length; i++) {
+      reindexedLists.add(nonFavoritesLists[i].copyWith(index: i));
     }
+
+    await _storageService.reorderLists(reindexedLists);
+    _loadLists();
   }
 
   Future<void> addToList(String listName, Product product) async {
@@ -156,6 +125,49 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   }
 }
 
+// --- MAIN PROVIDER for the list of lists ---
 final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, List<NamedList>>(
       (ref) => ShoppingListNotifier(HiveStorageService.instance),
+);
+
+
+// =========================================================================
+// --- REFACTORED ACTIVE LIST NOTIFIER AND PROVIDER ---
+// =========================================================================
+
+// This notifier manages one simple piece of state: the name of the currently active list.
+// It includes persistence logic to remember the user's choice across app restarts.
+class ActiveListNotifier extends StateNotifier<String?> {
+  // A unique key to save the data in SharedPreferences.
+  static const _activeListKey = 'active_shopping_list_key';
+
+  ActiveListNotifier() : super(null) {
+    // When the notifier is created, immediately try to load the last saved value.
+    _loadSavedActiveList();
+  }
+
+  // Asynchronous method to load the saved list name from device storage.
+  Future<void> _loadSavedActiveList() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getString(_activeListKey);
+  }
+
+  // The public method the UI will call. It updates the state in the app AND
+  // saves the new value to device storage for the next session.
+  Future<void> setActiveList(String? listName) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (listName == null) {
+      await prefs.remove(_activeListKey);
+    } else {
+      await prefs.setString(_activeListKey, listName);
+    }
+    // Update the in-memory state to instantly notify all listeners in the UI.
+    state = listName;
+  }
+}
+
+// This provider exposes the ActiveListNotifier and its state to the rest of the app.
+// The UI will use this provider to read the active list name and to call `setActiveList`.
+final activeShoppingListProvider = StateNotifierProvider<ActiveListNotifier, String?>(
+      (ref) => ActiveListNotifier(),
 );

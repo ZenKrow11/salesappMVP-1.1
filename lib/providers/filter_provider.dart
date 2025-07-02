@@ -1,79 +1,67 @@
+// lib/providers/filter_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'product_provider.dart';
+import 'products_provider.dart';
+import 'filter_state_provider.dart';
 
-/// --- FILTER STATE PROVIDERS ---
-/// These providers now hold a list of selected filters to support multi-selection.
-/// An empty list means no filter is applied for that category.
+// ...
 
-// Store filter
-final storeFilterProvider = StateProvider<List<String>>((ref) => []);
+final storeOptionsProvider = Provider<List<String>>((ref) {
+  final allProductsAsync = ref.watch(allProductsProvider);
 
-// Category filter
-final categoryFilterProvider = StateProvider<List<String>>((ref) => []);
-
-// Subcategory filter
-final subcategoryFilterProvider = StateProvider<List<String>>((ref) => []);
-
-
-/// --- FILTER OPTION LIST PROVIDERS ---
-/// These providers generate the list of available choices for the filters.
-/// They dynamically update based on other active filters for a better UX.
-
-// Store options: Provides a list of all unique stores from the dataset.
-final storeListProvider = Provider<List<String>>((ref) {
-  return ref.watch(paginatedProductsProvider).maybeWhen(
+  // --- FIX: Replaced 'orElse' with explicit 'loading' and 'error' handlers ---
+  return allProductsAsync.when(
     data: (products) {
-      final stores = products.map((p) => p.store).toSet().toList()..sort();
-      return stores;
+      return products.map((p) => p.store).toSet().toList()..sort();
     },
-    orElse: () => [],
+    loading: () => [], // Return empty list while loading
+    error: (e, st) => [], // Return empty list on error
   );
 });
 
-// Category options: Filtered by the selected store(s).
-final categoryListProvider = Provider<List<String>>((ref) {
-  final selectedStores = ref.watch(storeFilterProvider);
+final categoryOptionsProvider = Provider<List<String>>((ref) {
+  final allProductsAsync = ref.watch(allProductsProvider);
+  final selectedStores = ref.watch(filterStateProvider).selectedStores;
 
-  return ref.watch(paginatedProductsProvider).maybeWhen(
+  // --- FIX: Replaced 'orElse' ---
+  return allProductsAsync.when(
     data: (products) {
-      final categories = products
+      return products
           .where((p) =>
-      // If no stores are selected, include all. Otherwise, check if product's store is in the selected list.
       selectedStores.isEmpty || selectedStores.contains(p.store))
           .map((p) => p.category)
           .toSet()
           .toList()
         ..sort();
-      return categories;
     },
-    orElse: () => [],
+    loading: () => [],
+    error: (e, st) => [],
   );
 });
 
-// Subcategory options: Filtered by the selected store(s) and category(s).
-final subcategoryListProvider = Provider<List<String>>((ref) {
-  final selectedStores = ref.watch(storeFilterProvider);
-  final selectedCategories = ref.watch(categoryFilterProvider);
+final subcategoryOptionsProvider = Provider<List<String>>((ref) {
+  final allProductsAsync = ref.watch(allProductsProvider);
+  final filterState = ref.watch(filterStateProvider);
+  final selectedStores = filterState.selectedStores;
+  final selectedCategories = filterState.selectedCategories;
 
-  // If no category is selected, it doesn't make sense to show any subcategories.
   if (selectedCategories.isEmpty) {
     return [];
   }
 
-  return ref.watch(paginatedProductsProvider).maybeWhen(
+  // --- FIX: Replaced 'orElse' ---
+  return allProductsAsync.when(
     data: (products) {
-      final subcategories = products
+      return products
           .where((p) =>
-      // Check against selected stores (if any)
       (selectedStores.isEmpty || selectedStores.contains(p.store)) &&
-          // Check against selected categories (must have at least one)
           (selectedCategories.contains(p.category)))
           .map((p) => p.subcategory)
           .toSet()
           .toList()
         ..sort();
-      return subcategories;
     },
-    orElse: () => [],
+    loading: () => [],
+    error: (e, st) => [],
   );
 });

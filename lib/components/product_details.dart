@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
-import 'package:sales_app_mvp/components/shopping_list_dialog.dart';
+// Corrected import path if your file is in components/
+import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -147,21 +148,28 @@ class ProductDetails extends StatelessWidget {
           child: _buildActionButton(
             context: context,
             icon: Icons.open_in_new,
-            label: 'Visit Deal',
+            label: 'Visit Product',
             onPressed: () => _launchURL(context, product.url),
           ),
         ),
-        const SizedBox(width: 12,
-        ),
+
+        // bottom_sheet for adding products to existing lists
+
+        const SizedBox(width: 12),
         Expanded(
           child: _buildActionButton(
             context: context,
             icon: Icons.add_shopping_cart,
-            label: 'Save',
+            label: 'Save to list',
             onPressed: () {
-              showDialog(
+              showModalBottomSheet(
                 context: context,
-                builder: (_) => ShoppingListDialog(
+                isScrollControlled: true, // Allows the sheet to be taller
+                backgroundColor: AppColors.background, // Match your theme
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                builder: (_) => ShoppingListBottomSheet(
                   product: product,
                   onConfirm: (String selectedListName) {},
                 ),

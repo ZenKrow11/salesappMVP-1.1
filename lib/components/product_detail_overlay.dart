@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/product.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'shopping_list_dialog.dart';
+import 'shopping_list_bottom_sheet.dart';
 
 
 
@@ -182,7 +182,7 @@ class ProductDetailOverlay extends ConsumerWidget {
                               onPressed: () {
                                 showDialog(
                                   context: context,
-                                  builder: (_) => ShoppingListDialog(
+                                  builder: (_) => ShoppingListBottomSheet(
                                     product: product,
                                     onConfirm: (listName) {
                                       // Optional: Snackbar already shown in ShoppingListDialog, but can keep for consistency

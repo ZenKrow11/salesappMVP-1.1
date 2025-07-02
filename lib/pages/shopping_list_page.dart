@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../components/create_list_bottom_sheet.dart'; // Import the new widget
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
@@ -15,7 +16,6 @@ class ShoppingListPage extends ConsumerWidget {
     final shoppingLists = ref.watch(shoppingListsProvider);
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
-    // Separate favorites from other lists
     final favorites = shoppingLists.firstWhere(
           (list) => list.name == favoritesListName,
       orElse: () => NamedList(
@@ -29,17 +29,20 @@ class ShoppingListPage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Compute otherLists here for _showAddListDialog to ensure it's up-to-date
-          final otherLists = shoppingLists
-              .where((list) => list.name != favoritesListName)
-              .toList()
-            ..sort((a, b) => a.index.compareTo(b.index));
-          _showAddListDialog(context, shoppingListNotifier, otherLists);
+          // --- FIX: Call the new, reusable bottom sheet ---
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent, // Let the child handle color
+            builder: (ctx) => const CreateListBottomSheet(),
+          );
         },
-        backgroundColor: AppColors.accent,
-        child: const Icon(Icons.add,
+        backgroundColor: AppColors.secondary,
+        child: const Icon(
+          Icons.add,
           size: 32,
-          color: AppColors.primary,),
+          color: AppColors.primary,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -51,9 +54,7 @@ class ShoppingListPage extends ConsumerWidget {
             favorites,
             allowDelete: false,
           ),
-
           const SizedBox(height: 12),
-
           // --- Draggable Custom Lists ---
           Consumer(
             builder: (context, ref, child) {
@@ -105,25 +106,29 @@ class ShoppingListPage extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: ExpansionTile(
-        backgroundColor: AppColors.inactive,
+        backgroundColor: AppColors.inactive.withOpacity(0.2),
         collapsedBackgroundColor: AppColors.primary,
+        iconColor: AppColors.accent,
+        collapsedIconColor: AppColors.inactive,
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
         title: Text(
           list.name,
           style: const TextStyle(
               color: AppColors.active,
-              fontSize: 18, fontWeight: FontWeight.bold),
+              fontSize: 18,
+              fontWeight: FontWeight.bold),
         ),
         trailing: allowDelete
             ? IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red, size: 30),
+          icon: const Icon(Icons.delete, color: AppColors.accent, size: 30),
           onPressed: () {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
                 title: const Text('Delete List'),
-                content: Text('Are you sure you want to delete "${list.name}"?'),
+                content: Text(
+                    'Are you sure you want to delete "${list.name}"?'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -140,7 +145,8 @@ class ShoppingListPage extends ConsumerWidget {
                       );
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    child: const Text('Delete',
+                        style: TextStyle(color: AppColors.accent)),
                   ),
                 ],
               ),
@@ -150,9 +156,10 @@ class ShoppingListPage extends ConsumerWidget {
             : const SizedBox(width: 30),
         children: list.items.isEmpty
             ? [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('This list is empty.'),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('This list is empty.',
+                style: TextStyle(color: AppColors.inactive)),
           ),
         ]
             : list.items.asMap().entries.map((entry) {
@@ -175,67 +182,10 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  void _showAddListDialog(BuildContext context, ShoppingListNotifier notifier, List<NamedList> currentLists) {
-    final TextEditingController controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New List'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'List name',
-            hintText: 'Enter list name',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final listName = controller.text.trim();
-
-              if (listName.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('List name cannot be empty'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-                return;
-              }
-
-              if (currentLists.any((list) => list.name == listName) || listName == favoritesListName) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('List name already exists'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-                return;
-              }
-
-              notifier.addEmptyList(listName);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Created "$listName"'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-              Navigator.of(context).pop();
-            },
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-  }
+// --- The _showAddListBottomSheet method is now removed ---
 }
 
-// Placeholder for ShoppingListItemTile (replace with your actual implementation)
+// Placeholder for ShoppingListItemTile
 class ShoppingListItemTile extends StatelessWidget {
   final Product product;
   final String listName;
@@ -251,9 +201,10 @@ class ShoppingListItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(product.name),
+      title: Text(product.name, style: const TextStyle(color: AppColors.active)),
+      subtitle: Text(product.store, style: TextStyle(color: AppColors.inactive)),
       trailing: IconButton(
-        icon: const Icon(Icons.remove_circle, color: Colors.red),
+        icon: const Icon(Icons.close, color: AppColors.accent, size: 30),
         onPressed: onRemove,
       ),
     );

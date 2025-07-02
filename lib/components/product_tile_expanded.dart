@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/product.dart';
 import '../widgets/image_aspect_ratio.dart';
-import 'shopping_list_dialog.dart';
+import 'shopping_list_bottom_sheet.dart';
 
 class ProductTileExpanded extends StatelessWidget {
   final Product product;
@@ -129,7 +129,7 @@ class ProductTileExpanded extends StatelessWidget {
               _squareButton(Icons.view_list, () {
                 showDialog(
                   context: context,
-                  builder: (_) => ShoppingListDialog(
+                  builder: (_) => ShoppingListBottomSheet(
                     product: product,
                     onConfirm: (listName) {
                       ScaffoldMessenger.of(context).showSnackBar(
