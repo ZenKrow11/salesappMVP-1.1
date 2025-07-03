@@ -13,10 +13,63 @@ import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-// The page is a simpler ConsumerWidget.
-class HomePage extends ConsumerWidget {
+// --- MODIFICATION 1: Convert to ConsumerStatefulWidget ---
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  // --- MODIFICATION 2: Add state variables ---
+  // Controller to detect scroll position
+  final ScrollController _scrollController = ScrollController();
+  // Boolean to control the FAB's visibility
+  bool _isFabVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add a listener to the scroll controller
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    // ALWAYS dispose of controllers
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // --- MODIFICATION 3: The listener function ---
+  // This function is called every time the user scrolls
+  void _scrollListener() {
+    // Check if the user has scrolled down more than 400 pixels
+    if (_scrollController.offset > 400 && !_isFabVisible) {
+      setState(() {
+        _isFabVisible = true;
+      });
+    }
+    // Check if the user has scrolled back up
+    else if (_scrollController.offset <= 400 && _isFabVisible) {
+      setState(() {
+        _isFabVisible = false;
+      });
+    }
+  }
+
+  // --- MODIFICATION 4: Function to scroll to the top ---
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0.0, // Scroll to the top of the list
+      duration: const Duration(milliseconds: 500), // Animation duration
+      curve: Curves.easeInOut, // Animation curve
+    );
+  }
+
+  // Helper methods are now part of the State class
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -43,14 +96,25 @@ class HomePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // We watch the new provider.
+  Widget build(BuildContext context) {
     final productsAsync = ref.watch(filteredProductsProvider);
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList == null ? 'Select List' : 'Selected: $activeList';
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      // --- MODIFICATION 5: Add the FloatingActionButton to the Scaffold ---
+      floatingActionButton: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: _isFabVisible ? 1.0 : 0.0, // Control visibility
+        child: FloatingActionButton(
+          onPressed: _isFabVisible ? _scrollToTop : null, // Prevent accidental taps when hidden
+          backgroundColor: AppColors.secondary,
+          foregroundColor: AppColors.primary,
+          child: const Icon(Icons.arrow_upward,
+              size: 32.0),
+        ),
+      ),
       body: Column(
         children: [
           // The header UI remains the same.
@@ -111,15 +175,14 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           Expanded(
-            // THE FIX IS HERE: The .when() callback now works correctly.
             child: productsAsync.when(
-              // The 'data' parameter is now a 'List<Product>', which we name 'products'.
               data: (products) {
-                // We check 'products.isEmpty' directly.
                 if (products.isEmpty) {
                   return const Center(child: Text('No products match your filter.'));
                 }
                 return GridView.builder(
+                  // --- MODIFICATION 6: Attach the scroll controller ---
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -127,10 +190,8 @@ class HomePage extends ConsumerWidget {
                     mainAxisSpacing: 10,
                     childAspectRatio: 0.75,
                   ),
-                  // We use 'products.length' directly.
                   itemCount: products.length,
                   itemBuilder: (context, index) {
-                    // We get the product from the 'products' list directly.
                     final product = products[index];
                     return ProductTile(
                       product: product,
@@ -139,7 +200,7 @@ class HomePage extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductSwiperScreen(
-                              products: products, // Pass the 'products' list.
+                              products: products,
                               initialIndex: index,
                             ),
                           ),

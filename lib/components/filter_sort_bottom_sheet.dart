@@ -42,6 +42,11 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   void _handleExpansion(bool isExpanded, Object panelKey) {
     setState(() {
       if (isExpanded) {
+        // If another panel is already expanded, close it first.
+        // This ensures only one panel can be open at a time.
+        if (_expandedPanelKeys.isNotEmpty && !_expandedPanelKeys.contains(panelKey)) {
+          _expandedPanelKeys.clear();
+        }
         _expandedPanelKeys.add(panelKey);
       } else {
         _expandedPanelKeys.remove(panelKey);
@@ -64,7 +69,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.primary,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -256,7 +261,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
                     onChanged: (_) => onOptionToggled(option),
                     activeColor: AppColors.primary,
                     dense: true,
-                    controlAffinity: ListTileControlAffinity.leading,
+                    controlAffinity: ListTileControlAffinity.trailing,
                   );
                 },
               ),
@@ -327,6 +332,7 @@ class _StoreLogoFilter extends StatelessWidget {
     }
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.inactive,
