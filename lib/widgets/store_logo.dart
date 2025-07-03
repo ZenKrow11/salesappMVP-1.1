@@ -16,6 +16,7 @@ class StoreLogo extends StatelessWidget {
     'aligro': 'assets/images/store_logos/aligro_logo.png',
     'coop': 'assets/images/store_logos/coop_logo.png',
     'denner': 'assets/images/store_logos/denner_logo.png',
+    'eurospar': 'assets/images/store_logos/eurospar_logo.png',
     'lidl': 'assets/images/store_logos/lidl_logo.png',
     'migros': 'assets/images/store_logos/migros_logo.png',
     "ottos": 'assets/images/store_logos/ottos_logo.png',
@@ -31,6 +32,8 @@ class StoreLogo extends StatelessWidget {
     required this.storeName,
     this.height = 24, // A good default height
   });
+
+  static get assets => null;
 
   @override
   Widget build(BuildContext context) {
