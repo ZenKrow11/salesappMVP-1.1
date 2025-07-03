@@ -47,7 +47,7 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
                   return Card(
                     elevation: isActive ? 2 : 0,
                     color: isActive
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     child: ListTile(
                       title: Text(

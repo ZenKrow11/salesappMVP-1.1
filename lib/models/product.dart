@@ -8,29 +8,23 @@ class Product extends HiveObject {
   final String id;
 
   @HiveField(1)
-  final String store;
+  final String store; // This will now be a clean, trimmed string
 
+  // ... other fields remain the same
   @HiveField(2)
   final String name;
-
   @HiveField(3)
   final double currentPrice;
-
   @HiveField(4)
   final double normalPrice;
-
   @HiveField(5)
   final String discountPercentage;
-
   @HiveField(6)
   final String category;
-
   @HiveField(7)
   final String subcategory;
-
   @HiveField(8)
   final String url;
-
   @HiveField(9)
   final String imageUrl;
 
@@ -50,11 +44,13 @@ class Product extends HiveObject {
   factory Product.fromJson(String id, Map<String, dynamic> data) {
     return Product(
       id: id,
-      store: data['store'] ?? '',
-      name: data['name'] ?? '',
+      // V-- THE FIX IS HERE --V
+      store: (data['store'] as String? ?? '').trim(),
+      // ^----------------------^
+      name: (data['name'] as String? ?? '').trim(), // Also good to trim names
       currentPrice: (data['currentPrice'] as num?)?.toDouble() ?? 0.0,
       normalPrice: (data['normalPrice'] as num?)?.toDouble() ?? 0.0,
-      discountPercentage: data['discountPercentage']?.toString() ?? '0%',
+      discountPercentage: data['discountPercentage']?.toString() ?? '0',
       category: data['category'] ?? '',
       subcategory: data['subcategory'] ?? '',
       url: data['url'] ?? '',

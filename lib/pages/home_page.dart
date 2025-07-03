@@ -6,7 +6,6 @@ import 'package:sales_app_mvp/providers/products_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 
 // Component and Screen imports
-// --- IMPORTANT: Import your new sheet ---
 import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/filter_sort_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
@@ -77,10 +76,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // The rest of the build method is the same as the last correct version
     final productsAsyncState = ref.watch(productsProvider);
     final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList == null ? 'Select List' : 'Active: $activeList';
+    final buttonText = activeList == null ? 'Select List' : 'Selected: $activeList';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,18 +87,22 @@ class _HomePageState extends ConsumerState<HomePage> {
           Container(
             color: AppColors.background,
             padding: EdgeInsets.fromLTRB(
-              12.0,
-              MediaQuery.of(context).padding.top + 10,
-              12.0,
-              12.0,
+              12.0, // Left padding
+              MediaQuery.of(context).padding.top, // Top padding (status bar height)
+              12.0, // Right padding
+              12.0, // Bottom padding
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SearchBarWidget(),
+                const SizedBox(
+                  height: 56, // Increased height to match other elements
+                  child: SearchBarWidget(),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
+                    // "Select List" Button
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.list, color: AppColors.secondary, size: 24.0),
@@ -122,12 +124,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // "Filter & Sort" Button
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
                         label: const Flexible(
                           child: Text(
-                            'Filter & Sort',
+                            'Filter and Sort',
                             style: TextStyle(color: AppColors.inactive),
                             overflow: TextOverflow.ellipsis,
                           ),

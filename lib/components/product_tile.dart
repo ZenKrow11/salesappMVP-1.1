@@ -1,7 +1,10 @@
+// lib/widgets/product_tile.dart
+
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import '../models/product.dart';
+import '../widgets/store_logo.dart';
 
 class ProductTile extends StatelessWidget {
   final Product product;
@@ -13,6 +16,7 @@ class ProductTile extends StatelessWidget {
     required this.onTap,
   });
 
+  // ... (build method remains the same) ...
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -37,6 +41,7 @@ class ProductTile extends StatelessWidget {
     );
   }
 
+  // ... (_buildContent method remains the same) ...
   Widget _buildContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,9 +52,9 @@ class ProductTile extends StatelessWidget {
         Expanded(
           child: ClipRect(
             child: ImageWithAspectRatio(
-                imageUrl: product.imageUrl,
-                maxHeight: double.infinity,
-                maxWidth: double.infinity,
+              imageUrl: product.imageUrl,
+              maxHeight: double.infinity,
+              maxWidth: double.infinity,
             ),
           ),
         ),
@@ -59,24 +64,20 @@ class ProductTile extends StatelessWidget {
     );
   }
 
+
+  // --- 2. MODIFY this method ---
   Widget _buildHeaderRow() {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start, // Align to top
+      crossAxisAlignment: CrossAxisAlignment.center, // Center items vertically
       children: [
-        Expanded(
-          flex: 1,
-          child: Text(
-            product.store,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
+        // Replace the store Text with your new StoreLogo widget
+        StoreLogo(
+          storeName: product.store,
+          height: 24, // Adjust the height as needed
         ),
+        const SizedBox(width: 8), // Add some space between the logo and name
         Expanded(
-          flex: 3,
+          // The name now takes all the remaining space
           child: Text(
             product.name,
             style: const TextStyle(
@@ -92,9 +93,7 @@ class ProductTile extends StatelessWidget {
       ],
     );
   }
-
-
-
+  // ... (rest of the file is unchanged) ...
   Widget _buildPriceRow({double fontSize = 12}) {
     return Row(
       children: [

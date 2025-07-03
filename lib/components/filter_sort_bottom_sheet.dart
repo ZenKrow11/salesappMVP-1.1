@@ -46,7 +46,7 @@ class FilterSortBottomSheet extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Filter & Sort', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text('Filter and Sort', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: () => filterNotifier.state = const FilterState(),
                   child: const Text('Reset', style: TextStyle(color: AppColors.secondary)),

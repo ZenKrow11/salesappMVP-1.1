@@ -57,7 +57,7 @@ class _ShoppingListBottomSheetState
                     color: AppColors.secondary),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.accent),
+                icon: const Icon(Icons.close, color: AppColors.accent,),
                 onPressed: () => Navigator.pop(context),
               )
             ],
@@ -67,9 +67,9 @@ class _ShoppingListBottomSheetState
           // Tab Bar
           TabBar(
             controller: _tabController,
-            labelColor: AppColors.accent,
+            labelColor: AppColors.secondary,
             unselectedLabelColor: AppColors.inactive,
-            indicatorColor: AppColors.accent,
+            indicatorColor: AppColors.secondary,
             tabs: const [
               Tab(text: 'Select List'),
               Tab(text: 'New List'),
@@ -109,9 +109,9 @@ class _ShoppingListBottomSheetState
                         });
                       },
                       trailing: IconButton(
-                        icon: const Icon(Icons.add_task, color: AppColors.primary),
+                        icon: const Icon(Icons.add, color: AppColors.primary),
                         style: IconButton.styleFrom(
-                          backgroundColor: AppColors.accent,
+                          backgroundColor: AppColors.secondary.withValues(alpha: 1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -145,7 +145,7 @@ class _ShoppingListBottomSheetState
                           borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
                           borderRadius: BorderRadius.circular(8.0)),
                       focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: AppColors.accent),
+                          borderSide: const BorderSide(color: AppColors.secondary),
                           borderRadius: BorderRadius.circular(8.0)),
                     ),
                     onChanged: (value) {
@@ -161,14 +161,16 @@ class _ShoppingListBottomSheetState
           // Action Buttons
           Row(
             children: [
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Expanded(
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('CANCEL', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
                 ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('CANCEL', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -216,7 +218,8 @@ class _ShoppingListBottomSheetState
                       );
                     }
                   },
-                  child: const Text('CONFIRM', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
+                  child: const Text('CONFIRM', style: TextStyle(color: AppColors.inactive,
+                  fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
