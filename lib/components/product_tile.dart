@@ -1,12 +1,16 @@
 // lib/widgets/product_tile.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+// --- (1) ADDED: Import the bottom sheet you want to open ---
+import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import '../models/product.dart';
 import '../widgets/store_logo.dart';
 
-class ProductTile extends StatelessWidget {
+class ProductTile extends ConsumerWidget {
   final Product product;
   final VoidCallback onTap;
 
@@ -17,14 +21,13 @@ class ProductTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        // Using a card provides a nice default shadow and shape
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias, // Ensures content respects the rounded corners
+        clipBehavior: Clip.antiAlias,
         elevation: 2,
         child: Container(
           decoration: BoxDecoration(
@@ -33,26 +36,26 @@ class ProductTile extends StatelessWidget {
               color: AppColors.primary,
               width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(11), // Slightly less than card's radius
+            borderRadius: BorderRadius.circular(11),
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: _buildContent(context),
+            child: _buildContent(context, ref),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, WidgetRef ref) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch, // Stretch children to fill width
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeaderRow(),
         const SizedBox(height: 6),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8), // Clip the image with rounded corners
+            borderRadius: BorderRadius.circular(8),
             child: ImageWithAspectRatio(
               imageUrl: product.imageUrl,
               maxHeight: double.infinity,
@@ -61,7 +64,7 @@ class ProductTile extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        _buildPriceRow(),
+        _buildPriceRow(context, ref),
       ],
     );
   }
@@ -92,20 +95,15 @@ class ProductTile extends StatelessWidget {
     );
   }
 
-  // --- REFACTORED PRICE ROW ---
-  Widget _buildPriceRow({double fontSize = 12}) {
-    // Define a single, consistent height for all elements in the row.
+  Widget _buildPriceRow(BuildContext context, WidgetRef ref, {double fontSize = 12}) {
     const double rowHeight = 36.0;
 
     return SizedBox(
       height: rowHeight,
       child: Row(
-        // Use crossAxisAlignment.stretch to make all children fill the height of the row.
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Discount Box
           Expanded(
-            // flex: 1 is the default and ensures it takes 1/3 of the space.
             child: _priceBox(
               text: '${product.discountPercentage.replaceAll('%', '')}%',
               bgColor: Colors.red,
@@ -116,9 +114,7 @@ class ProductTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 6), // A consistent gap
-
-          // 2. Price Box
+          const SizedBox(width: 6),
           Expanded(
             child: _priceBox(
               text: product.currentPrice.toStringAsFixed(2),
@@ -130,18 +126,48 @@ class ProductTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 6), // A consistent gap
-
-          // 3. Add to Cart Button
+          const SizedBox(width: 6),
           Expanded(
             child: ElevatedButton(
+              // --- (2) ADDED: The onLongPress handler ---
+              onLongPress: () {
+                // This code is similar to what's in home_page.dart
+                showModalBottomSheet(
+                  context: context,
+                  useRootNavigator: true,
+                  backgroundColor: AppColors.background,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (ctx) => const ActiveListSelectorBottomSheet(),
+                );
+              },
+              // The existing quicksave logic for a regular tap
               onPressed: () {
-                // TODO: Add to cart functionality
-                print("Add ${product.name} to cart");
+                final activeListName = ref.read(activeShoppingListProvider);
+                final notifier = ref.read(shoppingListsProvider.notifier);
+
+                if (activeListName == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select a list first.'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  notifier.addToList(activeListName, product);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Added to "$activeListName"'),
+                      duration: const Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
-                // Remove default padding to precisely control the icon's size
                 padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -150,7 +176,7 @@ class ProductTile extends StatelessWidget {
               child: Icon(
                 Icons.add_shopping_cart,
                 color: AppColors.primary,
-                size: fontSize + 8, // Make the icon a bit bigger
+                size: fontSize + 8,
               ),
             ),
           ),
@@ -159,8 +185,6 @@ class ProductTile extends StatelessWidget {
     );
   }
 
-  // --- REFACTORED PRICE BOX ---
-  // It no longer needs a height parameter as its parent enforces the height.
   Widget _priceBox({
     required String text,
     required Color? bgColor,
@@ -171,7 +195,6 @@ class ProductTile extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
       ),
-      // Center ensures the text is perfectly aligned both vertically and horizontally.
       child: Center(
         child: Text(
           text,

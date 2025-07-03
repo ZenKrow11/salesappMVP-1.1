@@ -56,7 +56,7 @@ class HomePage extends ConsumerWidget {
           // The header UI remains the same.
           Container(
             color: AppColors.background,
-            padding: EdgeInsets.fromLTRB(12.0, MediaQuery.of(context).padding.top, 12.0, 12.0),
+            padding: EdgeInsets.fromLTRB(12.0, MediaQuery.of(context).padding.top / 4, 12.0, 12.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -66,7 +66,7 @@ class HomePage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: TextButton.icon(
-                        icon: const Icon(Icons.list, color: AppColors.secondary, size: 24.0),
+                        icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary, size: 24.0),
                         label: Flexible(
                           child: Text(
                             buttonText,

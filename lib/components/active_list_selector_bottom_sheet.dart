@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../components/create_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
@@ -18,8 +19,27 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min, // Make the sheet only as tall as its content
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Select an Active List',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Select a Quicksave List',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              IconButton(
+                // Add a new list button
+                icon: const Icon(Icons.add, size: 32.0),
+                color: AppColors.secondary, // Set the color of the icon itself
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the current bottom sheet
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled:
+                        true, // Allows the sheet to take up more screen space
+                    builder: (context) => const CreateListBottomSheet(),
+                  );
+                },
+              ),
+            ],
+          ),
           const Divider(height: 24),
 
           // Handle the case where no lists exist yet.
@@ -46,19 +66,21 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
 
                   return Card(
                     elevation: isActive ? 2 : 0,
-                    color: isActive
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : Colors.transparent,
+                    color: isActive ? AppColors.secondary : Colors.transparent,
                     child: ListTile(
                       title: Text(
                         list.name,
                         style: TextStyle(
-                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                          color: isActive
+                              ? AppColors.primary
+                              : AppColors.inactive, // Text color
+                        ),
                       ),
                       // When a list is tapped, set it as active and close the sheet.
-                      onTap: () {
+                      onTap: () async {
                         ref.read(activeShoppingListProvider.notifier).setActiveList(list.name);
-                        Navigator.of(context).pop();
+                        // Intentionally not closing the bottom sheet here.
                       },
                     ),
                   );

@@ -137,9 +137,9 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
                     child: OutlinedButton(
                       onPressed: () => filterNotifier.state = const FilterState(),
                       style: OutlinedButton.styleFrom(
+                        backgroundColor: AppColors.primary, // Use backgroundColor for OutlinedButton
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         foregroundColor: AppColors.textPrimary,
-                        side: BorderSide(color: Colors.grey.shade400),
                       ),
                       child: const Text('Reset'),
                     ),
@@ -148,10 +148,15 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                      child: const Text('Apply'),
-                    ),
-                  ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary, // Use backgroundColor for ElevatedButton
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Apply'
+                          , style: TextStyle(color: AppColors.primary),
+                          )
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -186,7 +191,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
               label: Text(option),
               selected: isSelected,
               onSelected: (_) => onOptionToggled(option),
-              selectedColor: AppColors.primary.withOpacity(0.2),
+              selectedColor: AppColors.primary.withValues(alpha: 0.2),
               checkmarkColor: AppColors.primary,
               labelStyle: TextStyle(color: isSelected ? AppColors.primary : Colors.black87),
             );
@@ -261,12 +266,12 @@ class _StoreLogoFilter extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                    color: isSelected ? AppColors.primary : Colors.white,
                     width: isSelected ? 2.5 : 1.5,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 5, spreadRadius: 1)]
-                      : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
+                      ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 5, spreadRadius: 1)]
+                      : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(1, 1))],
                 ),
                 child: StoreLogo(storeName: store, height: 32),
               ),
@@ -275,7 +280,7 @@ class _StoreLogoFilter extends StatelessWidget {
                 Positioned.fill( // Fills the entire space of the Stack
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.6), // Semi-transparent overlay
+                      color: AppColors.primary.withValues(alpha: 0.6), // Semi-transparent overlay
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.check_circle, color: Colors.white, size: 28),

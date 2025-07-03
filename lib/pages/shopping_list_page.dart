@@ -106,7 +106,7 @@ class ShoppingListPage extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       child: ExpansionTile(
-        backgroundColor: AppColors.inactive.withOpacity(0.2),
+        backgroundColor: AppColors.inactive.withValues(alpha: 0.2),
         collapsedBackgroundColor: AppColors.primary,
         iconColor: AppColors.accent,
         collapsedIconColor: AppColors.inactive,
