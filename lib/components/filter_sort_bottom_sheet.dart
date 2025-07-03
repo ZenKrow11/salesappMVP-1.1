@@ -28,154 +28,182 @@ class FilterSortBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
+  // Use a single nullable object to track the expanded panel.
+  // Using GlobalKey is not necessary here and this is simpler.
   Object? _expandedPanelKey;
+
+  // Keys to uniquely identify each expansion tile.
+  final _categoryKey = Object();
+  final _subcategoryKey = Object();
+  final _sortKey = Object();
 
   void _handleExpansion(bool isExpanded, Object panelKey) {
     setState(() {
-      if (isExpanded) {
-        _expandedPanelKey = panelKey;
-      } else if (_expandedPanelKey == panelKey) {
-        _expandedPanelKey = null;
-      }
+      _expandedPanelKey = isExpanded ? panelKey : null;
     });
+  }
+
+  // Helper method to reduce code duplication for toggling items in a filter list.
+  List<String> _toggleListOption(List<String> list, String option) {
+    final newList = List<String>.from(list);
+    if (newList.contains(option)) {
+      newList.remove(option);
+    } else {
+      newList.add(option);
+    }
+    return newList;
   }
 
   @override
   Widget build(BuildContext context) {
-    final storeOptions = ref.watch(storeOptionsProvider);
-    final categoryOptions = ref.watch(categoryOptionsProvider);
-    final subcategoryOptions = ref.watch(subcategoryOptionsProvider);
-    final currentFilterState = ref.watch(filterStateProvider);
-    final filterNotifier = ref.read(filterStateProvider.notifier);
-
-    final categoryKey = GlobalKey();
-    final subcategoryKey = GlobalKey();
-    final sortKey = GlobalKey();
-
     return Container(
+      // Set max height to prevent the sheet from covering the whole screen.
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       child: SafeArea(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Text('Filter and Sort', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            ),
-            const Divider(height: 1, thickness: 1),
+            _buildHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Store', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    // Using the newly refactored Store Logo filter
-                    _StoreLogoFilter(
-                      allStores: storeOptions,
-                      selectedStores: currentFilterState.selectedStores,
-                      onStoreToggled: (store) {
-                        final currentSelection = List<String>.from(currentFilterState.selectedStores);
-                        if (currentSelection.contains(store)) {
-                          currentSelection.remove(store);
-                        } else {
-                          currentSelection.add(store);
-                        }
-                        filterNotifier.state = currentFilterState.copyWith(selectedStores: currentSelection);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildFilterExpansionTile(
-                      key: categoryKey,
-                      title: 'Category',
-                      options: categoryOptions,
-                      selectedOptions: currentFilterState.selectedCategories,
-                      onOptionToggled: (category) {
-                        final currentSelection = List<String>.from(currentFilterState.selectedCategories);
-                        if (currentSelection.contains(category)) {
-                          currentSelection.remove(category);
-                        } else {
-                          currentSelection.add(category);
-                        }
-                        filterNotifier.state = currentFilterState.copyWith(selectedCategories: currentSelection);
-                      },
-                    ),
-                    _buildFilterExpansionTile(
-                      key: subcategoryKey,
-                      title: 'Subcategory',
-                      options: subcategoryOptions,
-                      selectedOptions: currentFilterState.selectedSubcategories,
-                      onOptionToggled: (subcategory) {
-                        final currentSelection = List<String>.from(currentFilterState.selectedSubcategories);
-                        if (currentSelection.contains(subcategory)) {
-                          currentSelection.remove(subcategory);
-                        } else {
-                          currentSelection.add(subcategory);
-                        }
-                        filterNotifier.state = currentFilterState.copyWith(selectedSubcategories: currentSelection);
-                      },
-                    ),
-                    _buildSortExpansionTile(
-                      key: sortKey,
-                      currentSortOption: currentFilterState.sortOption,
-                      onSortChanged: (newSortOption) {
-                        if (newSortOption != null) {
-                          filterNotifier.state = currentFilterState.copyWith(sortOption: newSortOption);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              child: _buildFilterList(),
             ),
-            const Divider(height: 1, thickness: 1),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => filterNotifier.state = const FilterState(),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: AppColors.primary, // Use backgroundColor for OutlinedButton
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        foregroundColor: AppColors.textPrimary,
-                      ),
-                      child: const Text('Reset'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary, // Use backgroundColor for ElevatedButton
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Apply'
-                          , style: TextStyle(color: AppColors.primary),
-                          )
-                        ),
-                      ),
-                ],
-              ),
-            ),
+            _buildActionBar(),
           ],
         ),
       ),
     );
   }
 
+  /// Builds the header section with the title.
+  Widget _buildHeader() {
+    return const Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Text('Filter and Sort', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        ),
+        Divider(height: 1, thickness: 1),
+      ],
+    );
+  }
+
+  /// Builds the main scrollable list of filter options.
+  Widget _buildFilterList() {
+    final storeOptions = ref.watch(storeOptionsProvider);
+    final categoryOptions = ref.watch(categoryOptionsProvider);
+    final subcategoryOptions = ref.watch(subcategoryOptionsProvider);
+    final currentFilterState = ref.watch(filterStateProvider);
+    final filterNotifier = ref.read(filterStateProvider.notifier);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Store', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _StoreLogoFilter(
+            allStores: storeOptions,
+            selectedStores: currentFilterState.selectedStores,
+            onStoreToggled: (store) {
+              final newStores = _toggleListOption(currentFilterState.selectedStores, store);
+              filterNotifier.state = currentFilterState.copyWith(selectedStores: newStores);
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildFilterExpansionTile(
+            key: _categoryKey,
+            title: 'Category',
+            options: categoryOptions,
+            selectedOptions: currentFilterState.selectedCategories,
+            onOptionToggled: (category) {
+              final newCategories = _toggleListOption(currentFilterState.selectedCategories, category);
+              // CRITICAL: When categories change, we must clear the subcategory selections
+              // to prevent orphaned/invalid filter states.
+              filterNotifier.state = currentFilterState.copyWith(
+                selectedCategories: newCategories,
+                selectedSubcategories: [],
+              );
+            },
+          ),
+          _buildFilterExpansionTile(
+            key: _subcategoryKey,
+            title: 'Subcategory',
+            options: subcategoryOptions,
+            selectedOptions: currentFilterState.selectedSubcategories,
+            onOptionToggled: (subcategory) {
+              final newSubcategories = _toggleListOption(currentFilterState.selectedSubcategories, subcategory);
+              filterNotifier.state = currentFilterState.copyWith(selectedSubcategories: newSubcategories);
+            },
+          ),
+          _buildSortExpansionTile(
+            key: _sortKey,
+            currentSortOption: currentFilterState.sortOption,
+            onSortChanged: (newSortOption) {
+              if (newSortOption != null) {
+                filterNotifier.state = currentFilterState.copyWith(sortOption: newSortOption);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the action bar with Reset and Apply buttons.
+  Widget _buildActionBar() {
+    final filterNotifier = ref.read(filterStateProvider.notifier);
+
+    return Column(
+      children: [
+        const Divider(height: 1, thickness: 1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                // ROBUSTNESS FIX: Use ElevatedButton instead of a styled OutlinedButton
+                // to prevent the "Incorrect use of ParentDataWidget" crash.
+                child: ElevatedButton(
+                  onPressed: () => filterNotifier.state = const FilterState(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textPrimary, // Sets text color
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Reset'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Apply', style: TextStyle(color: AppColors.primary)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- WIDGET BUILDER HELPERS ---
+
   Widget _buildFilterExpansionTile({
-    required Key key,
+    required Object key,
     required String title,
     required List<String> options,
     required List<String> selectedOptions,
     required ValueChanged<String> onOptionToggled,
   }) {
     if (options.isEmpty) return const SizedBox.shrink();
+
     return ExpansionTile(
-      key: key,
+      key: ValueKey(key),
       title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       initiallyExpanded: _expandedPanelKey == key,
       onExpansionChanged: (isExpanding) => _handleExpansion(isExpanding, key),
@@ -191,7 +219,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
               label: Text(option),
               selected: isSelected,
               onSelected: (_) => onOptionToggled(option),
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
+              selectedColor: AppColors.primary.withOpacity(0.2),
               checkmarkColor: AppColors.primary,
               labelStyle: TextStyle(color: isSelected ? AppColors.primary : Colors.black87),
             );
@@ -202,12 +230,12 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 
   Widget _buildSortExpansionTile({
-    required Key key,
+    required Object key,
     required SortOption currentSortOption,
     required ValueChanged<SortOption?> onSortChanged,
   }) {
     return ExpansionTile(
-      key: key,
+      key: ValueKey(key),
       title: const Text('Sort By', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       initiallyExpanded: _expandedPanelKey == key,
       onExpansionChanged: (isExpanding) => _handleExpansion(isExpanding, key),
@@ -227,7 +255,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 }
 
-// --- NEW WIDGET with Checkmark overlay for store logos ---
+// _StoreLogoFilter widget remains the same but is included for completeness.
 class _StoreLogoFilter extends StatelessWidget {
   final List<String> allStores;
   final List<String> selectedStores;
@@ -256,9 +284,8 @@ class _StoreLogoFilter extends StatelessWidget {
         return GestureDetector(
           onTap: () => onStoreToggled(store),
           child: Stack(
-            alignment: Alignment.center, // Center the overlay and checkmark
+            alignment: Alignment.center,
             children: [
-              // The main logo container
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(4),
@@ -266,21 +293,20 @@ class _StoreLogoFilter extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.white,
+                    color: isSelected ? AppColors.primary : Colors.grey.shade300,
                     width: isSelected ? 2.5 : 1.5,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 5, spreadRadius: 1)]
-                      : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(1, 1))],
+                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 5, spreadRadius: 1)]
+                      : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
                 ),
                 child: StoreLogo(storeName: store, height: 32),
               ),
-              // The checkmark and overlay when selected
               if (isSelected)
-                Positioned.fill( // Fills the entire space of the Stack
+                Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.6), // Semi-transparent overlay
+                      color: AppColors.primary.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.check_circle, color: Colors.white, size: 28),
