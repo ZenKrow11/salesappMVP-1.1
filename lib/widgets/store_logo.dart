@@ -34,8 +34,6 @@ class StoreLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("StoreLogo received name: '[${storeName}]' and is looking for key: '[${storeName.toLowerCase()}]'");
-    // The brackets [] will make whitespace visible in the console, e.g., '[ aldi ]'
 
     final logoPath = _logoMap[storeName.toLowerCase()] ?? _defaultLogoPath;
 

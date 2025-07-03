@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
-// Corrected import path if your file is in components/
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+// <-- 1. IMPORT your new widget
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 
 class ProductDetails extends StatelessWidget {
   final Product product;
@@ -18,13 +20,12 @@ class ProductDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStore(),
-          const SizedBox(height: 4),
-          _buildProductName(),
+          // <-- 2. REPLACED old methods with a new, combined header
+          _buildHeader(),
           const SizedBox(height: 8),
-          _buildCategoryRow('Category', product.category),
+          _buildCategoryRow('Category', product.category,),
           const SizedBox(height: 4),
-          _buildCategoryRow('Subcategory', product.subcategory),
+          _buildCategoryRow('Subcategory', product.subcategory,),
           const SizedBox(height: 16),
           _buildImage(),
           const SizedBox(height: 16),
@@ -36,38 +37,42 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildStore() {
-    return Text(
-      product.store,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textSecondary,
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+  // <-- 3. COMBINED store and name into a single, clean header method
+  Widget _buildHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center, // Vertically align logo and text
+      children: [
+        // Use the StoreLogo widget here
+        StoreLogo(
+          storeName: product.store,
+          height: 32, // Adjust height for a "details" screen look
+        ),
+        const SizedBox(width: 12),
+        // Expanded ensures the text takes remaining space and wraps if needed
+        Expanded(
+          child: Text(
+            product.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 3, // Allow for longer names on the details page
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
-
-  Widget _buildProductName() {
-    return Text(
-      product.name,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
+  // The old _buildStore() and _buildProductName() methods are now removed.
 
   Widget _buildCategoryRow(String label, String value) {
+    // Corrected color definition for white
     return Text(
       '$label: $value',
       style: TextStyle(
         fontSize: 14,
-        color: Colors.white.withValues(alpha: 0.85),
+        color: Colors.white.withOpacity(0.85),
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -87,6 +92,9 @@ class ProductDetails extends StatelessWidget {
   }
 
   Widget _buildPriceRow() {
+    // Robustly handle the discount percentage string to avoid "%%"
+    final cleanPercentage = product.discountPercentage.replaceAll(RegExp(r'[^0-9.]'), '');
+
     return Row(
       children: [
         Expanded(
@@ -104,7 +112,7 @@ class ProductDetails extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _priceBox(
-            '${product.discountPercentage}%',
+            '$cleanPercentage%', // Use the cleaned percentage
             Colors.redAccent,
             const TextStyle(
               fontSize: 30,
@@ -129,6 +137,7 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
+  // ... (The rest of the file remains the same)
   Widget _priceBox(String value, Color bgColor, TextStyle textStyle) {
     return Container(
       height: 75,
@@ -140,7 +149,6 @@ class ProductDetails extends StatelessWidget {
       child: Text(value, style: textStyle, textAlign: TextAlign.center),
     );
   }
-
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [

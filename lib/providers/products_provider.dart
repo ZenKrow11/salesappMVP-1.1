@@ -1,135 +1,108 @@
 // lib/providers/products_provider.dart
 
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
-import '../models/filter_state.dart'; // Import the model from its new file
-import 'filter_state_provider.dart'; // Import the provider that holds the state
+import '../models/filter_state.dart';
+import 'filter_state_provider.dart';
 
-// This class holds our list and pagination state
-class ProductState {
-  final List<Product> products;
-  final bool isLoadingMore;
-  final bool hasMore;
-
-  ProductState({
-    this.products = const [],
-    this.isLoadingMore = false,
-    this.hasMore = true,
-  });
-
-  ProductState copyWith({
-    List<Product>? products,
-    bool? isLoadingMore,
-    bool? hasMore,
-  }) {
-    return ProductState(
-      products: products ?? this.products,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
-    );
-  }
-}
-
-// This provider fetches ALL products ONCE and caches them. It is correct.
+// 1. This provider fetches ALL products from Firestore ONCE and caches the result.
+//    This is now our single source of truth for product data. It remains unchanged.
 final allProductsProvider = FutureProvider<List<Product>>((ref) async {
   final snapshot = await FirebaseFirestore.instance.collection('products').get();
-  // Ensure the fromFirestore method is called correctly and safely
   return snapshot.docs
       .map((doc) => Product.fromFirestore(doc.id, doc.data()))
       .toList();
 });
 
-// --- CRITICAL FIX: The missing provider definition ---
-// This is the main provider your UI will watch.
-final productsProvider =
-StateNotifierProvider.autoDispose<ProductsNotifier, AsyncValue<ProductState>>((ref) {
-  // Watch the filter state. If it changes, this provider will automatically be
-  // re-created, thus re-fetching data with the new filters.
+
+// 2. --- NEW and IMPROVED ---
+//    This is the main provider your UI will watch. It takes all products, applies
+//    filters and sorting, and provides the final list to the UI.
+final filteredProductsProvider = Provider<AsyncValue<List<Product>>>((ref) {
+  // Watch the provider that fetches all data
+  final asyncAllProducts = ref.watch(allProductsProvider);
+  // Watch the provider that holds the current filter/sort state
   final filterState = ref.watch(filterStateProvider);
-  return ProductsNotifier(filterState);
+
+  // Handle the loading/error/data states from the initial fetch
+  return asyncAllProducts.when(
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+    data: (allProducts) {
+      // --- Filtering and Sorting Logic (Client-Side) ---
+
+      // Start with the full list of products
+      List<Product> filteredList = List.from(allProducts);
+
+      // A. Apply FILTERS
+      // Filter by Search Query
+      if (filterState.searchQuery.isNotEmpty) {
+        final query = filterState.searchQuery.toLowerCase();
+        filteredList = filteredList.where((p) {
+          return p.name.toLowerCase().contains(query) ||
+              p.store.toLowerCase().contains(query) ||
+              p.category.toLowerCase().contains(query);
+        }).toList();
+      }
+
+      // Filter by Store
+      if (filterState.selectedStores.isNotEmpty) {
+        filteredList = filteredList
+            .where((p) => filterState.selectedStores.contains(p.store))
+            .toList();
+      }
+
+      // Filter by Category
+      if (filterState.selectedCategories.isNotEmpty) {
+        filteredList = filteredList
+            .where((p) => filterState.selectedCategories.contains(p.category))
+            .toList();
+      }
+
+      // Filter by Subcategory
+      if (filterState.selectedSubcategories.isNotEmpty) {
+        filteredList = filteredList
+            .where((p) => filterState.selectedSubcategories.contains(p.subcategory))
+            .toList();
+      }
+
+
+      // B. Apply SORTING
+      // This is where you add all your sorting logic!
+      filteredList.sort((a, b) {
+        switch (filterState.sortOption) {
+          case SortOption.storeAlphabetical:
+            return a.store.toLowerCase().compareTo(b.store.toLowerCase());
+          case SortOption.productAlphabetical:
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          case SortOption.priceLowToHigh:
+            return a.currentPrice.compareTo(b.currentPrice);
+          case SortOption.priceHighToLow:
+            return b.currentPrice.compareTo(a.currentPrice);
+          case SortOption.discountHighToLow:
+            return _parseDiscount(b.discountPercentage).compareTo(_parseDiscount(a.discountPercentage));
+          case SortOption.discountLowToHigh:
+            return _parseDiscount(a.discountPercentage).compareTo(_parseDiscount(b.discountPercentage));
+
+        // Add sorting by date if you have the field in your Product model
+        // case SortOption.dateAddedNewest:
+        //   return b.dateAdded.compareTo(a.dateAdded);
+        // case SortOption.dateAddedOldest:
+        //   return a.dateAdded.compareTo(b.dateAdded);
+        }
+      });
+
+      // Return the final, filtered, and sorted list
+      return AsyncValue.data(filteredList);
+    },
+  );
 });
 
-class ProductsNotifier extends StateNotifier<AsyncValue<ProductState>> {
-  final FilterState _filterState;
-  DocumentSnapshot? _lastDoc;
-  static const int _limit = 20;
 
-  ProductsNotifier(this._filterState) : super(const AsyncValue.loading()) {
-    _fetchFirstPage();
-  }
-
-  Future<void> _fetchFirstPage() async {
-    try {
-      final snapshot = await _buildQuery().limit(_limit).get();
-      final products = snapshot.docs
-          .map((doc) => Product.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
-          .toList();
-
-      if (snapshot.docs.isNotEmpty) {
-        _lastDoc = snapshot.docs.last;
-      }
-
-      state = AsyncValue.data(ProductState(
-        products: products,
-        hasMore: products.length == _limit,
-      ));
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-    }
-  }
-
-  Future<void> loadMore() async {
-    if (state.value?.isLoadingMore == true || state.value?.hasMore == false) return;
-
-    state = AsyncValue.data(state.value!.copyWith(isLoadingMore: true));
-
-    try {
-      final snapshot = await _buildQuery().startAfterDocument(_lastDoc!).limit(_limit).get();
-      final newProducts = snapshot.docs
-          .map((doc) => Product.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
-          .toList();
-
-      if (snapshot.docs.isNotEmpty) {
-        _lastDoc = snapshot.docs.last;
-      }
-
-      final currentProducts = state.value!.products;
-
-      state = AsyncValue.data(state.value!.copyWith(
-        products: [...currentProducts, ...newProducts],
-        isLoadingMore: false,
-        hasMore: newProducts.length == _limit,
-      ));
-    } catch (e) {
-      state = AsyncValue.data(state.value!.copyWith(isLoadingMore: false));
-      print("Error loading more: $e");
-    }
-  }
-
-  Query _buildQuery() {
-    Query query = FirebaseFirestore.instance.collection('products');
-
-    if (_filterState.selectedStores.isNotEmpty) {
-      query = query.where('store', whereIn: _filterState.selectedStores);
-    }
-    if (_filterState.selectedCategories.isNotEmpty) {
-      query = query.where('category', whereIn: _filterState.selectedCategories);
-    }
-    // ... add subcategory and search filters here if needed
-
-    switch (_filterState.sortOption) {
-      case SortOption.priceLowToHigh:
-        query = query.orderBy('currentPrice', descending: false);
-        break;
-      case SortOption.discountHighToLow:
-        query = query.orderBy('discountPercentage', descending: true);
-        break;
-      case SortOption.alphabetical:
-        query = query.orderBy('name', descending: false);
-        break;
-    }
-    return query;
-  }
+// Helper function to safely parse the discount string to a number for sorting
+double _parseDiscount(String discountStr) {
+  final cleanStr = discountStr.replaceAll(RegExp(r'[^0-9.]'), '');
+  if (cleanStr.isEmpty) return 0.0;
+  return double.tryParse(cleanStr) ?? 0.0;
 }

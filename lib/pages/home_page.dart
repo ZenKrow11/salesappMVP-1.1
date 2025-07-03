@@ -13,70 +13,39 @@ import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-class HomePage extends ConsumerStatefulWidget {
+// The page is a simpler ConsumerWidget.
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  @override
-  ConsumerState<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends ConsumerState<HomePage> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
-      ref.read(productsProvider.notifier).loadMore();
-    }
-  }
-
-  void _showFilterSheet() {
+  void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true, // FIX: This makes the sheet appear above the nav bar
+      useRootNavigator: true,
       backgroundColor: AppColors.background,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
       ),
-      builder: (context) {
-        return const FilterSortBottomSheet();
-      },
+      builder: (context) => const FilterSortBottomSheet(),
     );
   }
 
-  // --- REFACTORED: This now calls the correct sheet ---
-  void _showActiveListSelector() {
+  void _showActiveListSelector(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true, // FIX: This makes the sheet appear above the nav bar
+      useRootNavigator: true,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) {
-        // Call the new, correct bottom sheet
-        return const ActiveListSelectorBottomSheet();
-      },
+      builder: (ctx) => const ActiveListSelectorBottomSheet(),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    final productsAsyncState = ref.watch(productsProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    // We watch the new provider.
+    final productsAsync = ref.watch(filteredProductsProvider);
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList == null ? 'Select List' : 'Selected: $activeList';
 
@@ -84,25 +53,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
+          // The header UI remains the same.
           Container(
             color: AppColors.background,
-            padding: EdgeInsets.fromLTRB(
-              12.0, // Left padding
-              MediaQuery.of(context).padding.top, // Top padding (status bar height)
-              12.0, // Right padding
-              12.0, // Bottom padding
-            ),
+            padding: EdgeInsets.fromLTRB(12.0, MediaQuery.of(context).padding.top, 12.0, 12.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
-                  height: 56, // Increased height to match other elements
-                  child: SearchBarWidget(),
-                ),
+                const SizedBox(height: 56, child: SearchBarWidget()),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    // "Select List" Button
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.list, color: AppColors.secondary, size: 24.0),
@@ -113,7 +74,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        onPressed: _showActiveListSelector,
+                        onPressed: () => _showActiveListSelector(context),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                           shape: RoundedRectangleBorder(
@@ -124,7 +85,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // "Filter & Sort" Button
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
@@ -135,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        onPressed: _showFilterSheet,
+                        onPressed: () => _showFilterSheet(context),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                           shape: RoundedRectangleBorder(
@@ -151,13 +111,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           Expanded(
-            child: productsAsyncState.when(
-              data: (productState) {
-                if (productState.products.isEmpty) {
-                  return const Center(child: Text('No products found.'));
+            // THE FIX IS HERE: The .when() callback now works correctly.
+            child: productsAsync.when(
+              // The 'data' parameter is now a 'List<Product>', which we name 'products'.
+              data: (products) {
+                // We check 'products.isEmpty' directly.
+                if (products.isEmpty) {
+                  return const Center(child: Text('No products match your filter.'));
                 }
                 return GridView.builder(
-                  controller: _scrollController,
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -165,12 +127,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     mainAxisSpacing: 10,
                     childAspectRatio: 0.75,
                   ),
-                  itemCount: productState.products.length + (productState.isLoadingMore ? 1 : 0),
+                  // We use 'products.length' directly.
+                  itemCount: products.length,
                   itemBuilder: (context, index) {
-                    if (index >= productState.products.length) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final product = productState.products[index];
+                    // We get the product from the 'products' list directly.
+                    final product = products[index];
                     return ProductTile(
                       product: product,
                       onTap: () {
@@ -178,7 +139,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductSwiperScreen(
-                              products: productState.products,
+                              products: products, // Pass the 'products' list.
                               initialIndex: index,
                             ),
                           ),

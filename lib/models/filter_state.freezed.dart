@@ -19,7 +19,8 @@ mixin _$FilterState {
   String get searchQuery => throw _privateConstructorUsedError;
   List<String> get selectedStores => throw _privateConstructorUsedError;
   List<String> get selectedCategories => throw _privateConstructorUsedError;
-  List<String> get selectedSubcategories => throw _privateConstructorUsedError;
+  List<String> get selectedSubcategories =>
+      throw _privateConstructorUsedError; // Change the default to a more sensible option
   SortOption get sortOption => throw _privateConstructorUsedError;
 
   /// Create a copy of FilterState
@@ -157,7 +158,7 @@ class _$FilterStateImpl implements _FilterState {
       final List<String> selectedStores = const [],
       final List<String> selectedCategories = const [],
       final List<String> selectedSubcategories = const [],
-      this.sortOption = SortOption.alphabetical})
+      this.sortOption = SortOption.storeAlphabetical})
       : _selectedStores = selectedStores,
         _selectedCategories = selectedCategories,
         _selectedSubcategories = selectedSubcategories;
@@ -194,6 +195,7 @@ class _$FilterStateImpl implements _FilterState {
     return EqualUnmodifiableListView(_selectedSubcategories);
   }
 
+// Change the default to a more sensible option
   @override
   @JsonKey()
   final SortOption sortOption;
@@ -253,7 +255,8 @@ abstract class _FilterState implements FilterState {
   @override
   List<String> get selectedCategories;
   @override
-  List<String> get selectedSubcategories;
+  List<String>
+      get selectedSubcategories; // Change the default to a more sensible option
   @override
   SortOption get sortOption;
 
