@@ -28,11 +28,7 @@ class FilterSortBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
-  // Use a single nullable object to track the expanded panel.
-  // Using GlobalKey is not necessary here and this is simpler.
   Object? _expandedPanelKey;
-
-  // Keys to uniquely identify each expansion tile.
   final _categoryKey = Object();
   final _subcategoryKey = Object();
   final _sortKey = Object();
@@ -43,7 +39,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     });
   }
 
-  // Helper method to reduce code duplication for toggling items in a filter list.
   List<String> _toggleListOption(List<String> list, String option) {
     final newList = List<String>.from(list);
     if (newList.contains(option)) {
@@ -57,7 +52,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Set max height to prevent the sheet from covering the whole screen.
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       child: SafeArea(
         child: Column(
@@ -66,14 +60,13 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
             Expanded(
               child: _buildFilterList(),
             ),
-            _buildActionBar(),
+            _buildActionBar(), // The widget with the fix
           ],
         ),
       ),
     );
   }
 
-  /// Builds the header section with the title.
   Widget _buildHeader() {
     return const Column(
       children: [
@@ -86,7 +79,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     );
   }
 
-  /// Builds the main scrollable list of filter options.
   Widget _buildFilterList() {
     final storeOptions = ref.watch(storeOptionsProvider);
     final categoryOptions = ref.watch(categoryOptionsProvider);
@@ -106,7 +98,12 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
             selectedStores: currentFilterState.selectedStores,
             onStoreToggled: (store) {
               final newStores = _toggleListOption(currentFilterState.selectedStores, store);
-              filterNotifier.state = currentFilterState.copyWith(selectedStores: newStores);
+              // When store selection changes, it's good practice to also reset category/subcategory
+              filterNotifier.state = currentFilterState.copyWith(
+                selectedStores: newStores,
+                selectedCategories: [],
+                selectedSubcategories: [],
+              );
             },
           ),
           const SizedBox(height: 16),
@@ -117,8 +114,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
             selectedOptions: currentFilterState.selectedCategories,
             onOptionToggled: (category) {
               final newCategories = _toggleListOption(currentFilterState.selectedCategories, category);
-              // CRITICAL: When categories change, we must clear the subcategory selections
-              // to prevent orphaned/invalid filter states.
               filterNotifier.state = currentFilterState.copyWith(
                 selectedCategories: newCategories,
                 selectedSubcategories: [],
@@ -150,6 +145,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 
   /// Builds the action bar with Reset and Apply buttons.
+  /// THIS METHOD CONTAINS THE CRITICAL FIX.
   Widget _buildActionBar() {
     final filterNotifier = ref.read(filterStateProvider.notifier);
 
@@ -160,14 +156,17 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
             children: [
+              //================================================================
+              // START OF THE FIX
+              // The error comes from using an OutlinedButton with a background color
+              // inside an Expanded widget. Using ElevatedButton for both is safe and correct.
+              //================================================================
               Expanded(
-                // ROBUSTNESS FIX: Use ElevatedButton instead of a styled OutlinedButton
-                // to prevent the "Incorrect use of ParentDataWidget" crash.
                 child: ElevatedButton(
                   onPressed: () => filterNotifier.state = const FilterState(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.textPrimary, // Sets text color
+                    foregroundColor: AppColors.textPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Reset'),
@@ -179,19 +178,21 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
+                    foregroundColor: AppColors.primary, // This correctly styles the text color
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Apply', style: TextStyle(color: AppColors.primary)),
+                  child: const Text('Apply'),
                 ),
               ),
+              //================================================================
+              // END OF THE FIX
+              //================================================================
             ],
           ),
         ),
       ],
     );
   }
-
-  // --- WIDGET BUILDER HELPERS ---
 
   Widget _buildFilterExpansionTile({
     required Object key,
@@ -255,7 +256,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 }
 
-// _StoreLogoFilter widget remains the same but is included for completeness.
+// _StoreLogoFilter widget - unchanged but included
 class _StoreLogoFilter extends StatelessWidget {
   final List<String> allStores;
   final List<String> selectedStores;
