@@ -1,3 +1,5 @@
+// lib/pages/home_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,7 +15,6 @@ import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-// --- MODIFICATION 1: Convert to ConsumerStatefulWidget ---
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -22,54 +23,42 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  // --- MODIFICATION 2: Add state variables ---
-  // Controller to detect scroll position
   final ScrollController _scrollController = ScrollController();
-  // Boolean to control the FAB's visibility
   bool _isFabVisible = false;
 
   @override
   void initState() {
     super.initState();
-    // Add a listener to the scroll controller
     _scrollController.addListener(_scrollListener);
   }
 
   @override
   void dispose() {
-    // ALWAYS dispose of controllers
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
   }
 
-  // --- MODIFICATION 3: The listener function ---
-  // This function is called every time the user scrolls
   void _scrollListener() {
-    // Check if the user has scrolled down more than 400 pixels
     if (_scrollController.offset > 400 && !_isFabVisible) {
       setState(() {
         _isFabVisible = true;
       });
-    }
-    // Check if the user has scrolled back up
-    else if (_scrollController.offset <= 400 && _isFabVisible) {
+    } else if (_scrollController.offset <= 400 && _isFabVisible) {
       setState(() {
         _isFabVisible = false;
       });
     }
   }
 
-  // --- MODIFICATION 4: Function to scroll to the top ---
   void _scrollToTop() {
     _scrollController.animateTo(
-      0.0, // Scroll to the top of the list
-      duration: const Duration(milliseconds: 500), // Animation duration
-      curve: Curves.easeInOut, // Animation curve
+      0.0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
     );
   }
 
-  // Helper methods are now part of the State class
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -103,21 +92,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      // --- MODIFICATION 5: Add the FloatingActionButton to the Scaffold ---
       floatingActionButton: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
-        opacity: _isFabVisible ? 1.0 : 0.0, // Control visibility
+        opacity: _isFabVisible ? 1.0 : 0.0,
         child: FloatingActionButton(
-          onPressed: _isFabVisible ? _scrollToTop : null, // Prevent accidental taps when hidden
+          onPressed: _isFabVisible ? _scrollToTop : null,
           backgroundColor: AppColors.secondary,
           foregroundColor: AppColors.primary,
-          child: const Icon(Icons.arrow_upward,
-              size: 32.0),
+          child: const Icon(Icons.arrow_upward, size: 32.0),
         ),
       ),
       body: Column(
         children: [
-          // The header UI remains the same.
           Container(
             color: AppColors.background,
             padding: EdgeInsets.fromLTRB(12.0, MediaQuery.of(context).padding.top / 4, 12.0, 12.0),
@@ -131,12 +117,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary, size: 24.0),
-                        label: Flexible(
-                          child: Text(
-                            buttonText,
-                            style: const TextStyle(color: AppColors.inactive),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        // --- FIX: Removed the incorrect Flexible wrapper ---
+                        label: Text(
+                          buttonText,
+                          style: const TextStyle(color: AppColors.inactive),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => _showActiveListSelector(context),
                         style: TextButton.styleFrom(
@@ -152,12 +137,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
-                        label: const Flexible(
-                          child: Text(
-                            'Filter and Sort',
-                            style: TextStyle(color: AppColors.inactive),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        // --- FIX: Removed the incorrect Flexible wrapper ---
+                        label: const Text(
+                          'Filter and Sort',
+                          style: TextStyle(color: AppColors.inactive),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => _showFilterSheet(context),
                         style: TextButton.styleFrom(
@@ -181,7 +165,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   return const Center(child: Text('No products match your filter.'));
                 }
                 return GridView.builder(
-                  // --- MODIFICATION 6: Attach the scroll controller ---
                   controller: _scrollController,
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -196,27 +179,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                     return ProductTile(
                       product: product,
                       onTap: () {
-                        // --- START OF NEW CODE ---
                         showModalBottomSheet(
                           context: context,
-                          // Allows the sheet to be full-screen. This is essential.
                           isScrollControlled: true,
-                          // We make the sheet's container transparent to control the color and corners ourselves.
                           backgroundColor: Colors.transparent,
                           builder: (ctx) {
-                            // Wrap your screen in a Container to apply custom styling.
                             return Container(
-                              // Make it slightly less than full height to show it's a modal overlay.
                               height: MediaQuery.of(context).size.height * 0.95,
                               decoration: const BoxDecoration(
-                                // Use the same background color as your swiper screen.
                                 color: AppColors.background,
-                                // Apply rounded corners only to the top.
                                 borderRadius: BorderRadius.vertical(
                                   top: Radius.circular(20),
                                 ),
                               ),
-                              // The content of the sheet is your existing swiper screen.
                               child: ProductSwiperScreen(
                                 products: products,
                                 initialIndex: index,
