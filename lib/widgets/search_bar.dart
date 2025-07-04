@@ -30,30 +30,33 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: TextField(
-        controller: _controller,
-        onChanged: (value) {
-          // Update the provider on every keystroke.
-          ref.read(searchQueryProvider.notifier).state = value;
-        },
-        style: const TextStyle(color: AppColors.textWhite), // Themed text color
-        decoration: InputDecoration(
-          hintText: 'Search products...',
-          hintStyle: const TextStyle(color: AppColors.inactive), // Themed hint text
-          prefixIcon: const Icon(Icons.search, color: AppColors.secondary), // Themed icon
-          filled: true,
-          fillColor: AppColors.primary, // Use background for a seamless look
-          // Themed border when the field is not focused
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.inactive),
-          ),
-          // Themed border when the field is focused
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.secondary, width: 2.0),
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
+        child: TextField(
+          controller: _controller,
+          onChanged: (value) {
+            // Update the provider on every keystroke.
+            ref.read(searchQueryProvider.notifier).state = value;
+          },
+          style: const TextStyle(color: AppColors.textWhite), // Themed text color
+          decoration: InputDecoration(
+            hintText: 'Search products...',
+            hintStyle: const TextStyle(color: AppColors.inactive), // Themed hint text
+            prefixIcon: const Icon(Icons.search, color: AppColors.secondary), // Themed icon
+            filled: true,
+            fillColor: AppColors.primary, // Use background for a seamless look
+            // Themed border when the field is not focused
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.inactive),
+            ),
+            // Themed border when the field is focused
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.secondary, width: 2.0),
+            ),
           ),
         ),
       ),

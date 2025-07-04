@@ -91,8 +91,10 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.secondary,
+        label: const Text('Create New List', style: TextStyle(color: AppColors.primary)),
+        icon: const Icon(Icons.add, color: AppColors.primary), // Added icon to the extended FAB
         onPressed: () {
           Navigator.of(context).pop(); // Close the current bottom sheet
           showModalBottomSheet(
@@ -101,8 +103,8 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
             builder: (context) => const CreateListBottomSheet(),
           );
         },
-        child: const Icon(Icons.add, color: AppColors.primary),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

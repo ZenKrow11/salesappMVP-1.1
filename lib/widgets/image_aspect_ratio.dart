@@ -5,19 +5,21 @@ class ImageWithAspectRatio extends StatelessWidget {
   final String imageUrl;
   final double maxHeight;
   final double maxWidth;
+  final BoxFit fit;
 
   const ImageWithAspectRatio({
     super.key,
     required this.imageUrl,
     required this.maxHeight,
     required this.maxWidth,
+    this.fit = BoxFit.contain,
   });
 
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      fit: BoxFit.contain,
+      fit: fit,
       height: maxHeight,
       width: maxWidth,
       placeholder: (context, url) => const Center(child: CircularProgressIndicator()),

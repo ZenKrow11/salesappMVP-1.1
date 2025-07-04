@@ -1,11 +1,12 @@
-import 'package:flutter/gestures.dart'; // Make sure this is imported
+// lib/screens/product_swiper_screen.dart (or wherever this file is)
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-// Your CustomPageScrollPhysics class remains the same and is still needed!
 class CustomPageScrollPhysics extends PageScrollPhysics {
   const CustomPageScrollPhysics({super.parent});
 
@@ -34,13 +35,12 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
+  // PageController is no longer needed because we're not tracking the current index for a title
   late final PageController _pageController;
-  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
   }
 
@@ -52,52 +52,66 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- REPLACED Dismissible with GestureDetector ---
     return GestureDetector(
-      // We manually detect a fast downward swipe (a "fling").
       onVerticalDragEnd: (details) {
-        // 'primaryVelocity' is the speed of the swipe.
-        // A positive value means swiping downwards.
-        // We set a threshold to only trigger on a fast swipe.
         if (details.primaryVelocity != null && details.primaryVelocity! > 1500) {
           Navigator.of(context).pop();
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: Text(
-            widget.products[_currentIndex].name,
-            style: const TextStyle(
-              color: AppColors.secondary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: AppColors.primary,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_downward, color: AppColors.secondary),
-            tooltip: 'Swipe down to close',
-            onPressed: () => Navigator.of(context).pop(),
+        // REMOVED: The entire AppBar is gone, as requested.
+        // appBar: AppBar(...),
+
+        // UPDATED: The body is now a Column to hold the PageView and the button.
+        // We also wrap it in a SafeArea to avoid the system status bar at the top.
+        body: SafeArea(
+          child: Column(
+            children: [
+              // The PageView must be wrapped in Expanded to fill the available space.
+              Expanded(
+                child: PageView.builder(
+                  physics: const CustomPageScrollPhysics(),
+                  dragStartBehavior: DragStartBehavior.down,
+                  controller: _pageController,
+                  itemCount: widget.products.length,
+                  // The onPageChanged is no longer needed since we removed the title
+                  itemBuilder: (context, index) {
+                    final product = widget.products[index];
+                    return ProductDetails(product: product);
+                  },
+                ),
+              ),
+              // NEW: The bottom button is added here, outside the PageView.
+              _buildCloseButton(context),
+            ],
           ),
         ),
-        body: PageView.builder(
-          // This physics class is still important for the horizontal swipe feel!
-          physics: const CustomPageScrollPhysics(),
-          // This behavior helps the PageView win the gesture arena more easily.
-          dragStartBehavior: DragStartBehavior.down,
-          controller: _pageController,
-          itemCount: widget.products.length,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          itemBuilder: (context, index) {
-            final product = widget.products[index];
-            return ProductDetails(product: product);
-          },
+      ),
+    );
+  }
+
+  // NEW: A dedicated method for the new bottom arrow button.
+  Widget _buildCloseButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity, // Span the entire width
+      child: ElevatedButton(
+        onPressed: () => Navigator.of(context).pop(),
+        style: ElevatedButton.styleFrom(
+          // Makes the button look like part of the background
+          backgroundColor: AppColors.background,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          // Add padding for a larger touch area and visual spacing
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // No rounded corners
+          ),
+        ),
+        child: const Icon(
+          Icons.arrow_downward, // The "arrow button" icon
+          size: 32,
+          color: AppColors.accent, // A color that's visible on the dark background
         ),
       ),
     );

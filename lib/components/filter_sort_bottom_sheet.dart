@@ -193,9 +193,11 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.inactive),
+                side: const BorderSide(color: AppColors.accent),
               ),
-              child: const Text('Reset'),
+              child: const Text(
+                style: TextStyle(color: AppColors.accent),
+                  'Reset'),
             ),
           ),
           const SizedBox(width: 12),
@@ -203,8 +205,8 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.inactive,
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 elevation: 2,
               ),

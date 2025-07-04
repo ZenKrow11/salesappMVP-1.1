@@ -99,7 +99,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(filteredProductsProvider);
     final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList == null ? 'Select List' : 'Selected: $activeList';
+    final buttonText = activeList == null ? 'Select List' : 'List: $activeList';
 
     return Scaffold(
       backgroundColor: AppColors.background,
