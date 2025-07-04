@@ -196,14 +196,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                     return ProductTile(
                       product: product,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductSwiperScreen(
-                              products: products,
-                              initialIndex: index,
-                            ),
-                          ),
+                        // --- START OF NEW CODE ---
+                        showModalBottomSheet(
+                          context: context,
+                          // Allows the sheet to be full-screen. This is essential.
+                          isScrollControlled: true,
+                          // We make the sheet's container transparent to control the color and corners ourselves.
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) {
+                            // Wrap your screen in a Container to apply custom styling.
+                            return Container(
+                              // Make it slightly less than full height to show it's a modal overlay.
+                              height: MediaQuery.of(context).size.height * 0.95,
+                              decoration: const BoxDecoration(
+                                // Use the same background color as your swiper screen.
+                                color: AppColors.background,
+                                // Apply rounded corners only to the top.
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              // The content of the sheet is your existing swiper screen.
+                              child: ProductSwiperScreen(
+                                products: products,
+                                initialIndex: index,
+                              ),
+                            );
+                          },
                         );
                       },
                     );
