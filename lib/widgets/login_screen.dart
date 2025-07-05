@@ -1,10 +1,7 @@
-// lib/screens/login_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_controller.dart'; // Import our new controller
+import '../providers/auth_controller.dart';
 
-// We use a ConsumerStatefulWidget to hold onto the TextEditingControllers.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,8 +12,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // You can keep UI-specific state like this here.
   bool _keepLoggedIn = true;
 
   @override
@@ -26,14 +21,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  // A single helper method to show snackbars
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
-
-  // --- Methods that call the AuthController ---
 
   Future<void> _signInWithEmail() async {
     try {
@@ -42,7 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _passwordController.text.trim(),
       );
     } catch (e) {
-      _showErrorSnackBar('Login failed: $e');
+      // No need to show error here, error will be handled in build via AsyncValue
     }
   }
 
@@ -52,26 +44,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-    } catch (e) {
-      _showErrorSnackBar('Sign up failed: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _signInWithGoogle() async {
     try {
       await ref.read(authControllerProvider.notifier).signInWithGoogle();
-    } catch (e) {
-      _showErrorSnackBar('Google Sign-In failed: $e');
-    }
+    } catch (e) {}
   }
-
-  // --- The Build Method ---
 
   @override
   Widget build(BuildContext context) {
-    // Watch the provider to get the current loading state.
-    // The widget will rebuild whenever this value changes.
-    final isLoading = ref.watch(authControllerProvider);
+    final authState = ref.watch(authControllerProvider);
+
+    // Show error SnackBar if there is an error
+    ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        error: (e, _) {
+          _showErrorSnackBar(e.toString());
+        },
+      );
+    });
+
+    final isLoading = authState.isLoading;
 
     return DefaultTabController(
       length: 2,
@@ -125,7 +120,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // If loading, show a spinner. Otherwise, show the buttons.
           if (isLoading)
             const CircularProgressIndicator()
           else
@@ -133,7 +127,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ElevatedButton(
-                  // We disable the button while loading to prevent double taps.
                   onPressed: isLoading ? null : (isLogin ? _signInWithEmail : _signUpWithEmail),
                   child: Text(isLogin ? 'Login' : 'Sign Up'),
                 ),

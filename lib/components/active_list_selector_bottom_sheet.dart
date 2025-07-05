@@ -15,7 +15,7 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
 
     return Scaffold(
       // Use Scaffold to easily place the FAB
-      backgroundColor: AppColors.primary, // Set background color to match theme
+      backgroundColor: AppColors.background, // Set background color to match theme
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -92,7 +92,7 @@ class ActiveListSelectorBottomSheet extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.inactive,
         label: const Text('Create New List', style: TextStyle(color: AppColors.primary)),
         icon: const Icon(Icons.add, color: AppColors.primary), // Added icon to the extended FAB
         onPressed: () {

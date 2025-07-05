@@ -21,15 +21,15 @@ class ProductDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // UPDATED: The new header with Logo and Category boxes
+          // The header with Logo and Category boxes
           _buildHeader(),
           const SizedBox(height: 24), // Increased space before the title
 
-          // UPDATED: The product name is now a standalone widget here
+          // The product name is now in a fixed-height container
           _buildProductName(),
           const SizedBox(height: 12),
 
-          // UPDATED: The image is now in a fixed-size, styled box
+          // The image is in a fixed-size, styled box
           _buildImageContainer(),
           const SizedBox(height: 16),
 
@@ -42,7 +42,7 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
-  // UPDATED: Header now contains the logo and the new category boxes
+  // Header now contains the logo and the new category boxes
   Widget _buildHeader() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,10 +59,10 @@ class ProductDetails extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // NEW: Outlined box for Category
+              // Outlined box for Category
               _buildCategoryBox(product.category),
               const SizedBox(height: 6),
-              // NEW: Outlined box for Subcategory
+              // Outlined box for Subcategory
               _buildCategoryBox(product.subcategory),
             ],
           ),
@@ -71,7 +71,7 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
-  // NEW: A dedicated widget to create the outlined box for categories
+  // A dedicated widget to create the outlined box for categories
   Widget _buildCategoryBox(String text) {
     if (text.isEmpty) {
       return const SizedBox.shrink(); // Don't show a box if there's no text
@@ -88,7 +88,7 @@ class ProductDetails extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.85),
+          color: Colors.white.withValues(alpha: .85),
           fontWeight: FontWeight.w500,
         ),
         maxLines: 1,
@@ -97,28 +97,34 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
-  // NEW: The product name is now its own widget for better layout control
+  // MODIFIED: The product name is now wrapped in a fixed-height Container.
   Widget _buildProductName() {
-    return Text(
-      product.name,
-      style: const TextStyle(
-        fontSize: 22, // Larger font size for a title
-        fontWeight: FontWeight.bold,
-        color: AppColors.textSecondary,
+    // By wrapping the Text widget in a Container with a fixed height, we reserve
+    // enough space for a 3-line title. This fulfills the requirement to ensure
+    // the layout below (specifically the image) remains in a consistent
+    // vertical position, regardless of the title's actual line count.
+    return Container(
+      height: 85.0, // A calculated height sufficient for 3 lines of text with fontSize 22.
+      alignment: Alignment.topLeft, // Aligns the Text widget to the top of the reserved space.
+      child: Text(
+        product.name,
+        style: const TextStyle(
+          fontSize: 22, // Larger font size for a title
+          fontWeight: FontWeight.bold,
+          color: AppColors.textSecondary,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
       ),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
     );
   }
-
-  // REMOVED: The old _buildCategoryRow is no longer needed
-
-  // From ProductDetails.dart
 
   Widget _buildImageContainer() {
     return Container(
       height: 300, // ** This fixed height creates the uniform layout **
       width: double.infinity,
+      // This centers the image within the 300px container, fulfilling the request
+      // to place the image in the middle of its possible space.
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.2), // A subtle background for the box
@@ -132,14 +138,11 @@ class ProductDetails extends StatelessWidget {
           // These are now bound by the container's height
           maxWidth: double.infinity,
           maxHeight: 300,
-          // REMOVED: The incorrect `fit: BoxFit.contain` line is gone.
-          // Your widget will still use BoxFit.contain because it's hardcoded inside it.
         ),
       ),
     );
   }
 
-  // REMOVED: The old _buildImage() is replaced by _buildImageContainer()
 
   // --- NO CHANGES BELOW THIS LINE ---
 

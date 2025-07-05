@@ -69,7 +69,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
       decoration: const BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.background,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),

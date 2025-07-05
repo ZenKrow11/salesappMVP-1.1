@@ -1,76 +1,67 @@
 // lib/providers/auth_controller.dart
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-// This provider will give us access to the AuthController instance.
 final authControllerProvider =
-StateNotifierProvider<AuthController, bool>((ref) {
-  return AuthController();
-});
+NotifierProvider<AuthController, AsyncValue<void>>(AuthController.new);
 
-class AuthController extends StateNotifier<bool> {
-  // The initial state is 'false' (not loading).
-  AuthController() : super(false);
-
+class AuthController extends Notifier<AsyncValue<void>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // THIS IS THE CORRECT WAY TO INITIALIZE
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  // ... (Your signInWithEmail and signUpWithEmail methods are here) ...
   Future<void> signInWithEmail(String email, String password) async {
-    state = true; // Set state to loading
+    state = const AsyncLoading();
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // On success, AuthGate will automatically handle navigation.
-    } catch (e) {
-      // If an error occurs, re-throw it so the UI can catch it and show a SnackBar.
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      state = const AsyncData(null);
+    } on FirebaseAuthException catch (e, st) {
+      state = AsyncError(e.message ?? 'An unknown error occurred', st);
       rethrow;
-    } finally {
-      state = false; // Set state back to not loading
     }
   }
 
   Future<void> signUpWithEmail(String email, String password) async {
-    state = true;
+    state = const AsyncLoading();
     try {
-      await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } catch (e) {
+      await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      state = const AsyncData(null);
+    } on FirebaseAuthException catch (e, st) {
+      state = AsyncError(e.message ?? 'An unknown error occurred', st);
       rethrow;
-    } finally {
-      state = false;
     }
   }
 
+
+  // --- REPLACE YOUR signInWithGoogle METHOD WITH THIS ---
   Future<void> signInWithGoogle() async {
-    state = true;
+    state = const AsyncLoading();
     try {
-      final googleUser = await _googleSignIn.signIn();
+      // The authenticate() method now directly returns the signed-in account
+      // or null if the user cancelled.
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
+
       if (googleUser == null) {
-        state = false; // User cancelled the sign-in
+        state = const AsyncData(null); // User cancelled the sign-in
         return;
       }
+
+      // The rest of the flow is the same as before
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       await _auth.signInWithCredential(credential);
-    } catch (e) {
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
       rethrow;
-    } finally {
-      // Don't set state to false here if a user was successfully selected,
-      // as the app will be navigating away. Only set it if there's an error,
-      // which is handled by the `try-catch-rethrow`.
-      // If we always set it to false, there can be a flicker.
-      if (mounted) { // 'mounted' is a property of StateNotifier
-        state = false;
-      }
     }
   }
 }
