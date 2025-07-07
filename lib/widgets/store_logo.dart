@@ -33,7 +33,7 @@ class StoreLogo extends StatelessWidget {
     this.height = 24, // A good default height
   });
 
-  static get assets => null;
+  static Null get assets => null;
 
   @override
   Widget build(BuildContext context) {

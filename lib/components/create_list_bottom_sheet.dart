@@ -95,7 +95,7 @@ class _CreateListBottomSheetState extends ConsumerState<CreateListBottomSheet> {
                 labelText: 'List name',
                 labelStyle: const TextStyle(color: AppColors.inactive),
                 enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.inactive.withOpacity(0.5)),
+                    borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(8.0)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: const BorderSide(color: AppColors.inactive),

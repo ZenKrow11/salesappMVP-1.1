@@ -110,14 +110,61 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 56, child: SearchBarWidget()),
+                // =========================================================================
+                // === MODIFICATION START: Replaced SizedBox with a Row for search + count ==
+                // =========================================================================
+                SizedBox(
+                  height: 56,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 1. The Search Bar, wrapped in Expanded to take available space
+                      const Expanded(
+                        child: SearchBarWidget(),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // 2. The new count display widget. It watches the count provider.
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final asyncCount = ref.watch(productCountProvider);
+                          return asyncCount.when(
+                            loading: () => const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2.0, color: AppColors.inactive),
+                            ),
+                            error: (err, stack) => const Icon(Icons.error_outline, color: Colors.red),
+                            data: (count) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.inactive.withAlpha(128)),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                '${count.filtered}/${count.total}',
+                                style: const TextStyle(
+                                  color: AppColors.inactive,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // =========================================================================
+                // === MODIFICATION END ====================================================
+                // =========================================================================
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary, size: 24.0),
-                        // --- FIX: Removed the incorrect Flexible wrapper ---
                         label: Text(
                           buttonText,
                           style: const TextStyle(color: AppColors.inactive),
@@ -137,7 +184,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Expanded(
                       child: TextButton.icon(
                         icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
-                        // --- FIX: Removed the incorrect Flexible wrapper ---
                         label: const Text(
                           'Filter and Sort',
                           style: TextStyle(color: AppColors.inactive),

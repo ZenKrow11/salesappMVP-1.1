@@ -1,5 +1,3 @@
-// lib/providers/auth_controller.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -9,13 +7,10 @@ NotifierProvider<AuthController, AsyncValue<void>>(AuthController.new);
 
 class AuthController extends Notifier<AsyncValue<void>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // THIS IS THE CORRECT WAY TO INITIALIZE
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   @override
   AsyncValue<void> build() => const AsyncData(null);
 
-  // ... (Your signInWithEmail and signUpWithEmail methods are here) ...
   Future<void> signInWithEmail(String email, String password) async {
     state = const AsyncLoading();
     try {
@@ -38,26 +33,49 @@ class AuthController extends Notifier<AsyncValue<void>> {
     }
   }
 
-
-  // --- REPLACE YOUR signInWithGoogle METHOD WITH THIS ---
   Future<void> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      // The authenticate() method now directly returns the signed-in account
-      // or null if the user cancelled.
-      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
+      // Initialize GoogleSignIn singleton
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '307296886319-48mgnkuihjsvdu9ssetrl4vellreek09.apps.googleusercontent.com',
+      );
 
-      if (googleUser == null) {
-        state = const AsyncData(null); // User cancelled the sign-in
-        return;
-      }
+      // Listen for the next sign-in event only
+      final event = await GoogleSignIn.instance.authenticationEvents
+          .where((event) => event is GoogleSignInAuthenticationEventSignIn)
+          .first as GoogleSignInAuthenticationEventSignIn;
 
-      // The rest of the flow is the same as before
-      final googleAuth = await googleUser.authentication;
+      final googleUser = event.user;
+      final googleAuth = googleUser.authentication;
+
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
+
       await _auth.signInWithCredential(credential);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> startGoogleSignInFlow() async {
+    // Call this method from your UI to trigger the Google sign-in process
+    if (GoogleSignIn.instance.supportsAuthenticate()) {
+      await GoogleSignIn.instance.authenticate();
+    } else {
+      // For platforms that don't support authenticate(), use platform-specific flow
+      // (e.g., web: use the Google button widget)
+    }
+  }
+
+  Future<void> signOut() async {
+    state = const AsyncLoading();
+    try {
+      await GoogleSignIn.instance.signOut();
+      await _auth.signOut();
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
