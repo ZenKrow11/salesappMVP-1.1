@@ -1,5 +1,3 @@
-// lib/screens/product_swiper_screen.dart (or wherever this file is)
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

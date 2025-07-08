@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/products_provider.dart';
-import 'package:sales_app_mvp/providers/filter_state_provider.dart'; // Required for dynamic filtering
+import 'package:sales_app_mvp/providers/filter_state_provider.dart';
+import 'package:sales_app_mvp/models/filter_state.dart'; // <-- Add this import
 
-/// Helper function to get unique, sorted, non-empty strings from a list of products.
+/// Helper function (unchanged)
 List<String> _getUniqueOptions(
-    List<Product> products, // Takes a direct list, not an AsyncValue
+    List<Product> products,
     String Function(Product) getField,
     ) {
   final options =
@@ -14,7 +15,7 @@ List<String> _getUniqueOptions(
   return options;
 }
 
-/// Provider for unique store names. This usually doesn't need to be dynamic.
+/// storeOptionsProvider (unchanged)
 final storeOptionsProvider = Provider<List<String>>((ref) {
   final asyncProducts = ref.watch(allProductsProvider);
   return asyncProducts.when(
@@ -24,11 +25,12 @@ final storeOptionsProvider = Provider<List<String>>((ref) {
   );
 });
 
-/// DYNAMIC provider for category names.
-/// It provides category options based on the currently selected stores.
-final categoryOptionsProvider = Provider<List<String>>((ref) {
+// --- MODIFIED SECTION START ---
+
+/// NEW: A family provider for categories that accepts a FilterState.
+/// This contains the core logic that was previously in categoryOptionsProvider.
+final categoryOptionsProviderFamily = Provider.family<List<String>, FilterState>((ref, filterState) {
   final asyncProducts = ref.watch(allProductsProvider);
-  final filterState = ref.watch(filterStateProvider);
 
   return asyncProducts.when(
     data: (products) {
@@ -48,12 +50,10 @@ final categoryOptionsProvider = Provider<List<String>>((ref) {
   );
 });
 
-
-/// DYNAMIC provider for subcategory names.
-/// It provides subcategory options based on currently selected stores AND categories.
-final subcategoryOptionsProvider = Provider<List<String>>((ref) {
+/// NEW: A family provider for subcategories that accepts a FilterState.
+/// This contains the core logic that was previously in subcategoryOptionsProvider.
+final subcategoryOptionsProviderFamily = Provider.family<List<String>, FilterState>((ref, filterState) {
   final asyncProducts = ref.watch(allProductsProvider);
-  final filterState = ref.watch(filterStateProvider);
 
   return asyncProducts.when(
     data: (products) {
@@ -79,3 +79,19 @@ final subcategoryOptionsProvider = Provider<List<String>>((ref) {
     error: (_, __) => [],
   );
 });
+
+
+/// MODIFIED: The original providers now just call their respective families
+/// using the global filter state. This maintains backward compatibility.
+
+final categoryOptionsProvider = Provider<List<String>>((ref) {
+  final filterState = ref.watch(filterStateProvider);
+  return ref.watch(categoryOptionsProviderFamily(filterState));
+});
+
+final subcategoryOptionsProvider = Provider<List<String>>((ref) {
+  final filterState = ref.watch(filterStateProvider);
+  return ref.watch(subcategoryOptionsProviderFamily(filterState));
+});
+
+// --- MODIFIED SECTION END ---

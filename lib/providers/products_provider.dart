@@ -18,7 +18,7 @@ final allProductsProvider = FutureProvider<List<Product>>((ref) async {
   final snapshot = await ref.watch(_firestoreProvider).collection('products').get();
   // V-- FIX #1 IS HERE --V
   return snapshot.docs.map((doc) {
-    return Product.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+    return Product.fromFirestore(doc.id, doc.data());
   }).toList();
   // ^----------------------^
 });
