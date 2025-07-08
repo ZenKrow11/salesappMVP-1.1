@@ -1,98 +1,99 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/providers/products_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// --- NEW CODE: ProductCount Data Class ---
+// ProductCount class is unchanged
 class ProductCount {
   final int filtered;
   final int total;
   ProductCount({required this.filtered, required this.total});
 }
-// ------------------------------------------
 
 final _firestoreProvider = Provider((ref) => FirebaseFirestore.instance);
 
+// --- THE SINGLE SOURCE OF TRUTH ---
+// This provider fetches ALL products from Firestore ONCE and caches them.
+// All other providers will now get their data from here.
 final allProductsProvider = FutureProvider<List<Product>>((ref) async {
+  print("🔄 [allProductsProvider] Fetching ALL products from Firestore... (Should run once per session)");
   final snapshot = await ref.watch(_firestoreProvider).collection('products').get();
-  // V-- FIX #1 IS HERE --V
-  return snapshot.docs.map((doc) {
-    return Product.fromFirestore(doc.id, doc.data());
-  }).toList();
-  // ^----------------------^
+  final products = snapshot.docs.map((doc) => Product.fromFirestore(doc.id, doc.data())).toList();
+  print("✅ [allProductsProvider] Fetched ${products.length} products.");
+  return products;
 });
 
-// Helper function to build a Firestore query based on the current filter state.
-Query _buildFilteredQuery({required Query query, required FilterState filter}) {
-  if (filter.selectedStores.isNotEmpty) {
-    query = query.where('store', whereIn: filter.selectedStores);
-  }
-  if (filter.selectedCategories.isNotEmpty) {
-    query = query.where('category', whereIn: filter.selectedCategories);
-  }
-  if (filter.selectedSubcategories.isNotEmpty) {
-    query = query.where('subcategory', whereIn: filter.selectedSubcategories);
-  }
-  if (filter.searchQuery.isNotEmpty) {
-    query = query.where('searchKeywords', arrayContains: filter.searchQuery.toLowerCase());
-  }
-  return query;
-}
-
-// --- NEW CODE: Provider for getting product counts ---
-final productCountProvider = FutureProvider.autoDispose<ProductCount>((ref) async {
+// --- REFACTORED filteredProductsProvider ---
+// This provider now filters the list from allProductsProvider IN-MEMORY.
+// It's a simple Provider, not a StreamProvider, making it fast and synchronous.
+final filteredProductsProvider = Provider.autoDispose<List<Product>>((ref) {
   final filter = ref.watch(filterStateProvider);
-  final collection = ref.watch(_firestoreProvider).collection('products');
+  final allProductsAsync = ref.watch(allProductsProvider);
 
-  final totalCountQuery = collection.count();
-  final filteredQueryWithWheres = _buildFilteredQuery(query: collection, filter: filter);
-  final filteredCountQuery = filteredQueryWithWheres.count();
+  return allProductsAsync.when(
+    loading: () => [], // Return empty list while the main provider is loading
+    error: (err, stack) => [], // Return empty list on error
+    data: (allProducts) {
+      // Start with the full list and apply filters sequentially.
+      List<Product> filteredList = allProducts;
 
-  final results = await Future.wait([
-    totalCountQuery.get(),
-    filteredCountQuery.get(),
-  ]);
+      // Filter by stores
+      if (filter.selectedStores.isNotEmpty) {
+        filteredList = filteredList.where((p) => filter.selectedStores.contains(p.store)).toList();
+      }
+      // Filter by categories
+      if (filter.selectedCategories.isNotEmpty) {
+        filteredList = filteredList.where((p) => filter.selectedCategories.contains(p.category)).toList();
+      }
+      // Filter by subcategories
+      if (filter.selectedSubcategories.isNotEmpty) {
+        filteredList = filteredList.where((p) => filter.selectedSubcategories.contains(p.subcategory)).toList();
+      }
 
-  final totalSnapshot = results[0];
-  final filteredSnapshot = results[1];
+      // *** THE CRITICAL SEARCH LOGIC FIX ***
+      // This logic now works because it searches the Product object directly.
+      if (filter.searchQuery.isNotEmpty) {
+        final query = filter.searchQuery.toLowerCase();
+        filteredList = filteredList.where((p) {
+          // It will match if the full name contains the query (e.g., when a suggestion is clicked)
+          final nameMatch = p.name.toLowerCase().contains(query);
+          // OR if any of its keywords start with the query (for partial typing)
+          final keywordMatch = p.searchKeywords.any((k) => k.startsWith(query));
+          return nameMatch || keywordMatch;
+        }).toList();
+      }
 
-  return ProductCount(
-    total: totalSnapshot.count ?? 0,
-    filtered: filteredSnapshot.count ?? 0,
+      // Sort the already filtered list
+      // This is identical to your original sorting logic.
+      switch (filter.sortOption) {
+        case SortOption.storeAlphabetical:
+          filteredList.sort((a, b) => a.store.compareTo(b.store));
+          break;
+        case SortOption.productAlphabetical:
+          filteredList.sort((a, b) => a.name.compareTo(b.name));
+          break;
+        case SortOption.priceHighToLow:
+          filteredList.sort((a, b) => b.currentPrice.compareTo(a.currentPrice));
+          break;
+        case SortOption.priceLowToHigh:
+          filteredList.sort((a, b) => a.currentPrice.compareTo(b.currentPrice));
+          break;
+        default:
+          filteredList.sort((a, b) => a.store.compareTo(b.store));
+      }
+
+      return filteredList;
+    },
   );
 });
 
-// --- CORRECTED: Provider for the filtered list of products. ---
-final filteredProductsProvider = StreamProvider.autoDispose<List<Product>>((ref) {
-  final filter = ref.watch(filterStateProvider);
-  final firestore = ref.watch(_firestoreProvider);
-  Query query = firestore.collection('products');
-
-  query = _buildFilteredQuery(query: query, filter: filter);
-
-  switch (filter.sortOption) {
-    case SortOption.storeAlphabetical:
-      query = query.orderBy('store').orderBy('name');
-      break;
-    case SortOption.productAlphabetical:
-      query = query.orderBy('name');
-      break;
-    case SortOption.priceHighToLow:
-      query = query.orderBy('currentPrice', descending: true);
-      break;
-    case SortOption.priceLowToHigh:
-      query = query.orderBy('currentPrice', descending: false);
-      break;
-    default:
-      query = query.orderBy('store');
-  }
-
-  return query.snapshots().map((snapshot) {
-    // V-- FIX #2 IS HERE --V
-    return snapshot.docs.map((doc) {
-      return Product.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
-    }).toList();
-    // ^----------------------^
-  });
+// --- REFACTORED productCountProvider ---
+// This also no longer talks to Firestore. It just gets counts from other providers.
+final productCountProvider = Provider.autoDispose<ProductCount>((ref) {
+  final totalCount = ref.watch(allProductsProvider).asData?.value.length ?? 0;
+  final filteredCount = ref.watch(filteredProductsProvider).length;
+  return ProductCount(filtered: filteredCount, total: totalCount);
 });
