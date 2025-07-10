@@ -1,115 +1,206 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+// Model and Provider imports
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+
+// Widget and Component imports
+import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/widgets/category_chip.dart';
+import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:sales_app_mvp/widgets/store_logo.dart';
 
-class ProductDetails extends StatelessWidget {
+// --- STEP 1: CONVERTED TO A CONSUMER WIDGET ---
+// This allows us to access providers like `activeShoppingListProvider`.
+class ProductDetails extends ConsumerWidget {
   final Product product;
 
   const ProductDetails({super.key, required this.product});
 
+  // --- STEP 2: RESTRUCTURED THE BUILD METHOD ---
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SingleChildScrollView( // Added to prevent overflow on smaller screens
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Row 1: Shop Logo (left) | Active List Selector (right)
+            _buildHeader(context, ref),
+            const SizedBox(height: 16),
+
+            // Row 2: Main Category and Subcategory Chips
+            _buildCategoryRows(),
+            const SizedBox(height: 16),
+
+            // Row 3: Product Title
+            _buildProductName(),
+            const SizedBox(height: 12),
+
+            // Row 4: Image
+            _buildImageContainer(),
+            const SizedBox(height: 20),
+
+            // Row 5: Available From Info
+            _buildAvailabilityInfo(),
+
+            // Row 6: Sonderkondition Info
+            _buildSonderkonditionInfo(),
+
+            // A divider to visually separate info from prices
+            if (product.availableFrom != null || product.sonderkondition != null)
+              const Divider(height: 32, color: Colors.white24),
+
+            // Row 7: Price Row
+            _buildPriceRow(),
+            const SizedBox(height: 24),
+
+            // Row 8: Action Buttons
+            _buildActionButtons(context, ref),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- NEW WIDGETS FOR THE OVERHAULED LAYOUT ---
+
+  /// Row 1: Shop Logo (left) | Active List Selector (right)
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        StoreLogo(storeName: product.store, height: 48),
+        const Spacer(), // Pushes the button to the right
+        _buildActiveListButton(context, ref),
+      ],
+    );
+  }
+
+  /// The button for the Active List Selector, now inside the details page.
+  Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
+    final activeList = ref.watch(activeShoppingListProvider);
+    final buttonText = activeList ?? 'Select List';
+
+    return TextButton.icon(
+      icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 20),
+      label: Text(
+        buttonText,
+        style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
+        overflow: TextOverflow.ellipsis,
+      ),
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          useRootNavigator: true,
+          backgroundColor: AppColors.background,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) => const ActiveListSelectorBottomSheet(),
+        );
+      },
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          side: BorderSide(color: AppColors.inactive.withAlpha(128)),
+        ),
+      ),
+    );
+  }
+
+  // --- MODIFIED WIDGET ---
+  /// Row 2: Category and Subcategory Chips.
+  /// These chips expand to fill the available width equally, ensuring a balanced and
+  /// responsive layout. The padding between them is fixed and consistent.
+  Widget _buildCategoryRows() {
+    // A constant for consistent spacing between the chips.
+    const double horizontalSpacing = 16.0;
+
+    return Row(
+      children: [
+        // The main category chip. It expands to fill the available space.
+        // If there is no subcategory, it will take up the entire row.
+        Expanded(
+          child: CategoryChip(categoryName: product.category),
+        ),
+        // Only show the subcategory and the space between if a subcategory exists.
+        if (product.subcategory.isNotEmpty) ...[
+          const SizedBox(width: horizontalSpacing),
+          // The subcategory chip. It also expands, sharing space equally
+          // with the main category chip thanks to the Expanded widget.
+          Expanded(
+            child: CategoryChip(categoryName: product.subcategory),
+          ),
+        ],
+      ],
+    );
+  }
+
+
+  /// Row 5: Displays the "Available From" date if it exists.
+  Widget _buildAvailabilityInfo() {
+    if (product.availableFrom == null) {
+      return const SizedBox.shrink(); // Don't show anything if no date
+    }
+    // Format the date for German locale, e.g., "15. August 2023"
+    final formattedDate = DateFormat.yMMMMd('de_DE').format(product.availableFrom!);
+
     return Padding(
-      // The overall padding for the screen content
-      padding: const EdgeInsets.all(20.0),
-      // Main layout is a Column
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
         children: [
-          // The header with Logo and Category boxes
-          _buildHeader(),
-          const SizedBox(height: 24), // Increased space before the title
-
-          // The product name is now in a fixed-height container
-          _buildProductName(),
-          const SizedBox(height: 12),
-
-          // The image is in a fixed-size, styled box
-          _buildImageContainer(),
-          const SizedBox(height: 16),
-
-          // --- The rest of the widgets remain the same ---
-          _buildPriceRow(),
-          const SizedBox(height: 16),
-          _buildActionButtons(context),
+          const Icon(Icons.calendar_today, color: AppColors.inactive, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            'Verfügbar ab: $formattedDate',
+            style: const TextStyle(color: AppColors.inactive, fontSize: 14),
+          ),
         ],
       ),
     );
   }
 
-  // Header now contains the logo and the new category boxes
-  Widget _buildHeader() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // StoreLogo remains on the left
-        StoreLogo(
-          storeName: product.store,
-          height: 48, // Slightly larger for better balance
-        ),
-        const SizedBox(width: 12),
-
-        // Expanded ensures the category column takes the remaining horizontal space
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Outlined box for Category
-              _buildCategoryBox(product.category),
-              const SizedBox(height: 6),
-              // Outlined box for Subcategory
-              _buildCategoryBox(product.subcategory),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // A dedicated widget to create the outlined box for categories
-  Widget _buildCategoryBox(String text) {
-    if (text.isEmpty) {
-      return const SizedBox.shrink(); // Don't show a box if there's no text
+  /// Row 6: Displays the "Sonderkondition" text if it exists.
+  Widget _buildSonderkonditionInfo() {
+    if (product.sonderkondition == null || product.sonderkondition!.isEmpty) {
+      return const SizedBox.shrink(); // Don't show if empty or null
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        // The outline
-        border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.0),
-        // Rounded corners
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: .85),
-          fontWeight: FontWeight.w500,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          const Icon(Icons.star_border, color: AppColors.secondary, size: 18),
+          const SizedBox(width: 8),
+          Expanded( // Use Expanded to allow text to wrap
+            child: Text(
+              product.sonderkondition!,
+              style: const TextStyle(color: AppColors.secondary, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // MODIFIED: The product name is now wrapped in a fixed-height Container.
+  // --- EXISTING WIDGETS (UNCHANGED LOGIC, JUST REPOSITIONED) ---
+
+  /// Row 3: Product Title
   Widget _buildProductName() {
-    // By wrapping the Text widget in a Container with a fixed height, we reserve
-    // enough space for a 3-line title. This fulfills the requirement to ensure
-    // the layout below (specifically the image) remains in a consistent
-    // vertical position, regardless of the title's actual line count.
-    return Container(
-      height: 85.0, // A calculated height sufficient for 3 lines of text with fontSize 22.
-      alignment: Alignment.topLeft, // Aligns the Text widget to the top of the reserved space.
+    return SizedBox(
+      height: 85.0,
       child: Text(
         product.name,
         style: const TextStyle(
-          fontSize: 22, // Larger font size for a title
+          fontSize: 22,
           fontWeight: FontWeight.bold,
           color: AppColors.textSecondary,
         ),
@@ -119,23 +210,20 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
+  /// Row 4: Image Container
   Widget _buildImageContainer() {
     return Container(
-      height: 300, // ** This fixed height creates the uniform layout **
+      height: 300,
       width: double.infinity,
-      // This centers the image within the 300px container, fulfilling the request
-      // to place the image in the middle of its possible space.
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2), // A subtle background for the box
+        color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
-      // ClipRRect ensures the image respects the container's rounded corners
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: ImageWithAspectRatio(
           imageUrl: product.imageUrl,
-          // These are now bound by the container's height
           maxWidth: double.infinity,
           maxHeight: 300,
         ),
@@ -143,51 +231,16 @@ class ProductDetails extends StatelessWidget {
     );
   }
 
-
-  // --- NO CHANGES BELOW THIS LINE ---
-
+  /// Row 7: Price Row
   Widget _buildPriceRow() {
-    // Robustly handle the discount percentage string to avoid "%%"
     final cleanPercentage = product.discountPercentage.replaceAll(RegExp(r'[^0-9.]'), '');
-
     return Row(
       children: [
-        Expanded(
-          child: _priceBox(
-            product.normalPrice.toStringAsFixed(2),
-            Colors.grey.shade300,
-            const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.lineThrough,
-              color: Colors.black54,
-            ),
-          ),
-        ),
+        Expanded(child: _priceBox(product.normalPrice.toStringAsFixed(2), Colors.grey.shade300, const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, decoration: TextDecoration.lineThrough, color: Colors.black54,),),),
         const SizedBox(width: 8),
-        Expanded(
-          child: _priceBox(
-            '$cleanPercentage%', // Use the cleaned percentage
-            Colors.redAccent,
-            const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
+        Expanded(child: _priceBox('$cleanPercentage%', Colors.redAccent, const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white,),),),
         const SizedBox(width: 8),
-        Expanded(
-          child: _priceBox(
-            product.currentPrice.toStringAsFixed(2),
-            Colors.yellow.shade600,
-            const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-        ),
+        Expanded(child: _priceBox(product.currentPrice.toStringAsFixed(2), Colors.yellow.shade600, const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.black,),),),
       ],
     );
   }
@@ -196,25 +249,16 @@ class ProductDetails extends StatelessWidget {
     return Container(
       height: 75,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
       child: Text(value, style: textStyle, textAlign: TextAlign.center),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  /// Row 8: Action Buttons
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
-        Expanded(
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.open_in_new,
-            label: 'Visit Product',
-            onPressed: () => _launchURL(context, product.url),
-          ),
-        ),
+        Expanded(child: _buildActionButton(context: context, icon: Icons.open_in_new, label: 'Visit Product', onPressed: () => _launchURL(context, product.url),),),
         const SizedBox(width: 12),
         Expanded(
           child: _buildActionButton(
@@ -224,15 +268,10 @@ class ProductDetails extends StatelessWidget {
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                isScrollControlled: true, // Allows the sheet to be taller
-                backgroundColor: AppColors.background, // Match your theme
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                builder: (_) => ShoppingListBottomSheet(
-                  product: product,
-                  onConfirm: (String selectedListName) {},
-                ),
+                isScrollControlled: true,
+                backgroundColor: AppColors.background,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                builder: (_) => ShoppingListBottomSheet(product: product, onConfirm: (String selectedListName) {},),
               );
             },
           ),
@@ -249,20 +288,12 @@ class ProductDetails extends StatelessWidget {
   }) {
     return ElevatedButton.icon(
       icon: Icon(icon, size: 20, color: AppColors.primary),
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textBlack,
-        ),
-      ),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textBlack,),),
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.secondary,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -270,15 +301,12 @@ class ProductDetails extends StatelessWidget {
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $url';
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Could not open product link")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open product link")));
     }
   }
 }

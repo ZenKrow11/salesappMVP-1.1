@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Import your other files
 import 'firebase_options.dart';
@@ -16,6 +17,8 @@ import 'pages/main_app_screen.dart';
 Future<void> main() async {
   // Ensure Flutter engine is ready
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('de_DE', null);
+
 
   // Initialize Firebase
   await Firebase.initializeApp(

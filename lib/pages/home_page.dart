@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Provider and Model imports
-import 'package:sales_app_mvp/models/category_style.dart';
+import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/products_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
