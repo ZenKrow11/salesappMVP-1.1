@@ -4,39 +4,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
-import '../services/hive_storage_service.dart';
+import '../services/hive_storage_service.dart'; // Import your existing service
 
-/// Provider 1: A FutureProvider to handle the ONE-TIME initialization of Hive.
-/// This will run once and its result will be cached by Riverpod.
-/// It handles registering adapters and opening the boxes.
+/// Handles the one-time initialization of Hive, including registering adapters and opening all necessary boxes.
 final hiveInitializationProvider = FutureProvider<void>((ref) async {
-  // Register all your Hive type adapters here.
-  // This is crucial! Hive needs to know how to (de)serialize your objects.
+  // Ensure all Hive type adapters are registered here.
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(NamedListAdapter());
 
-  // Open all the boxes you need for your app.
-  await Hive.openBox<Product>('favorites');
-  await Hive.openBox<NamedList>('namedLists');
-  // You also had 'shoppingLists' but it was untyped. If you still need it,
-  // add `await Hive.openBox('shoppingLists');` here.
+  // Open all the boxes your app will need at startup.
+  await Hive.openBox<Product>('products');
+  await Hive.openBox<Product>('favorites'); // Required by your service
+  await Hive.openBox<NamedList>('namedLists'); // Required by your service
 
   print("[HiveProvider] All Hive boxes initialized and opened.");
 });
 
-/// Provider 2: A regular Provider that creates and provides the
-/// instance of our HiveStorageService.
+/// Creates and provides the single instance of your HiveStorageService.
+/// This provider guarantees that the service is only created *after* Hive is fully initialized, preventing race conditions.
 final hiveStorageServiceProvider = Provider<HiveStorageService>((ref) {
-  // This line creates a dependency. This provider will not build until
-  // hiveInitializationProvider has successfully completed.
-  // This guarantees that the boxes are open before we try to use them.
+  // This dependency ensures the code below only runs after initialization is complete.
   ref.watch(hiveInitializationProvider);
 
   // Now that we know the boxes are open, we can safely get them.
   final favoritesBox = Hive.box<Product>('favorites');
   final namedListsBox = Hive.box<NamedList>('namedLists');
 
-  // Create and return the service instance with the open boxes.
+  // Create and return the service instance with the required open boxes.
   return HiveStorageService(
     favoritesBox: favoritesBox,
     namedListsBox: namedListsBox,
