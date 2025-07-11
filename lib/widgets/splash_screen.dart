@@ -2,19 +2,42 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../main.dart'; // For AuthGate
 import '../providers/storage_providers.dart'; // For hiveInitializationProvider
+import '../providers/products_provider.dart'; // IMPORTANT: You must import your products provider
+import '../widgets/theme_color.dart'; // For your app's colors
 
-/// A stream provider that tells us the current user's auth state.
+/// A stream provider that tells us the current user's auth state. (Unchanged)
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-/// This provider now only waits for services that are TRULY essential
-/// for the app to function at all (like Hive).
-final coreServicesReadyProvider = FutureProvider<void>((ref) async {
-  await ref.watch(hiveInitializationProvider.future);
+// --- NEW PROVIDER 1: Initial Data Loader ---
+/// This provider is responsible for fetching the first batch of essential data.
+/// The splash screen will wait for this to complete.
+///
+/// **ACTION REQUIRED:** Replace the placeholder logic with your actual data fetching
+/// from Firestore, likely by watching your existing `productsProvider`.
+final initialDataReadyProvider = FutureProvider<void>((ref) async {
+  // This will trigger the initial fetch of your products and wait for it.
+  // If the fetch fails, this provider will enter an error state,
+  // which can be handled on the splash screen.
+  await ref.watch(allProductsProvider.future);
+});
+
+
+// --- NEW PROVIDER 2: The "App Ready" Coordinator ---
+/// This master provider coordinates all essential startup tasks.
+/// It waits for both core services (like Hive) and initial data to be ready.
+/// The splash screen will only disappear when this provider has successfully completed.
+final appReadyProvider = FutureProvider<void>((ref) async {
+  // Wait for all futures in the list to complete.
+  await Future.wait([
+    ref.watch(hiveInitializationProvider.future), // Waits for Hive
+    ref.watch(initialDataReadyProvider.future),  // Waits for initial products
+  ]);
 });
 
 
@@ -23,42 +46,64 @@ class SplashScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We now watch the core services provider.
-    final coreServices = ref.watch(coreServicesReadyProvider);
+    // We now watch our new master provider.
+    final appReady = ref.watch(appReadyProvider);
 
-    // When the core services are ready, navigate to the AuthGate.
-    // AuthGate will then decide whether to show HomeScreen or LoginScreen.
-    coreServices.when(
+    // When all tasks are complete, navigate to the AuthGate.
+    appReady.when(
       data: (_) {
-        // Use addPostFrameCallback to avoid "setState during build" errors.
+        // Use addPostFrameCallback to schedule navigation for after the build phase.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AuthGate()),
           );
         });
       },
+      // The error state will catch failures from ANY of the startup tasks.
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            "Failed to initialize the app. Please restart.\n\nError: $err",
+            style: const TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
       loading: () {
-        // While loading, we show the splash UI. This part is unchanged.
-      },
-      error: (err, stack) {
-        // If core services fail (e.g., Hive can't initialize), show an error.
-        // This is a critical failure, so the app can't proceed.
-        return Center(
-          child: Text("Critical Error: $err"),
-        );
+        // While loading, the UI below is shown.
       },
     );
 
-    // This is the UI that is displayed while coreServicesReadyProvider is running.
-    return const Scaffold(
-      backgroundColor: Colors.white,
+    // --- NEW AESTHETIC ---
+    // This is the UI that is displayed while appReadyProvider is in its loading state.
+    return Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text("Initializing..."),
+            // A large, themed icon for branding.
+            const Icon(
+              Icons.shopping_cart_checkout,
+              size: 80,
+              color: AppColors.secondary,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Loading Deals...',
+              style: TextStyle(
+                fontSize: 18,
+                color: AppColors.inactive,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // A clean, themed progress indicator.
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 2,
+            ),
           ],
         ),
       ),

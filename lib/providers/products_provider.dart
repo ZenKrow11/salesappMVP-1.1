@@ -1,5 +1,3 @@
-// lib/providers/products_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
