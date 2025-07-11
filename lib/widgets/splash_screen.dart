@@ -6,37 +6,28 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../main.dart'; // For AuthGate
 import '../providers/storage_providers.dart'; // For hiveInitializationProvider
-import '../providers/products_provider.dart'; // IMPORTANT: You must import your products provider
+import '../providers/products_provider.dart'; // For allProductsProvider
 import '../widgets/theme_color.dart'; // For your app's colors
 
-/// A stream provider that tells us the current user's auth state. (Unchanged)
+/// A stream provider that tells us the current user's auth state.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-// --- NEW PROVIDER 1: Initial Data Loader ---
-/// This provider is responsible for fetching the first batch of essential data.
-/// The splash screen will wait for this to complete.
-///
-/// **ACTION REQUIRED:** Replace the placeholder logic with your actual data fetching
-/// from Firestore, likely by watching your existing `productsProvider`.
-final initialDataReadyProvider = FutureProvider<void>((ref) async {
-  // This will trigger the initial fetch of your products and wait for it.
-  // If the fetch fails, this provider will enter an error state,
-  // which can be handled on the splash screen.
-  await ref.watch(allProductsProvider.future);
-});
+// --- REMOVED: initialDataReadyProvider is no longer needed. ---
+// The logic is now handled directly by appReadyProvider.
 
-
-// --- NEW PROVIDER 2: The "App Ready" Coordinator ---
+// --- SIMPLIFIED: The "App Ready" Coordinator ---
 /// This master provider coordinates all essential startup tasks.
-/// It waits for both core services (like Hive) and initial data to be ready.
-/// The splash screen will only disappear when this provider has successfully completed.
+/// It waits for both core services (like Hive) and the initial product data fetch to complete.
 final appReadyProvider = FutureProvider<void>((ref) async {
   // Wait for all futures in the list to complete.
   await Future.wait([
-    ref.watch(hiveInitializationProvider.future), // Waits for Hive
-    ref.watch(initialDataReadyProvider.future),  // Waits for initial products
+    ref.watch(hiveInitializationProvider.future), // Waits for Hive to be set up.
+
+    // --- THIS IS THE FIX ---
+    // We wait for the FETCH action to complete, not the synchronous data provider.
+    ref.watch(productFetchProvider.future),
   ]);
 });
 
@@ -46,20 +37,17 @@ class SplashScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We now watch our new master provider.
+    // The rest of the widget is exactly the same and works perfectly.
     final appReady = ref.watch(appReadyProvider);
 
-    // When all tasks are complete, navigate to the AuthGate.
     appReady.when(
       data: (_) {
-        // Use addPostFrameCallback to schedule navigation for after the build phase.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AuthGate()),
           );
         });
       },
-      // The error state will catch failures from ANY of the startup tasks.
       error: (err, stack) => Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -70,20 +58,16 @@ class SplashScreen extends ConsumerWidget {
           ),
         ),
       ),
-      loading: () {
-        // While loading, the UI below is shown.
-      },
+      loading: () {}, // UI is shown below, so this can be empty.
     );
 
-    // --- NEW AESTHETIC ---
-    // This is the UI that is displayed while appReadyProvider is in its loading state.
+    // This UI remains unchanged.
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // A large, themed icon for branding.
             const Icon(
               Icons.shopping_cart_checkout,
               size: 80,
@@ -99,7 +83,6 @@ class SplashScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // A clean, themed progress indicator.
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               strokeWidth: 2,

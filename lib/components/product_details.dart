@@ -9,7 +9,7 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 // Widget and Component imports
 import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/widgets/category_chip.dart';
+import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
