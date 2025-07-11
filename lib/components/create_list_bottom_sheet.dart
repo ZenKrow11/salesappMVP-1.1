@@ -110,13 +110,17 @@ class _CreateListBottomSheetState extends ConsumerState<CreateListBottomSheet> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: AppColors.accent, // Adjusted button color for visibility
+                      backgroundColor: Colors.transparent, // Set background to transparent
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: const BorderSide(
+                        color: AppColors.accent, // Set outline color to accent
+                        width: 2, // Optional: Adjust outline thickness
+                      ),
                     ),
                     onPressed: () => Navigator.of(context).pop(null),
-                    child: const Text('CANCEL', style: TextStyle(color: AppColors.primary,
-                        fontWeight: FontWeight.bold)),
+                    child: const Text('CANCEL', style: TextStyle(color: AppColors.accent,
+                        fontWeight: FontWeight.bold,)),
                   ),
                 ),
                 const SizedBox(width: 16),

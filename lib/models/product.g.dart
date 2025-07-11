@@ -28,7 +28,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       url: fields[8] as String,
       imageUrl: fields[9] as String,
       searchKeywords: (fields[10] as List).cast<String>(),
-      availableFrom: fields[11] as DateTime?,
+      availableFrom: fields[11] as String,
       sonderkondition: fields[12] as String?,
     );
   }

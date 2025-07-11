@@ -1,57 +1,8 @@
+// product.dart
+
 import 'package:hive/hive.dart';
-import 'package:intl/intl.dart';
 
 part 'product.g.dart';
-
-// --- UPDATED AND CORRECTED HELPER FUNCTION ---
-DateTime? _parseGermanDateString(String? dateString) {
-  if (dateString == null || dateString.isEmpty) {
-    return null;
-  }
-
-  final lowercased = dateString.toLowerCase();
-
-  // Case 1: The offer is available now. Return null as there's no *future* start date.
-  if (lowercased.contains('jetzt verfügbar')) {
-    return null;
-  }
-
-  // Case 2: Use regex to find the first date pattern (e.g., "08.07." or "14.07.")
-  final regex = RegExp(r'(\d{1,2}\.\d{1,2}\.)');
-  final match = regex.firstMatch(lowercased);
-
-  if (match == null) {
-    // If no date pattern is found, we can't parse it.
-    print('Could not find a date pattern (dd.mm.) in "$dateString"');
-    return null;
-  }
-
-  try {
-    // Extract the matched date part, e.g., "08.07."
-    final datePart = match.group(0)!;
-
-    // Smartly determine the year (handle year-end rollovers)
-    final now = DateTime.now();
-    int year = now.year;
-
-    // First, try parsing with the current year
-    final formatter = DateFormat('d.M.yyyy');
-    DateTime prospectiveDate = formatter.parse('$datePart$year');
-
-    // If the resulting date is more than a week in the past (e.g., it's December
-    // and the offer is for January), assume it's for the next year.
-    if (prospectiveDate.isBefore(now.subtract(const Duration(days: 7)))) {
-      year++;
-      prospectiveDate = formatter.parse('$datePart$year');
-    }
-
-    return prospectiveDate;
-
-  } catch (e) {
-    print('Could not parse extracted date from: "$dateString". Error: $e');
-    return null;
-  }
-}
 
 @HiveType(typeId: 0)
 class Product extends HiveObject {
@@ -77,8 +28,12 @@ class Product extends HiveObject {
   final String imageUrl;
   @HiveField(10)
   final List<String> searchKeywords;
+
+  // Changed from String? to String because you stated it's never empty.
+  // This makes it safer to use in the UI without null checks.
   @HiveField(11)
-  final DateTime? availableFrom;
+  final String availableFrom;
+
   @HiveField(12)
   final String? sonderkondition;
 
@@ -94,7 +49,7 @@ class Product extends HiveObject {
     required this.url,
     required this.imageUrl,
     required this.searchKeywords,
-    this.availableFrom,
+    required this.availableFrom,
     this.sonderkondition,
   });
 
@@ -102,8 +57,12 @@ class Product extends HiveObject {
     final keywordsData = data['searchKeywords'] as List<dynamic>?;
     final keywords = keywordsData?.map((e) => e.toString()).toList() ?? [];
 
-    // This now calls the new, robust parsing function
-    final availableFromDate = _parseGermanDateString(data['available_from'] as String?);
+    // --- LOGIC FOR `sonderkondition` (Correct) ---
+    // If the string is "Keine Sonderkondition", we convert it to null so the UI can hide it.
+    String? sonderkonditionString = data['sonderkondition'] as String?;
+    if (sonderkonditionString == 'Keine Sonderkondition') {
+      sonderkonditionString = null;
+    }
 
     return Product(
       id: id,
@@ -111,14 +70,19 @@ class Product extends HiveObject {
       name: (data['name'] as String? ?? '').trim(),
       currentPrice: (data['currentPrice'] as num?)?.toDouble() ?? 0.0,
       normalPrice: (data['normalPrice'] as num?)?.toDouble() ?? 0.0,
-      discountPercentage: data['discountPercentage']?.toString() ?? '0',
+      discountPercentage: (data['discountPercentage'] as num?)?.toInt().toString() ?? '0',
       category: data['category'] as String? ?? '',
       subcategory: data['subcategory'] as String? ?? '',
       url: data['url'] as String? ?? '',
       imageUrl: data['imageUrl'] as String? ?? '',
       searchKeywords: keywords,
-      availableFrom: availableFromDate,
-      sonderkondition: data['Sonderkondition'] as String?,
+
+      // --- LOGIC FOR `available_from` (Corrected) ---
+      // Pass the string directly. Provide a default fallback in case the field is missing.
+      availableFrom: data['available_from'] as String? ?? 'Jetzt verfügbar',
+
+      // Assign the processed sonderkondition value
+      sonderkondition: sonderkonditionString,
     );
   }
 
@@ -138,7 +102,11 @@ class Product extends HiveObject {
     'url': url,
     'imageUrl': imageUrl,
     'searchKeywords': searchKeywords,
-    'available_from': availableFrom?.toIso8601String(),
-    'Sonderkondition': sonderkondition,
+
+    // `availableFrom` is a non-nullable string, so just pass it.
+    'available_from': availableFrom,
+
+    // When saving, restore the default string if the value is null.
+    'sonderkondition': sonderkondition ?? 'Keine Sonderkondition',
   };
 }

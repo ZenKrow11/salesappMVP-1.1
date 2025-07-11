@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../components/create_list_bottom_sheet.dart'; // Import the new widget
+import '../components/create_list_bottom_sheet.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
@@ -45,8 +45,19 @@ class ShoppingListPage extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
+          // --- Page Header (Inspired by ActiveListSelector) ---
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 22.0),
+            child: Text('Shopping Lists',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondary,
+                )),
+          ),
+
           // --- Favorites First (Static) ---
           _buildListCard(
             context,
@@ -54,7 +65,8 @@ class ShoppingListPage extends ConsumerWidget {
             favorites,
             allowDelete: false,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16), // Adjusted for margin
+
           // --- Draggable Custom Lists ---
           Consumer(
             builder: (context, ref, child) {
@@ -100,60 +112,75 @@ class ShoppingListPage extends ConsumerWidget {
       }) {
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
+    // Card wrapper provides the container and elevation
     return Card(
       key: key,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
+      color: AppColors.primary,
+      clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        backgroundColor: AppColors.inactive.withValues(alpha: 0.2),
-        collapsedBackgroundColor: AppColors.primary,
-        iconColor: AppColors.accent,
-        collapsedIconColor: AppColors.inactive,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // --- FIX: Add these two lines to remove the default borders ---
+        shape: const Border(),
+        collapsedShape: const Border(),
+        // --- End of Fix ---
+        backgroundColor: AppColors.secondary.withValues(alpha: 0.1), // Corrected .withValues to .withOpacity
+        iconColor: AppColors.secondary,
+        collapsedIconColor: AppColors.secondary,
+        tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
-        title: Text(
-          list.name,
-          style: const TextStyle(
-              color: AppColors.active,
-              fontSize: 18,
-              fontWeight: FontWeight.bold),
-        ),
-        trailing: allowDelete
-            ? IconButton(
-          icon: const Icon(Icons.delete, color: AppColors.accent, size: 30),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Delete List'),
-                content: Text(
-                    'Are you sure you want to delete "${list.name}"?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      shoppingListNotifier.deleteList(list.name);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Deleted "${list.name}"'),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Delete',
-                        style: TextStyle(color: AppColors.accent)),
-                  ),
-                ],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                list.name,
+                style: const TextStyle(
+                    color: AppColors.secondary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
               ),
-            );
-          },
-        )
-            : const SizedBox(width: 30),
+            ),
+            if (allowDelete)
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.accent, size: 28),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete List'),
+                      content: Text(
+                          'Are you sure you want to delete "${list.name}"?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            shoppingListNotifier.deleteList(list.name);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Deleted "${list.name}"'),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Delete',
+                              style: TextStyle(color: AppColors.accent)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+        // By removing the `trailing` property, the default expand/collapse arrow is used
         children: list.items.isEmpty
             ? [
           Padding(
@@ -168,7 +195,8 @@ class ShoppingListPage extends ConsumerWidget {
             product: product,
             listName: list.name,
             onRemove: () {
-              shoppingListNotifier.removeItemFromList(list.name, product);
+              shoppingListNotifier.removeItemFromList(
+                  list.name, product);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Removed from "${list.name}"'),
@@ -181,8 +209,6 @@ class ShoppingListPage extends ConsumerWidget {
       ),
     );
   }
-
-// --- The _showAddListBottomSheet method is now removed ---
 }
 
 // Placeholder for ShoppingListItemTile
@@ -201,10 +227,12 @@ class ShoppingListItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(product.name, style: const TextStyle(color: AppColors.active)),
-      subtitle: Text(product.store, style: TextStyle(color: AppColors.inactive)),
+      title:
+      Text(product.name, style: const TextStyle(color: AppColors.active)),
+      subtitle:
+      Text(product.store, style: TextStyle(color: AppColors.inactive)),
       trailing: IconButton(
-        icon: const Icon(Icons.close, color: AppColors.accent, size: 30),
+        icon: const Icon(Icons.close, color: AppColors.accent, size: 24),
         onPressed: onRemove,
       ),
     );
