@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// Model and Provider imports
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-
-// Widget and Component imports
 import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
@@ -14,10 +11,6 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-/// Displays the detailed view of a single product.
-///
-/// This widget arranges product information in a structured layout,
-/// including store, categories, name, image, pricing, and actions.
 class ProductDetails extends ConsumerWidget {
   final Product product;
 
@@ -26,7 +19,6 @@ class ProductDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
-      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +40,6 @@ class ProductDetails extends ConsumerWidget {
             _buildActionButtons(context, ref),
           ],
         ),
-      ),
     );
   }
 
@@ -96,14 +87,10 @@ class ProductDetails extends ConsumerWidget {
   Widget _buildCategoryRows() {
     return Row(
       children: [
-        Expanded(
-          child: CategoryChip(categoryName: product.category),
-        ),
+        Expanded(child: CategoryChip(categoryName: product.category)),
         if (product.subcategory.isNotEmpty) ...[
           const SizedBox(width: 16.0),
-          Expanded(
-            child: CategoryChip(categoryName: product.subcategory),
-          ),
+          Expanded(child: CategoryChip(categoryName: product.subcategory)),
         ],
       ],
     );
@@ -164,9 +151,8 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildSonderkonditionInfo() {
-    if (product.sonderkondition == null) {
-      return const SizedBox.shrink();
-    }
+    if (product.sonderkondition == null) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -190,6 +176,7 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildPriceRow() {
     final cleanPercentage = product.discountPercentage.replaceAll(RegExp(r'[^0-9.]'), '');
+
     return Row(
       children: [
         Expanded(
