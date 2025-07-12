@@ -11,6 +11,10 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
+// --- NEW IMPORT ---
+// Import the custom page route we created for the slide-up animation.
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+
 /// The main page of the app, displaying a filterable and sortable list of products.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -45,7 +49,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _scrollToTop() {
-    _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    _scrollController.animateTo(0.0,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
   }
 
   @override
@@ -113,13 +118,17 @@ class _HomePageState extends ConsumerState<HomePage> {
             builder: (context, ref, child) {
               final count = ref.watch(productCountProvider);
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.inactive.withAlpha(128)),
                   borderRadius: BorderRadius.circular(4.0),
                 ),
                 child: Text('${count.filtered}/${count.total}',
-                    style: const TextStyle(color: AppColors.inactive, fontSize: 16, fontWeight: FontWeight.w500)),
+                    style: const TextStyle(
+                        color: AppColors.inactive,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500)),
               );
             },
           ),
@@ -133,18 +142,27 @@ class _HomePageState extends ConsumerState<HomePage> {
       children: [
         Expanded(
           child: TextButton.icon(
-            icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary, size: 24.0),
-            label: Text(buttonText, style: const TextStyle(color: AppColors.inactive), overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet((_) => const ActiveListSelectorBottomSheet()),
+            icon: const Icon(Icons.add_shopping_cart,
+                color: AppColors.secondary, size: 24.0),
+            label: Text(buttonText,
+                style: const TextStyle(color: AppColors.inactive),
+                overflow: TextOverflow.ellipsis),
+            onPressed: () =>
+                _showModalSheet((_) => const ActiveListSelectorBottomSheet()),
             style: _actionButtonStyle(),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: TextButton.icon(
-            icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
-            label: const Text('Filter and Sort', style: TextStyle(color: AppColors.inactive), overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet((_) => const FilterSortBottomSheet(), isScrollControlled: true),
+            icon: const Icon(Icons.filter_alt,
+                color: AppColors.secondary, size: 24.0),
+            label: const Text('Filter and Sort',
+                style: TextStyle(color: AppColors.inactive),
+                overflow: TextOverflow.ellipsis),
+            onPressed: () => _showModalSheet(
+                    (_) => const FilterSortBottomSheet(),
+                isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
@@ -155,16 +173,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   ButtonStyle _actionButtonStyle() {
     return TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0), side: BorderSide(color: AppColors.inactive.withAlpha(128))));
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            side: BorderSide(color: AppColors.inactive.withAlpha(128))));
   }
 
-  void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
+  void _showModalSheet(Widget Function(BuildContext) builder,
+      {bool isScrollControlled = false}) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: AppColors.background,
       isScrollControlled: isScrollControlled,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: builder,
     );
   }
@@ -178,21 +200,32 @@ class _HomePageState extends ConsumerState<HomePage> {
           padding: const EdgeInsets.all(12),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.75),
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.75),
             delegate: SliverChildBuilderDelegate(
                   (context, index) {
                 final product = group.products[index];
                 return ProductTile(
                   product: product,
                   onTap: () {
-                    final flatSortedProducts = groups.expand((g) => g.products).toList();
-                    final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
-                    _showModalSheet(
-                          (_) => ProductSwiperScreen(
-                        products: flatSortedProducts,
-                        initialIndex: initialIndex != -1 ? initialIndex : 0,
+                    final flatSortedProducts =
+                    groups.expand((g) => g.products).toList();
+                    final initialIndex = flatSortedProducts
+                        .indexWhere((p) => p.id == product.id);
+
+                    // --- IMPLEMENTATION OF CUSTOM ANIMATION ---
+                    // Instead of MaterialPageRoute, we use our custom SlideUpPageRoute
+                    // to get the desired "slide from bottom" animation.
+                    Navigator.of(context).push(
+                      SlideUpPageRoute(
+                        page: ProductSwiperScreen(
+                          products: flatSortedProducts,
+                          initialIndex:
+                          initialIndex != -1 ? initialIndex : 0,
+                        ),
                       ),
-                      isScrollControlled: true,
                     );
                   },
                 );
@@ -218,7 +251,11 @@ class _GroupHeader extends StatelessWidget {
         children: [
           Icon(style.icon, color: style.color, size: 26),
           const SizedBox(width: 12),
-          Text(style.displayName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: style.color)),
+          Text(style.displayName,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: style.color)),
         ],
       ),
     );

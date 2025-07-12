@@ -13,7 +13,7 @@ const List<String> categoryDisplayOrder = [
   'Früchte & Gemüse',
   'Getränke', // Both alcoholic and non-alcoholic will group here.
   'Milchprodukte & Eier',
-  'Snacks & Süsswaren', // Updated display name to match style
+  'Snacks & Süsswaren',
   'Spezifische Ernährung',
   'Vorräte',
   'Sonstiges',

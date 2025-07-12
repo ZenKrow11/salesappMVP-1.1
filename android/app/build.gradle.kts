@@ -45,3 +45,8 @@ android {
 flutter {
     source = "../.."
 }
+
+// HIER hinzufügen:
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:deprecation")
+}

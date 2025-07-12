@@ -5,7 +5,8 @@ import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-// Custom scroll physics for smoother drag behavior. This remains unchanged.
+// This custom physics class from your original code can be kept
+// if you prefer its specific drag-start behavior.
 class CustomPageScrollPhysics extends PageScrollPhysics {
   const CustomPageScrollPhysics({super.parent});
 
@@ -29,7 +30,8 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProductSwiperScreen> createState() => _ProductSwiperScreenState();
+  ConsumerState<ProductSwiperScreen> createState() =>
+      _ProductSwiperScreenState();
 }
 
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
@@ -49,49 +51,51 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the height of the top status bar (the notch/island area).
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+
     return GestureDetector(
-      // This allows the user to dismiss the screen with a downward swipe.
       onVerticalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > 1500) {
+        // Keep the "swipe down to close" gesture for a fluid UX.
+        const double swipeVelocityThreshold = 1500;
+        if (details.primaryVelocity != null &&
+            details.primaryVelocity! > swipeVelocityThreshold) {
           Navigator.of(context).pop();
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        resizeToAvoidBottomInset: false,
-        // The Scaffold's body is wrapped in a SafeArea. This is the core of the fix.
-        // It ensures the content is rendered below the status bar, while the
-        // Scaffold's background color correctly fills the space behind it.
-        body: SafeArea(
-          top: true,    // Apply padding for the top system UI (status bar/notch).
-          bottom: false, // Do NOT apply padding at the bottom.
-          child: Column(
-            // The main layout is a Column containing the PageView and the close button.
-            children: [
-              Expanded(
-                child: PageView.builder(
-                  physics: const CustomPageScrollPhysics(),
-                  dragStartBehavior: DragStartBehavior.down,
-                  controller: _pageController,
-                  itemCount: widget.products.length,
-                  itemBuilder: (context, index) {
-                    final product = widget.products[index];
-                    // We directly return the ProductDetails widget.
-                    // It should NOT have its own SafeArea. The parent handles it now.
-                    return ProductDetails(product: product);
-                  },
-                ),
+        // We use a Column to stack the UI elements vertically.
+        body: Column(
+          children: [
+            // 1. A Container that acts as a custom "app bar" area.
+            // Its height perfectly matches the system's status bar.
+            Container(
+              height: statusBarHeight,
+              color: AppColors.primary,
+            ),
+            // 2. The main content, which expands to fill the available space.
+            Expanded(
+              child: PageView.builder(
+                physics: const CustomPageScrollPhysics(),
+                dragStartBehavior: DragStartBehavior.down,
+                controller: _pageController,
+                itemCount: widget.products.length,
+                itemBuilder: (context, index) {
+                  final product = widget.products[index];
+                  return ProductDetails(product: product);
+                },
               ),
-              // The close button is the last item in the Column.
-              _buildCloseButton(context),
-            ],
-          ),
+            ),
+            // 3. The dedicated close button at the bottom of the screen.
+            _buildCloseButton(context),
+          ],
         ),
       ),
     );
   }
 
-  /// Builds the consistent close button at the bottom of the screen.
+  /// Helper method to build the custom close button.
   Widget _buildCloseButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -102,6 +106,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
           shadowColor: Colors.transparent,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
+          // Use zero radius for a button that blends into the edge.
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.zero,
           ),
