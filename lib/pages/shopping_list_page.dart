@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../components/create_list_bottom_sheet.dart';
+import '../components/shopping_list_bottom_sheet.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
@@ -28,13 +28,18 @@ class ShoppingListPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
+        // --- UPDATED CALL ---
         onPressed: () {
-          // --- FIX: Call the new, reusable bottom sheet ---
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: Colors.transparent, // Let the child handle color
-            builder: (ctx) => const CreateListBottomSheet(),
+            backgroundColor: AppColors.background,
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            builder: (ctx) => const ShoppingListBottomSheet(
+              // Tell the sheet to open on the 'New List' tab (index 1)
+              initialTabIndex: 1,
+            ),
           );
         },
         backgroundColor: AppColors.secondary,
@@ -47,7 +52,6 @@ class ShoppingListPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
-          // --- Page Header (Inspired by ActiveListSelector) ---
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 22.0),
             child: Text('Shopping Lists',
@@ -57,17 +61,13 @@ class ShoppingListPage extends ConsumerWidget {
                   color: AppColors.secondary,
                 )),
           ),
-
-          // --- Favorites First (Static) ---
           _buildListCard(
             context,
             ref,
             favorites,
             allowDelete: false,
           ),
-          const SizedBox(height: 16), // Adjusted for margin
-
-          // --- Draggable Custom Lists ---
+          const SizedBox(height: 16),
           Consumer(
             builder: (context, ref, child) {
               final updatedLists = ref.watch(shoppingListsProvider);
@@ -112,7 +112,6 @@ class ShoppingListPage extends ConsumerWidget {
       }) {
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
-    // Card wrapper provides the container and elevation
     return Card(
       key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -121,14 +120,13 @@ class ShoppingListPage extends ConsumerWidget {
       color: AppColors.primary,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        // --- FIX: Add these two lines to remove the default borders ---
         shape: const Border(),
         collapsedShape: const Border(),
-        // --- End of Fix ---
-        backgroundColor: AppColors.secondary.withValues(alpha: 0.1), // Corrected .withValues to .withOpacity
+        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
         iconColor: AppColors.secondary,
         collapsedIconColor: AppColors.secondary,
-        tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
+        tilePadding:
+        const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -180,7 +178,6 @@ class ShoppingListPage extends ConsumerWidget {
               ),
           ],
         ),
-        // By removing the `trailing` property, the default expand/collapse arrow is used
         children: list.items.isEmpty
             ? [
           Padding(
@@ -195,8 +192,7 @@ class ShoppingListPage extends ConsumerWidget {
             product: product,
             listName: list.name,
             onRemove: () {
-              shoppingListNotifier.removeItemFromList(
-                  list.name, product);
+              shoppingListNotifier.removeItemFromList(list.name, product);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Removed from "${list.name}"'),
@@ -211,7 +207,6 @@ class ShoppingListPage extends ConsumerWidget {
   }
 }
 
-// Placeholder for ShoppingListItemTile
 class ShoppingListItemTile extends StatelessWidget {
   final Product product;
   final String listName;

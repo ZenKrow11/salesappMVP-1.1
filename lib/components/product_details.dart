@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
@@ -29,7 +27,6 @@ class ProductDetails extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildProductName(),
           const SizedBox(height: 12),
-          // Pass context and ref to build overlay buttons
           _buildImageContainer(context, ref),
           const SizedBox(height: 20),
           _buildAvailabilityInfo(),
@@ -37,7 +34,6 @@ class ProductDetails extends ConsumerWidget {
           if (product.sonderkondition != null)
             const Divider(height: 32, color: Colors.white24),
           _buildPriceRow(),
-          // The old action buttons are removed from here.
         ],
       ),
     );
@@ -54,6 +50,7 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
+  // --- UPDATED to use the new unified bottom sheet ---
   Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList ?? 'Select List';
@@ -67,12 +64,14 @@ class ProductDetails extends ConsumerWidget {
       ),
       onPressed: () => showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
         useRootNavigator: true,
         backgroundColor: AppColors.background,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (ctx) => const ActiveListSelectorBottomSheet(),
+        // This opens the sheet in "select active list" mode.
+        builder: (ctx) => const ShoppingListBottomSheet(),
       ),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
@@ -112,31 +111,34 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // Helper for the new overlay button style
+  // --- UPDATED to accept onLongPress ---
   Widget _buildOverlayButton({
     required IconData icon,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
+    VoidCallback? onLongPress,
   }) {
     return Material(
       color: Colors.black.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       clipBehavior: Clip.antiAlias,
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 24),
-        onPressed: onPressed,
+      child: InkWell(
+        onTap: onPressed,
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(icon, color: Colors.white, size: 24),
+        ),
       ),
     );
   }
 
-  // Modified to include overlay buttons
+  // --- UPDATED with quick add (onPressed) and choose list (onLongPress) ---
   Widget _buildImageContainer(BuildContext context, WidgetRef ref) {
     return Stack(
       children: [
-        // Original image container
         Container(
           height: 300,
           width: double.infinity,
-          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
@@ -150,22 +152,36 @@ class ProductDetails extends ConsumerWidget {
             ),
           ),
         ),
-        // Visit Page Button - Top Right
-        Positioned(
-          top: 12,
-          right: 12,
-          child: _buildOverlayButton(
-            icon: Icons.open_in_new,
-            onPressed: () => _launchURL(context, product.url),
-          ),
-        ),
-        // Add Now Button - Bottom Right
         Positioned(
           bottom: 12,
           right: 12,
           child: _buildOverlayButton(
             icon: Icons.add_shopping_cart,
-            onPressed: () => showModalBottomSheet(
+            // Quick Add: Add to active list on short press
+            onPressed: () {
+              final activeList = ref.read(activeShoppingListProvider);
+              if (activeList != null) {
+                ref.read(shoppingListsProvider.notifier).addToList(activeList, product);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Added to "$activeList"')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No active list. Please select one.')),
+                );
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: AppColors.background,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (_) => const ShoppingListBottomSheet(),
+                );
+              }
+            },
+            // Choose List: Open bottom sheet to choose a list on long press
+            onLongPress: () => showModalBottomSheet(
               context: context,
               isScrollControlled: true,
               backgroundColor: AppColors.background,
@@ -175,13 +191,18 @@ class ProductDetails extends ConsumerWidget {
               builder: (_) => ShoppingListBottomSheet(
                 product: product,
                 onConfirm: (String selectedListName) {
-                  // Handle confirmation if needed, e.g., show a snackbar
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(content: Text('${product.name} added to $selectedListName')),
-                  // );
+                  // The sheet already shows a snackbar, but you could add more logic here.
                 },
               ),
             ),
+          ),
+        ),
+        Positioned(
+          bottom: 12,
+          left: 12,
+          child: _buildOverlayButton(
+            icon: Icons.open_in_new,
+            onPressed: () => _launchURL(context, product.url),
           ),
         ),
       ],
@@ -286,8 +307,6 @@ class ProductDetails extends ConsumerWidget {
       child: Text(value, style: textStyle, textAlign: TextAlign.center),
     );
   }
-
-  // The _buildActionButtons and _buildActionButton methods have been removed.
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);

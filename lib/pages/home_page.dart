@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
+import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/filter_sort_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
@@ -10,12 +10,8 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
-
-// --- NEW IMPORT ---
-// Import the custom page route we created for the slide-up animation.
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 
-/// The main page of the app, displaying a filterable and sortable list of products.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -147,8 +143,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             label: Text(buttonText,
                 style: const TextStyle(color: AppColors.inactive),
                 overflow: TextOverflow.ellipsis),
-            onPressed: () =>
-                _showModalSheet((_) => const ActiveListSelectorBottomSheet()),
+            // --- UPDATED CALL ---
+            onPressed: () => _showModalSheet(
+                    (_) => const ShoppingListBottomSheet(), // Use the unified sheet
+                isScrollControlled: true), // Set true to handle keyboard
             style: _actionButtonStyle(),
           ),
         ),
@@ -214,10 +212,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     groups.expand((g) => g.products).toList();
                     final initialIndex = flatSortedProducts
                         .indexWhere((p) => p.id == product.id);
-
-                    // --- IMPLEMENTATION OF CUSTOM ANIMATION ---
-                    // Instead of MaterialPageRoute, we use our custom SlideUpPageRoute
-                    // to get the desired "slide from bottom" animation.
                     Navigator.of(context).push(
                       SlideUpPageRoute(
                         page: ProductSwiperScreen(

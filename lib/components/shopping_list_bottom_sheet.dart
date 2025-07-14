@@ -1,232 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
+import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
-import '../widgets/theme_color.dart'; // Assuming theme_color.dart exists
-
-const String favoritesListName = 'Favorites';
+import '../widgets/theme_color.dart';
 
 class ShoppingListBottomSheet extends ConsumerStatefulWidget {
-  final Product product;
-  final void Function(String selectedListName) onConfirm;
+  final Product? product;
+  final void Function(String selectedListName)? onConfirm;
+  final int initialTabIndex;
 
   const ShoppingListBottomSheet({
     super.key,
-    required this.product,
-    required this.onConfirm,
-  });
+    this.product,
+    this.onConfirm,
+    this.initialTabIndex = 0,
+  }) : assert(product == null || onConfirm != null,
+  'onConfirm must be provided when a product is given');
 
   @override
   ConsumerState<ShoppingListBottomSheet> createState() =>
       _ShoppingListBottomSheetState();
 }
 
-class _ShoppingListBottomSheetState
-    extends ConsumerState<ShoppingListBottomSheet>
+class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomSheet>
     with SingleTickerProviderStateMixin {
   final TextEditingController _newListController = TextEditingController();
   String? _selectedList;
   late TabController _tabController;
 
+  bool get isSelectActiveMode => widget.product == null;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final shoppingLists = ref.watch(shoppingListsProvider);
-    final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
-
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Add to Shopping List',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: AppColors.accent,),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          const Divider(thickness: 1, height: 24),
-
-          // Tab Bar
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.secondary,
-            unselectedLabelColor: AppColors.inactive,
-            indicatorColor: AppColors.secondary,
-            tabs: const [
-              Tab(text: 'Select List'),
-              Tab(text: 'New List'),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Tab Content
-          SizedBox(
-            // Constrain height to make content scrollable
-            height: 220,
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Select List Tab
-                shoppingLists.isEmpty
-                    ? const Center(
-                  child: Text(
-                    'No shopping lists yet.\nCreate one in the "New List" tab.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.inactive),
-                  ),
-                )
-                    : ListView.builder(
-                  itemCount: shoppingLists.length,
-                  itemBuilder: (context, index) {
-                    final list = shoppingLists[index];
-                    final listName = list.name;
-                    return ListTile(
-                      title: Text(listName, style: const TextStyle(color: AppColors.primary)),
-                      selected: _selectedList == listName,
-                      selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
-                      onTap: () {
-                        setState(() {
-                          _newListController.clear();
-                          _selectedList = listName;
-                        });
-                      },
-                      trailing: IconButton(
-                        icon: const Icon(Icons.add, color: AppColors.primary),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.secondary.withValues(alpha: 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          shoppingListNotifier.addToList(listName, widget.product);
-                          widget.onConfirm(listName);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Added to "$listName"'),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    );
-                  },
-                ),
-
-                // Add List Tab
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: TextField(
-                    controller: _newListController,
-                    style: const TextStyle(color: AppColors.primary),
-                    decoration: InputDecoration(
-                      labelText: 'Create new list name',
-                      labelStyle: const TextStyle(color: AppColors.inactive),
-                      enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
-                          borderRadius: BorderRadius.circular(8.0)),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: AppColors.secondary),
-                          borderRadius: BorderRadius.circular(8.0)),
-                    ),
-                    onChanged: (value) {
-                      setState(() => _selectedList = null);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('CANCEL', style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    final listName = _newListController.text.isNotEmpty
-                        ? _newListController.text.trim()
-                        : _selectedList;
-
-                    if (listName != null && listName.isNotEmpty) {
-                      if (_newListController.text.isNotEmpty && shoppingLists.any((list) => list.name == listName)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('List name already exists'),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
-                        return;
-                      }
-                      if (_newListController.text.isNotEmpty) {
-                        // Create new list and add item
-                        shoppingListNotifier.addEmptyList(listName);
-                      }
-                      // Add to selected or newly created list
-                      shoppingListNotifier.addToList(listName, widget.product);
-                      widget.onConfirm(listName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Added to "$listName"'),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                      Navigator.of(context).pop();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter or select a list name'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('CONFIRM', style: TextStyle(color: AppColors.inactive,
-                  fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-        ],
-      ),
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
     );
   }
 
@@ -235,5 +46,247 @@ class _ShoppingListBottomSheetState
     _newListController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shoppingLists = ref.watch(shoppingListsProvider);
+    final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
+    final activeList = ref.watch(activeShoppingListProvider);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          // --- REMOVED ---: The Divider widget is gone.
+          const SizedBox(height: 12), // Added for spacing
+          _buildTabBar(),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 220,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSelectList(shoppingLists, activeList),
+                _buildNewListTab(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (!isSelectActiveMode) ...[
+            _buildConfirmActions(shoppingListNotifier),
+            const SizedBox(height: 10),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          isSelectActiveMode ? 'Select or Create List' : 'Add to List',
+          style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.secondary),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, color: AppColors.accent),
+          onPressed: () => Navigator.pop(context),
+        )
+      ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return TabBar(
+      controller: _tabController,
+      labelColor: AppColors.secondary,
+      unselectedLabelColor: AppColors.inactive,
+      indicatorColor: AppColors.secondary,
+      // --- ADDED ---: This removes the line under the TabBar.
+      dividerColor: Colors.transparent,
+      tabs: const [
+        Tab(text: 'Select List'),
+        Tab(text: 'New List'),
+      ],
+    );
+  }
+
+  Widget _buildSelectList(List<NamedList> lists, String? activeList) {
+    if (lists.isEmpty) {
+      return const Center(
+        child: Text(
+          'No shopping lists yet.\nCreate one in the "New List" tab.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.inactive),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: lists.length,
+      itemBuilder: (context, index) {
+        final list = lists[index];
+        final listName = list.name;
+        final bool isCurrentlyActive =
+        isSelectActiveMode ? listName == activeList : listName == _selectedList;
+
+        return Opacity(
+          opacity: isCurrentlyActive ? 1.0 : 0.7,
+          child: Card(
+            elevation: isCurrentlyActive ? 2 : 0,
+            // --- FIX ---: Corrected .withValues to .withOpacity
+            color: isCurrentlyActive ? AppColors.secondary.withValues(alpha: 0.9) : Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: ListTile(
+              title: Text(
+                listName,
+                style: TextStyle(
+                  fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
+                  color: isCurrentlyActive ? AppColors.primary : AppColors.inactive,
+                ),
+              ),
+              onTap: () {
+                if (isSelectActiveMode) {
+                  ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
+                  Navigator.pop(context);
+                } else {
+                  setState(() {
+                    _newListController.clear();
+                    _selectedList = listName;
+                  });
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNewListTab() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: _newListController,
+        autofocus: _tabController.index == 1,
+        style: const TextStyle(color: AppColors.primary),
+        onSubmitted: (listName) {
+          if (isSelectActiveMode) {
+            _onCreateAndSetActive(listName);
+          }
+        },
+        decoration: InputDecoration(
+          labelText: 'Create new list name',
+          labelStyle: const TextStyle(color: AppColors.inactive),
+          enabledBorder: OutlineInputBorder(
+            // --- FIX ---: Corrected .withValues to .withOpacity
+              borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(8.0)),
+          focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.secondary),
+              borderRadius: BorderRadius.circular(8.0)),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && _selectedList != null) {
+            setState(() => _selectedList = null);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildConfirmActions(ShoppingListNotifier notifier) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: const BorderSide(color: AppColors.inactive),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('CANCEL',
+                style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => _onConfirmAddPressed(notifier),
+            child: const Text('CONFIRM',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _onCreateAndSetActive(String listName) {
+    final trimmedName = listName.trim();
+    if (trimmedName.isEmpty) return;
+
+    final notifier = ref.read(shoppingListsProvider.notifier);
+    final currentLists = ref.read(shoppingListsProvider);
+
+    if (currentLists.any((list) => list.name == trimmedName)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('List name already exists')));
+      return;
+    }
+
+    notifier.addEmptyList(trimmedName);
+    ref.read(activeShoppingListProvider.notifier).setActiveList(trimmedName);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Created and selected "$trimmedName"')));
+  }
+
+  void _onConfirmAddPressed(ShoppingListNotifier notifier) {
+    final newListName = _newListController.text.trim();
+    final listName = newListName.isNotEmpty ? newListName : _selectedList;
+    final currentLists = ref.read(shoppingListsProvider);
+
+    if (listName == null || listName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter or select a list name')),
+      );
+      return;
+    }
+
+    if (newListName.isNotEmpty &&
+        currentLists.any((list) => list.name == listName)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('List name already exists')),
+      );
+      return;
+    }
+
+    if (newListName.isNotEmpty) {
+      notifier.addEmptyList(listName);
+    }
+
+    notifier.addToList(listName, widget.product!);
+    widget.onConfirm!(listName);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added to "$listName"')),
+    );
+    Navigator.of(context).pop();
   }
 }

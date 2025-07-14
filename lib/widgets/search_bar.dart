@@ -39,7 +39,6 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _textController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), () {
-        // This now calls the synchronous version.
         _fetchSuggestions();
       });
       setState(() {});
@@ -71,7 +70,11 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
           link: _layerLink,
           showWhenUnlinked: false,
           offset: Offset(0.0, size.height + 8.0),
-          child: _buildSuggestionsOverlay(),
+          child: Material(
+            elevation: 4.0,
+            borderRadius: BorderRadius.circular(12),
+            child: _buildSuggestionsOverlay(),
+          ),
         ),
       ),
     );
@@ -83,14 +86,10 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _overlayEntry = null;
   }
 
-  // --- THIS METHOD IS NOW CORRECTED ---
-  // It is no longer async and does not use .future
   void _fetchSuggestions() {
     if (!_focusNode.hasFocus || !mounted) return;
 
     final query = _textController.text;
-
-    // Read the result directly from the new synchronous provider.
     final suggestions = ref.read(searchSuggestionsProvider(query));
 
     if (!mounted) return;
@@ -100,11 +99,11 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
 
     _overlayEntry?.markNeedsBuild();
   }
-  // --- END OF CORRECTION ---
 
   void _commitSearch(String query) {
     _textController.text = query;
-    _textController.selection = TextSelection.fromPosition(TextPosition(offset: query.length));
+    _textController.selection =
+        TextSelection.fromPosition(TextPosition(offset: query.length));
     ref.read(filterStateProvider.notifier).update((state) => state.copyWith(searchQuery: query));
     _focusNode.unfocus();
   }
@@ -136,14 +135,16 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
               : null,
           filled: true,
           fillColor: AppColors.primary,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.inactive),
+
+          // --- THIS IS THE CORRECTED PART ---
+          // Define a single border that applies to all states.
+          // This ensures the fillColor is clipped to the border's shape.
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0), // Apply your desired radius here
+            borderSide: BorderSide.none, // No visible outline
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.secondary, width: 2.0),
-          ),
+
+          // The specific 'enabledBorder' and 'focusedBorder' are no longer needed.
         ),
       ),
     );
@@ -153,10 +154,11 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     if (_lastSuggestions.isEmpty || !_focusNode.hasFocus) {
       return const SizedBox.shrink();
     }
-    return Material(
-      elevation: 4.0,
-      borderRadius: BorderRadius.circular(12),
-      color: AppColors.primary,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         itemCount: _lastSuggestions.length,
@@ -164,7 +166,10 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
         itemBuilder: (context, index) {
           final suggestion = _lastSuggestions[index];
           return ListTile(
-            title: Text(suggestion, style: const TextStyle(color: AppColors.textWhite)),
+            title: Text(
+              suggestion,
+              style: const TextStyle(color: AppColors.textWhite),
+            ),
             onTap: () {
               _commitSearch(suggestion);
             },

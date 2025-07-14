@@ -1,9 +1,6 @@
-// lib/widgets/product_tile.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// --- (1) ADDED: Import the bottom sheet you want to open ---
-import 'package:sales_app_mvp/components/active_list_selector_bottom_sheet.dart';
+import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
@@ -129,20 +126,27 @@ class ProductTile extends ConsumerWidget {
           const SizedBox(width: 6),
           Expanded(
             child: ElevatedButton(
-              // --- (2) ADDED: The onLongPress handler ---
+              // --- (3) UPDATED: The onLongPress handler now uses the correct bottom sheet ---
               onLongPress: () {
-                // This code is similar to what's in home_page.dart
                 showModalBottomSheet(
                   context: context,
+                  isScrollControlled: true,
                   useRootNavigator: true,
                   backgroundColor: AppColors.background,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   ),
-                  builder: (ctx) => const ActiveListSelectorBottomSheet(),
+                  // This opens the sheet in "add product to list" mode.
+                  builder: (ctx) => ShoppingListBottomSheet(
+                    product: product,
+                    onConfirm: (String selectedListName) {
+                      // The sheet already shows a snackbar on success.
+                      // No extra action needed here, but the callback is required by the constructor.
+                    },
+                  ),
                 );
               },
-              // The existing quicksave logic for a regular tap
+              // The quicksave logic for a regular tap remains unchanged.
               onPressed: () {
                 final activeListName = ref.read(activeShoppingListProvider);
                 final notifier = ref.read(shoppingListsProvider.notifier);
@@ -150,7 +154,7 @@ class ProductTile extends ConsumerWidget {
                 if (activeListName == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please select a list first.'),
+                      content: Text('No active list. Long press to choose one.'),
                       duration: Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
                     ),
