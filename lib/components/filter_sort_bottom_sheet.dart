@@ -40,6 +40,8 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
 
   // Panel expansion logic.
   final Set<Object> _expandedPanelKeys = {};
+  // --- CHANGE 1: Added a key for the new store panel ---
+  final _storePanelKey = Object();
   final _categoryPanelKey = Object();
   final _subcategoryPanelKey = Object();
   final _sortPanelKey = Object();
@@ -50,8 +52,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     // Initialize the local state with the current global state.
     _localFilterState = ref.read(filterStateProvider);
   }
-
-  // --- HELPER METHODS ARE NOW CORRECTLY PLACED INSIDE THE STATE CLASS ---
 
   void _handleExpansion(bool isExpanded, Object panelKey) {
     setState(() {
@@ -79,7 +79,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // This is the complete build method, returning a Container.
     return Container(
       constraints:
       BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
@@ -123,10 +122,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 
   Widget _buildFilterList() {
-    // We only need the storeOptions, as the others will be derived.
     final storeOptions = ref.watch(storeOptionsProvider);
-
-    // Call the new family providers using our LOCAL filter state.
     final categoryOptions =
     ref.watch(categoryOptionsProviderFamily(_localFilterState));
     final subcategoryOptions =
@@ -137,21 +133,14 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Store',
-              style: TextStyle(
-                  fontSize: 18,
-                  color: AppColors.inactive,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          // This widget now updates the local state, triggering a rebuild
-          _StoreLogoFilter(
+          // --- CHANGE 2: Replaced the old Store section with the new expansion tile ---
+          _buildStoreExpansionTile(
             allStores: storeOptions,
             selectedStores: _localFilterState.selectedStores,
             onStoreToggled: (store) {
               setState(() {
                 final newStores =
                 _toggleListOption(_localFilterState.selectedStores, store);
-                // Reset child filters when parent changes
                 _localFilterState = _localFilterState.copyWith(
                   selectedStores: newStores,
                   selectedCategories: [],
@@ -160,7 +149,8 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
               });
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // --- END CHANGE 2 ---
 
           _buildMultiSelectExpansionTile(
             key: _categoryPanelKey,
@@ -171,7 +161,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
               setState(() {
                 final newCategories = _toggleListOption(
                     _localFilterState.selectedCategories, category);
-                // Reset child filter
                 _localFilterState = _localFilterState.copyWith(
                   selectedCategories: newCategories,
                   selectedSubcategories: [],
@@ -231,7 +220,8 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
                 foregroundColor: AppColors.textPrimary,
                 side: const BorderSide(color: AppColors.accent),
               ),
-              child: const Text('Reset', style: TextStyle(color: AppColors.accent)),
+              child:
+              const Text('Reset', style: TextStyle(color: AppColors.accent)),
             ),
           ),
           const SizedBox(width: 12),
@@ -255,7 +245,95 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
     );
   }
 
-  // --- ALL HELPER BUILDER WIDGETS ARE NOW INCLUDED ---
+  // --- CHANGE 3: Created a new builder method for the Store Expansion Tile ---
+  Widget _buildStoreExpansionTile({
+    required List<String> allStores,
+    required List<String> selectedStores,
+    required ValueChanged<String> onStoreToggled,
+  }) {
+    return Card(
+      elevation: 0,
+      color: AppColors.inactive,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: ValueKey(_storePanelKey),
+        title: const Text('Store',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        initiallyExpanded: _expandedPanelKeys.contains(_storePanelKey),
+        onExpansionChanged: (isExpanding) =>
+            _handleExpansion(isExpanding, _storePanelKey),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          const Divider(height: 1, endIndent: 0, indent: 0),
+          const SizedBox(height: 16),
+          if (allStores.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Loading stores...",
+                    style: TextStyle(color: Colors.grey)),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 12.0,
+              runSpacing: 12.0,
+              alignment: WrapAlignment.center,
+              children: allStores.map((store) {
+                final isSelected = selectedStores.contains(store);
+                return GestureDetector(
+                  onTap: () => onStoreToggled(store),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.inactive,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : Colors.white,
+                            width: isSelected ? 2.5 : 1.5,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                            BoxShadow(
+                                color: AppColors.primary.withAlpha(75),
+                                blurRadius: 5,
+                                spreadRadius: 1)
+                          ]
+                              : [
+                            BoxShadow(
+                                color: Colors.black.withAlpha(12),
+                                blurRadius: 2,
+                                offset: const Offset(1, 1))
+                          ],
+                        ),
+                        child: StoreLogo(storeName: store, height: 32),
+                      ),
+                      if (isSelected)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withAlpha(150),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.check_circle,
+                                color: AppColors.inactive, size: 28),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+  // --- END CHANGE 3 ---
 
   Widget _buildMultiSelectExpansionTile({
     required Object key,
@@ -290,8 +368,7 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
             )
           else
             SizedBox(
-              height:
-              options.length > 5 ? 240 : null, // Constrain height if list is long
+              height: options.length > 5 ? 240 : null,
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: options.length,
@@ -360,87 +437,6 @@ class _FilterSortBottomSheetState extends ConsumerState<FilterSortBottomSheet> {
   }
 }
 
-// Store logo filter is now defined in the same file for simplicity.
-class _StoreLogoFilter extends StatelessWidget {
-  final List<String> allStores;
-  final List<String> selectedStores;
-  final ValueChanged<String> onStoreToggled;
-
-  const _StoreLogoFilter(
-      {required this.allStores,
-        required this.selectedStores,
-        required this.onStoreToggled});
-
-  @override
-  Widget build(BuildContext context) {
-    if (allStores.isEmpty) {
-      return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Loading stores...", style: TextStyle(color: Colors.grey)),
-          ));
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.inactive,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Wrap(
-        spacing: 12.0,
-        runSpacing: 12.0,
-        alignment: WrapAlignment.center,
-        children: allStores.map((store) {
-          final isSelected = selectedStores.contains(store);
-          return GestureDetector(
-            onTap: () => onStoreToggled(store),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.inactive,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.white,
-                      width: isSelected ? 2.5 : 1.5,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                      BoxShadow(
-                          color: AppColors.primary.withAlpha(75),
-                          blurRadius: 5,
-                          spreadRadius: 1)
-                    ]
-                        : [
-                      BoxShadow(
-                          color: Colors.black.withAlpha(12),
-                          blurRadius: 2,
-                          offset: const Offset(1, 1))
-                    ],
-                  ),
-                  child: StoreLogo(storeName: store, height: 32),
-                ),
-                if (isSelected)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(150),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.check_circle,
-                          color: AppColors.inactive, size: 28),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
+// NOTE: The _StoreLogoFilter class is no longer needed as its logic
+// has been integrated directly into the _buildStoreExpansionTile method.
+// You can safely delete it.

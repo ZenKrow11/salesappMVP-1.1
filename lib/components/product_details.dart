@@ -19,27 +19,27 @@ class ProductDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, ref),
-            const SizedBox(height: 16),
-            _buildCategoryRows(),
-            const SizedBox(height: 16),
-            _buildProductName(),
-            const SizedBox(height: 12),
-            _buildImageContainer(),
-            const SizedBox(height: 20),
-            _buildAvailabilityInfo(),
-            _buildSonderkonditionInfo(),
-            if (product.sonderkondition != null)
-              const Divider(height: 32, color: Colors.white24),
-            _buildPriceRow(),
-            const SizedBox(height: 24),
-            _buildActionButtons(context, ref),
-          ],
-        ),
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context, ref),
+          const SizedBox(height: 16),
+          _buildCategoryRows(),
+          const SizedBox(height: 16),
+          _buildProductName(),
+          const SizedBox(height: 12),
+          // Pass context and ref to build overlay buttons
+          _buildImageContainer(context, ref),
+          const SizedBox(height: 20),
+          _buildAvailabilityInfo(),
+          _buildSonderkonditionInfo(),
+          if (product.sonderkondition != null)
+            const Divider(height: 32, color: Colors.white24),
+          _buildPriceRow(),
+          // The old action buttons are removed from here.
+        ],
+      ),
     );
   }
 
@@ -112,23 +112,79 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  Widget _buildImageContainer() {
-    return Container(
-      height: 300,
-      width: double.infinity,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
+  // Helper for the new overlay button style
+  Widget _buildOverlayButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 24),
+        onPressed: onPressed,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: ImageWithAspectRatio(
-          imageUrl: product.imageUrl,
-          maxWidth: double.infinity,
-          maxHeight: 300,
+    );
+  }
+
+  // Modified to include overlay buttons
+  Widget _buildImageContainer(BuildContext context, WidgetRef ref) {
+    return Stack(
+      children: [
+        // Original image container
+        Container(
+          height: 300,
+          width: double.infinity,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ImageWithAspectRatio(
+              imageUrl: product.imageUrl,
+              maxWidth: double.infinity,
+              maxHeight: 300,
+            ),
+          ),
         ),
-      ),
+        // Visit Page Button - Top Right
+        Positioned(
+          top: 12,
+          right: 12,
+          child: _buildOverlayButton(
+            icon: Icons.open_in_new,
+            onPressed: () => _launchURL(context, product.url),
+          ),
+        ),
+        // Add Now Button - Bottom Right
+        Positioned(
+          bottom: 12,
+          right: 12,
+          child: _buildOverlayButton(
+            icon: Icons.add_shopping_cart,
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: AppColors.background,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (_) => ShoppingListBottomSheet(
+                product: product,
+                onConfirm: (String selectedListName) {
+                  // Handle confirmation if needed, e.g., show a snackbar
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(content: Text('${product.name} added to $selectedListName')),
+                  // );
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -231,61 +287,7 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.open_in_new,
-            label: 'Visit Product',
-            onPressed: () => _launchURL(context, product.url),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.add_shopping_cart,
-            label: 'Save to list',
-            onPressed: () => showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: AppColors.background,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (_) => ShoppingListBottomSheet(
-                product: product,
-                onConfirm: (String selectedListName) {},
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, size: 20, color: AppColors.primary),
-      label: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textBlack),
-      ),
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.secondary,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
+  // The _buildActionButtons and _buildActionButton methods have been removed.
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -295,9 +297,11 @@ class ProductDetails extends ConsumerWidget {
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Could not open product link")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open product link")),
+        );
+      }
     }
   }
 }
