@@ -11,6 +11,9 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/search_bar.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+// --- NEW ---
+import 'package:sales_app_mvp/widgets/item_count_widget.dart';
+
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -102,33 +105,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // --- HEAVILY MODIFIED AND SIMPLIFIED ---
   Widget _buildSearchBarAndCount() {
     return SizedBox(
       height: 56,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Expanded(child: SearchBarWidget()),
-          const SizedBox(width: 12),
-          Consumer(
-            builder: (context, ref, child) {
-              final count = ref.watch(productCountProvider);
-              return Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.inactive.withAlpha(128)),
-                  borderRadius: BorderRadius.circular(4.0),
-                ),
-                child: Text('${count.filtered}/${count.total}',
-                    style: const TextStyle(
-                        color: AppColors.inactive,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500)),
-              );
-            },
-          ),
-        ],
+      child: SearchBarWidget(
+        // Pass the ItemCountWidget as the trailing parameter
+        trailing: Consumer(
+          builder: (context, ref, child) {
+            final count = ref.watch(productCountProvider);
+            return ItemCountWidget(
+              filtered: count.filtered,
+              total: count.total,
+            );
+          },
+        ),
       ),
     );
   }
@@ -143,10 +134,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             label: Text(buttonText,
                 style: const TextStyle(color: AppColors.inactive),
                 overflow: TextOverflow.ellipsis),
-            // --- UPDATED CALL ---
             onPressed: () => _showModalSheet(
-                    (_) => const ShoppingListBottomSheet(), // Use the unified sheet
-                isScrollControlled: true), // Set true to handle keyboard
+                    (_) => const ShoppingListBottomSheet(),
+                isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
@@ -159,8 +149,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 style: TextStyle(color: AppColors.inactive),
                 overflow: TextOverflow.ellipsis),
             onPressed: () => _showModalSheet(
-                    (_) => const FilterSortBottomSheet(),
-                isScrollControlled: true),
+                    (_) => const FilterSortBottomSheet(), isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
@@ -170,10 +159,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   ButtonStyle _actionButtonStyle() {
     return TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            side: BorderSide(color: AppColors.inactive.withAlpha(128))));
+      backgroundColor: AppColors.primary,
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+    );
   }
 
   void _showModalSheet(Widget Function(BuildContext) builder,

@@ -6,7 +6,11 @@ import 'package:sales_app_mvp/providers/search_suggestions_provider.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class SearchBarWidget extends ConsumerStatefulWidget {
-  const SearchBarWidget({super.key});
+  // --- NEW ---
+  // Add a parameter to accept a trailing widget
+  final Widget? trailing;
+
+  const SearchBarWidget({super.key, this.trailing});
 
   @override
   ConsumerState<SearchBarWidget> createState() => _SearchBarWidgetState();
@@ -111,11 +115,19 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
   void _clearSearch() {
     _textController.clear();
     ref.read(filterStateProvider.notifier).update((state) => state.copyWith(searchQuery: ''));
-    _focusNode.unfocus();
+    // No need to unfocus here, user might want to type a new search
   }
 
   @override
   Widget build(BuildContext context) {
+    // Determine which suffix icon to show
+    final suffixIcon = _textController.text.isNotEmpty
+        ? IconButton(
+      icon: const Icon(Icons.clear, color: AppColors.accent),
+      onPressed: _clearSearch,
+    )
+        : null;
+
     return CompositedTransformTarget(
       link: _layerLink,
       child: TextField(
@@ -127,24 +139,23 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
           hintText: 'Search products...',
           hintStyle: const TextStyle(color: AppColors.inactive),
           prefixIcon: const Icon(Icons.search, color: AppColors.secondary),
-          suffixIcon: _textController.text.isNotEmpty
-              ? IconButton(
-            icon: const Icon(Icons.clear, color: AppColors.accent),
-            onPressed: _clearSearch,
-          )
-              : null,
-          filled: true,
-          fillColor: AppColors.primary,
 
-          // --- THIS IS THE CORRECTED PART ---
-          // Define a single border that applies to all states.
-          // This ensures the fillColor is clipped to the border's shape.
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0), // Apply your desired radius here
-            borderSide: BorderSide.none, // No visible outline
+          // --- UPDATED ---
+          // Use a Row in the suffix to hold both the clear button and the new trailing widget
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min, // Important to keep the row compact
+            children: [
+              if (widget.trailing != null) widget.trailing!,
+              if (suffixIcon != null) suffixIcon,
+            ],
           ),
 
-          // The specific 'enabledBorder' and 'focusedBorder' are no longer needed.
+          filled: true,
+          fillColor: AppColors.primary,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
