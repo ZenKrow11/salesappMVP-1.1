@@ -6,7 +6,11 @@ import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
 import '../widgets/theme_color.dart';
 
-const String favoritesListName = 'Favorites';
+// The constant for the special list name should be in your provider file,
+// but it's also used here, so we re-declare or import it.
+// To avoid duplication, it's best if the provider file exports it.
+// For now, we'll define it here to match the provider.
+const String merkzettelListName = 'Merkzettel';
 
 class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
@@ -16,10 +20,10 @@ class ShoppingListPage extends ConsumerWidget {
     final shoppingLists = ref.watch(shoppingListsProvider);
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
-    final favorites = shoppingLists.firstWhere(
-          (list) => list.name == favoritesListName,
+    final merkzettel = shoppingLists.firstWhere(
+          (list) => list.name == merkzettelListName,
       orElse: () => NamedList(
-        name: favoritesListName,
+        name: merkzettelListName,
         items: [],
         index: -1,
       ),
@@ -28,7 +32,6 @@ class ShoppingListPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
-        // --- UPDATED CALL ---
         onPressed: () {
           showModalBottomSheet(
             context: context,
@@ -37,7 +40,6 @@ class ShoppingListPage extends ConsumerWidget {
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
             builder: (ctx) => const ShoppingListBottomSheet(
-              // Tell the sheet to open on the 'New List' tab (index 1)
               initialTabIndex: 1,
             ),
           );
@@ -64,7 +66,7 @@ class ShoppingListPage extends ConsumerWidget {
           _buildListCard(
             context,
             ref,
-            favorites,
+            merkzettel,
             allowDelete: false,
           ),
           const SizedBox(height: 16),
@@ -72,7 +74,7 @@ class ShoppingListPage extends ConsumerWidget {
             builder: (context, ref, child) {
               final updatedLists = ref.watch(shoppingListsProvider);
               final otherLists = updatedLists
-                  .where((list) => list.name != favoritesListName)
+                  .where((list) => list.name != merkzettelListName)
                   .toList()
                 ..sort((a, b) => a.index.compareTo(b.index));
 
@@ -132,13 +134,23 @@ class ShoppingListPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Text(
-                list.name,
-                style: const TextStyle(
-                    color: AppColors.secondary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  if (list.name == merkzettelListName) ...[
+                    const Icon(Icons.note_alt_outlined, color: AppColors.secondary, size: 24),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Text(
+                      list.name,
+                      style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (allowDelete)
