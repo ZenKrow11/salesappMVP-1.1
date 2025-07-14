@@ -5,30 +5,18 @@ import '../models/product.dart';
 import '../models/named_list.dart';
 
 /// A service layer that handles all direct database interactions with Hive
-/// for both favorites and shopping lists.
+/// for named shopping lists. The old concept of a separate favorites box is removed.
 class HiveStorageService {
-  final Box<Product> _favoritesBox;
   final Box<NamedList> _namedListsBox;
 
+  // The constructor no longer requires a 'favoritesBox'.
   HiveStorageService({
-    required Box<Product> favoritesBox,
     required Box<NamedList> namedListsBox,
-  })  : _favoritesBox = favoritesBox,
-        _namedListsBox = namedListsBox;
+  }) : _namedListsBox = namedListsBox;
 
-  // --- Favorites Methods ---
+  // --- All methods related to the old favoritesBox have been removed. ---
 
-  List<Product> getFavorites() => _favoritesBox.values.toList();
-  bool isFavorite(String productId) => _favoritesBox.containsKey(productId);
-  Future<void> toggleFavorite(Product product) async {
-    if (_favoritesBox.containsKey(product.id)) {
-      await _favoritesBox.delete(product.id);
-    } else {
-      await _favoritesBox.put(product.id, product);
-    }
-  }
-
-  // --- Shopping List Methods (NOW COMPLETE) ---
+  // --- Shopping List Methods ---
 
   List<NamedList> getShoppingLists() {
     return _namedListsBox.values.toList()

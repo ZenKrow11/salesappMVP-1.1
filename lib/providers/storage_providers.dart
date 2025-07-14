@@ -4,35 +4,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
-import '../services/hive_storage_service.dart'; // Import your existing service
+import '../services/hive_storage_service.dart';
 
-/// Handles the one-time initialization of Hive, including registering adapters and opening all necessary boxes.
+/// Handles the one-time initialization of Hive.
 final hiveInitializationProvider = FutureProvider<void>((ref) async {
-  // Ensure all Hive type adapters are registered here.
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(NamedListAdapter());
 
-  // Open all the boxes your app will need at startup.
   await Hive.openBox<Product>('products');
-  await Hive.openBox<Product>('favorites'); // Required by your service
-  await Hive.openBox<NamedList>('namedLists'); // Required by your service
+  await Hive.openBox<NamedList>('namedLists');
+
+  // IMPORTANT: We open the old 'favorites' box one last time here so that our
+  // migration logic in the ShoppingListNotifier can access it.
+  // After you are confident your users have updated, you can safely remove this line.
+  await Hive.openBox<Product>('favorites');
 
   print("[HiveProvider] All Hive boxes initialized and opened.");
 });
 
 /// Creates and provides the single instance of your HiveStorageService.
-/// This provider guarantees that the service is only created *after* Hive is fully initialized, preventing race conditions.
 final hiveStorageServiceProvider = Provider<HiveStorageService>((ref) {
   // This dependency ensures the code below only runs after initialization is complete.
   ref.watch(hiveInitializationProvider);
 
-  // Now that we know the boxes are open, we can safely get them.
-  final favoritesBox = Hive.box<Product>('favorites');
   final namedListsBox = Hive.box<NamedList>('namedLists');
 
-  // Create and return the service instance with the required open boxes.
+  // The service is now created with only the namedListsBox, as required.
   return HiveStorageService(
-    favoritesBox: favoritesBox,
     namedListsBox: namedListsBox,
   );
 });
