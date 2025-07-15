@@ -8,7 +8,7 @@ import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/products_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
-import 'package:sales_app_mvp/widgets/search_bar.dart';
+import 'package:sales_app_mvp/widgets/search_bar_widget.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 // --- NEW ---

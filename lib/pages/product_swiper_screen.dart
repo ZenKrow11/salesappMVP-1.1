@@ -6,7 +6,7 @@ import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 // This custom physics class from your original code can be kept
-// if you prefer its specific drag-start behavior.
+// as it works for both horizontal and vertical scrolling.
 class CustomPageScrollPhysics extends PageScrollPhysics {
   const CustomPageScrollPhysics({super.parent});
 
@@ -54,43 +54,37 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     // Get the height of the top status bar (the notch/island area).
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return GestureDetector(
-      onVerticalDragEnd: (details) {
-        // Keep the "swipe down to close" gesture for a fluid UX.
-        const double swipeVelocityThreshold = 1500;
-        if (details.primaryVelocity != null &&
-            details.primaryVelocity! > swipeVelocityThreshold) {
-          Navigator.of(context).pop();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        // We use a Column to stack the UI elements vertically.
-        body: Column(
-          children: [
-            // 1. A Container that acts as a custom "app bar" area.
-            // Its height perfectly matches the system's status bar.
-            Container(
-              height: statusBarHeight,
-              color: AppColors.primary,
+    // We removed the outer GestureDetector as its vertical swipe-to-close
+    // functionality would conflict with the new vertical PageView.
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      // We use a Column to stack the UI elements vertically.
+      body: Column(
+        children: [
+          // 1. A Container that acts as a custom "app bar" area.
+          // Its height perfectly matches the system's status bar.
+          Container(
+            height: statusBarHeight,
+            color: AppColors.primary,
+          ),
+          // 2. The main content, which expands to fill the available space.
+          Expanded(
+            child: PageView.builder(
+              // MODIFICATION: Changed scroll direction to vertical.
+              scrollDirection: Axis.vertical,
+              physics: const CustomPageScrollPhysics(),
+              dragStartBehavior: DragStartBehavior.down,
+              controller: _pageController,
+              itemCount: widget.products.length,
+              itemBuilder: (context, index) {
+                final product = widget.products[index];
+                return ProductDetails(product: product);
+              },
             ),
-            // 2. The main content, which expands to fill the available space.
-            Expanded(
-              child: PageView.builder(
-                physics: const CustomPageScrollPhysics(),
-                dragStartBehavior: DragStartBehavior.down,
-                controller: _pageController,
-                itemCount: widget.products.length,
-                itemBuilder: (context, index) {
-                  final product = widget.products[index];
-                  return ProductDetails(product: product);
-                },
-              ),
-            ),
-            // 3. The dedicated close button at the bottom of the screen.
-            _buildCloseButton(context),
-          ],
-        ),
+          ),
+          // 3. The dedicated close button at the bottom of the screen.
+          _buildCloseButton(context),
+        ],
       ),
     );
   }
@@ -111,8 +105,10 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
             borderRadius: BorderRadius.zero,
           ),
         ),
+        // MODIFICATION: Changed icon for better UX clarity.
+        // An arrow icon is now ambiguous, but a close icon is clear.
         child: const Icon(
-          Icons.arrow_downward,
+          Icons.close,
           size: 32,
           color: AppColors.accent,
         ),

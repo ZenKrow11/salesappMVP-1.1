@@ -13,24 +13,20 @@ class ItemCountWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A small container to sit inside the search bar's suffix area.
-    // We add padding here to control its size.
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0), // Padding from the edge of the search bar
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-        decoration: BoxDecoration(
-          // Using a slightly different color to distinguish from the search bar itself
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: Text(
-          '$filtered/$total',
-          style: const TextStyle(
-            color: AppColors.inactive,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+    // REMOVED: The outer Padding widget.
+    return Container(
+      // The padding is now inside the container
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+      decoration: BoxDecoration(
+        color: AppColors.primary, // Or maybe a slightly different color
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
+        '$filtered/$total',
+        style: const TextStyle(
+          color: AppColors.inactive,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

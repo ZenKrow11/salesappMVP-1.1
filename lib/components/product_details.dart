@@ -198,8 +198,8 @@ class ProductDetails extends ConsumerWidget {
           ),
         ),
         Positioned(
-          bottom: 12,
-          left: 12,
+          top: 12,
+          right: 12,
           child: _buildOverlayButton(
             icon: Icons.open_in_new,
             onPressed: () => _launchURL(context, product.url),
