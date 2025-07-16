@@ -11,8 +11,15 @@ import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class ProductDetails extends ConsumerWidget {
   final Product product;
+  final int currentIndex;
+  final int totalItems;
 
-  const ProductDetails({super.key, required this.product});
+  const ProductDetails({
+    super.key,
+    required this.product,
+    required this.currentIndex,
+    required this.totalItems,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,45 +46,82 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
+  /// Header with Store Logo (left), Centered Counter, and List Button (right).
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        StoreLogo(storeName: product.store, height: 48),
-        const Spacer(),
-        _buildActiveListButton(context, ref),
+      children: <Widget>[
+        Expanded(
+          flex: 3, // Give more space to the logo
+          child: StoreLogo(storeName: product.store, height: 48),
+        ),
+        const Spacer(flex: 1), // Add a spacer to push the counter
+        Expanded(
+          flex: 2, // Give space to the counter
+          child: _buildCounter(),
+        ),
+        const Spacer(flex: 1), // Add a spacer to push the button
+        Expanded(
+          flex: 3, // Give more space to the button
+          child: _buildActiveListButton(context, ref),
+        ),
       ],
     );
   }
 
-  // --- UPDATED to use the new unified bottom sheet ---
+  /// A styled counter that matches the design of the home page's ItemCountWidget.
+  Widget _buildCounter() {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 90), // Ensure minimum width
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Text(
+        '$currentIndex / $totalItems',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: AppColors.inactive,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// A styled button that matches the design of the home page's action buttons.
   Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList ?? 'Select List';
 
-    return TextButton.icon(
-      icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 20),
-      label: Text(
-        buttonText,
-        style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
-        overflow: TextOverflow.ellipsis,
-      ),
-      onPressed: () => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useRootNavigator: true,
-        backgroundColor: AppColors.background,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Expanded(
+      flex: 2, // Adjust flex factor as needed
+      child: TextButton.icon(
+        icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 24.0),
+        label: Text(
+          buttonText,
+          style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
-        // This opens the sheet in "select active list" mode.
-        builder: (ctx) => const ShoppingListBottomSheet(),
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          side: BorderSide(color: AppColors.inactive.withAlpha(128)),
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          useRootNavigator: true,
+          backgroundColor: AppColors.background,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) => const ShoppingListBottomSheet(),
+        ),
+        style: TextButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+          minimumSize: const Size(0, 48), // Match height of store logo
         ),
       ),
     );
@@ -111,14 +155,13 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- UPDATED to accept onLongPress ---
   Widget _buildOverlayButton({
     required IconData icon,
     VoidCallback? onPressed,
     VoidCallback? onLongPress,
   }) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.5),
+      color: Colors.black.withOpacity(0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -132,7 +175,6 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- UPDATED with quick add (onPressed) and choose list (onLongPress) ---
   Widget _buildImageContainer(BuildContext context, WidgetRef ref) {
     return Stack(
       children: [
@@ -140,7 +182,7 @@ class ProductDetails extends ConsumerWidget {
           height: 300,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: ClipRRect(
@@ -157,7 +199,6 @@ class ProductDetails extends ConsumerWidget {
           right: 12,
           child: _buildOverlayButton(
             icon: Icons.add_shopping_cart,
-            // Quick Add: Add to active list on short press
             onPressed: () {
               final activeList = ref.read(activeShoppingListProvider);
               if (activeList != null) {
@@ -180,7 +221,6 @@ class ProductDetails extends ConsumerWidget {
                 );
               }
             },
-            // Choose List: Open bottom sheet to choose a list on long press
             onLongPress: () => showModalBottomSheet(
               context: context,
               isScrollControlled: true,
@@ -190,9 +230,7 @@ class ProductDetails extends ConsumerWidget {
               ),
               builder: (_) => ShoppingListBottomSheet(
                 product: product,
-                onConfirm: (String selectedListName) {
-                  // The sheet already shows a snackbar, but you could add more logic here.
-                },
+                onConfirm: (String selectedListName) {},
               ),
             ),
           ),

@@ -14,22 +14,46 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-// --- REMOVED: initialDataReadyProvider is no longer needed. ---
-// The logic is now handled directly by appReadyProvider.
+// --- NEW: Step 1 - Define a state class for our startup progress ---
+@immutable
+class StartupState {
+  const StartupState({required this.progress, required this.message});
 
-// --- SIMPLIFIED: The "App Ready" Coordinator ---
-/// This master provider coordinates all essential startup tasks.
-/// It waits for both core services (like Hive) and the initial product data fetch to complete.
-final appReadyProvider = FutureProvider<void>((ref) async {
-  // Wait for all futures in the list to complete.
-  await Future.wait([
-    ref.watch(hiveInitializationProvider.future), // Waits for Hive to be set up.
+  final double progress;
+  final String message;
+}
 
-    // --- THIS IS THE FIX ---
-    // We wait for the FETCH action to complete, not the synchronous data provider.
-    ref.watch(productFetchProvider.future),
-  ]);
+// --- NEW: Step 2 - Create a StateNotifier to manage the startup process ---
+class StartupNotifier extends StateNotifier<StartupState> {
+  StartupNotifier(this._ref) : super(const StartupState(progress: 0.0, message: 'Initializing...')) {
+    _initialize();
+  }
+
+  final Ref _ref;
+
+  // This method runs the startup tasks sequentially and updates the state.
+  Future<void> _initialize() async {
+    // Task 1: Initialize Hive (Let's say this is 50% of the work)
+    state = const StartupState(progress: 0.0, message: 'Preparing local storage...');
+    await _ref.read(hiveInitializationProvider.future);
+    state = const StartupState(progress: 0.5, message: 'Loading latest deals...');
+
+    // Task 2: Fetch products (The other 50%)
+    await _ref.read(productFetchProvider.future);
+    state = const StartupState(progress: 1.0, message: 'All set!');
+
+    // A small delay to allow the user to see the "All set!" message.
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+}
+
+/// The provider that the UI will watch to get progress updates.
+final startupProvider = StateNotifierProvider<StartupNotifier, StartupState>((ref) {
+  return StartupNotifier(ref);
 });
+
+// --- DEPRECATED: The old appReadyProvider is no longer needed. ---
+// final appReadyProvider = FutureProvider<void>((ref) async { ... });
 
 
 class SplashScreen extends ConsumerWidget {
@@ -37,31 +61,24 @@ class SplashScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The rest of the widget is exactly the same and works perfectly.
-    final appReady = ref.watch(appReadyProvider);
+    // --- MODIFIED: Watch our new startupProvider instead of the old one ---
+    final startupState = ref.watch(startupProvider);
 
-    appReady.when(
-      data: (_) {
+    // Navigate when initialization is complete (progress is 1.0)
+    ref.listen(startupProvider, (previous, next) {
+      if (next.progress == 1.0) {
+        // Use addPostFrameCallback to ensure the build method is complete.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AuthGate()),
           );
         });
-      },
-      error: (err, stack) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            "Failed to initialize the app. Please restart.\n\nError: $err",
-            style: const TextStyle(color: Colors.red),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-      loading: () {}, // UI is shown below, so this can be empty.
-    );
+      }
+    });
 
-    // This UI remains unchanged.
+    // We don't need the .when() handler anymore as the UI is always visible
+    // and updates based on the startupState.
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
@@ -74,18 +91,25 @@ class SplashScreen extends ConsumerWidget {
               color: AppColors.secondary,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Loading Deals...',
-              style: TextStyle(
+            Text(
+              // --- MODIFIED: Show the dynamic message from our state ---
+              startupState.message,
+              style: const TextStyle(
                 fontSize: 18,
                 color: AppColors.inactive,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 16),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 2,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48.0),
+              // --- REPLACED: Use a LinearProgressIndicator ---
+              child: LinearProgressIndicator(
+                // The value comes directly from our startup state
+                value: startupState.progress,
+                backgroundColor: AppColors.inactive.withValues(alpha: 10.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
             ),
           ],
         ),

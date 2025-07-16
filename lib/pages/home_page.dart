@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/components/filter_sort_bottom_sheet.dart';
+import 'package:sales_app_mvp/components/filter_bottom_sheet.dart'; // UPDATED import
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
@@ -11,9 +11,8 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/search_bar_widget.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
-// --- NEW ---
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
-
+import 'package:sales_app_mvp/widgets/sort_button_widget.dart'; // NEW import
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -48,8 +47,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _scrollToTop() {
-    _scrollController.animateTo(0.0,
-        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
   }
 
   @override
@@ -105,12 +103,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // --- HEAVILY MODIFIED AND SIMPLIFIED ---
   Widget _buildSearchBarAndCount() {
     return SizedBox(
       height: 56,
       child: SearchBarWidget(
-        // Pass the ItemCountWidget as the trailing parameter
         trailing: Consumer(
           builder: (context, ref, child) {
             final count = ref.watch(productCountProvider);
@@ -124,34 +120,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // --- HEAVILY MODIFIED TO SPLIT BUTTONS ---
   Widget _buildActionButtons(String buttonText) {
     return Row(
       children: [
         Expanded(
+          flex: 2, // Give more space to the list name
           child: TextButton.icon(
-            icon: const Icon(Icons.add_shopping_cart,
-                color: AppColors.secondary, size: 24.0),
-            label: Text(buttonText,
-                style: const TextStyle(color: AppColors.inactive),
-                overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet(
-                    (_) => const ShoppingListBottomSheet(),
-                isScrollControlled: true),
+            icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary, size: 24.0),
+            label: Text(buttonText, style: const TextStyle(color: AppColors.inactive), overflow: TextOverflow.ellipsis),
+            onPressed: () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
+          flex: 2, // Give less space to the filter button
           child: TextButton.icon(
-            icon: const Icon(Icons.filter_alt,
-                color: AppColors.secondary, size: 24.0),
-            label: const Text('Filter and Sort',
-                style: TextStyle(color: AppColors.inactive),
-                overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet(
-                    (_) => const FilterSortBottomSheet(), isScrollControlled: true),
+            icon: const Icon(Icons.filter_alt, color: AppColors.secondary, size: 24.0),
+            label: const Text('Filter', style: TextStyle(color: AppColors.inactive), overflow: TextOverflow.ellipsis),
+            onPressed: () => _showModalSheet((_) => const FilterBottomSheet(), isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
+        ),
+        const SizedBox(width: 8),
+        const Expanded(
+          flex: 1, // Give less space to the sort button
+          child: SortButton(), // Use the new modular widget
         ),
       ],
     );
@@ -161,24 +156,22 @@ class _HomePageState extends ConsumerState<HomePage> {
     return TextButton.styleFrom(
       backgroundColor: AppColors.primary,
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     );
   }
 
-  void _showModalSheet(Widget Function(BuildContext) builder,
-      {bool isScrollControlled = false}) {
+  void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent, // Important for custom border radius
       isScrollControlled: isScrollControlled,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: builder,
     );
   }
+
+  // The rest of the HomePage widget remains the same...
+  // _buildProductGroupSlivers, _GroupHeader, etc. are unchanged.
 
   List<Widget> _buildProductGroupSlivers(List<ProductGroup> groups) {
     return [
@@ -199,16 +192,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 return ProductTile(
                   product: product,
                   onTap: () {
-                    final flatSortedProducts =
-                    groups.expand((g) => g.products).toList();
-                    final initialIndex = flatSortedProducts
-                        .indexWhere((p) => p.id == product.id);
+                    final flatSortedProducts = groups.expand((g) => g.products).toList();
+                    final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
                     Navigator.of(context).push(
                       SlideUpPageRoute(
                         page: ProductSwiperScreen(
                           products: flatSortedProducts,
-                          initialIndex:
-                          initialIndex != -1 ? initialIndex : 0,
+                          initialIndex: initialIndex != -1 ? initialIndex : 0,
                         ),
                       ),
                     );
@@ -236,11 +226,7 @@ class _GroupHeader extends StatelessWidget {
         children: [
           Icon(style.icon, color: style.color, size: 26),
           const SizedBox(width: 12),
-          Text(style.displayName,
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: style.color)),
+          Text(style.displayName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: style.color)),
         ],
       ),
     );

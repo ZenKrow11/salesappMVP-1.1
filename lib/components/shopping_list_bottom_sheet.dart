@@ -23,7 +23,8 @@ class ShoppingListBottomSheet extends ConsumerStatefulWidget {
       _ShoppingListBottomSheetState();
 }
 
-class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomSheet>
+class _ShoppingListBottomSheetState
+    extends ConsumerState<ShoppingListBottomSheet>
     with SingleTickerProviderStateMixin {
   final TextEditingController _newListController = TextEditingController();
   String? _selectedList;
@@ -54,38 +55,48 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
     final activeList = ref.watch(activeShoppingListProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
+    // This Container provides the background color and rounded corners,
+    // making the widget self-contained and visually consistent.
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          // --- REMOVED ---: The Divider widget is gone.
-          const SizedBox(height: 12), // Added for spacing
-          _buildTabBar(),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildSelectList(shoppingLists, activeList),
-                _buildNewListTab(),
-              ],
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 12),
+            _buildTabBar(),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 220,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildSelectList(shoppingLists, activeList),
+                  _buildNewListTab(),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          if (!isSelectActiveMode) ...[
-            _buildConfirmActions(shoppingListNotifier),
-            const SizedBox(height: 10),
-          ]
-        ],
+            const SizedBox(height: 24),
+            if (!isSelectActiveMode) ...[
+              _buildConfirmActions(shoppingListNotifier),
+              const SizedBox(height: 10),
+            ]
+          ],
+        ),
       ),
     );
   }
@@ -115,7 +126,6 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
       labelColor: AppColors.secondary,
       unselectedLabelColor: AppColors.inactive,
       indicatorColor: AppColors.secondary,
-      // --- ADDED ---: This removes the line under the TabBar.
       dividerColor: Colors.transparent,
       tabs: const [
         Tab(text: 'Select List'),
@@ -146,20 +156,26 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
           opacity: isCurrentlyActive ? 1.0 : 0.7,
           child: Card(
             elevation: isCurrentlyActive ? 2 : 0,
-            // --- FIX ---: Corrected .withValues to .withOpacity
-            color: isCurrentlyActive ? AppColors.secondary.withValues(alpha: 0.9) : Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            color: isCurrentlyActive
+                ? AppColors.secondary.withOpacity(0.9)
+                : Colors.transparent,
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             child: ListTile(
               title: Text(
                 listName,
                 style: TextStyle(
-                  fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
-                  color: isCurrentlyActive ? AppColors.primary : AppColors.inactive,
+                  fontWeight:
+                  isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
+                  color:
+                  isCurrentlyActive ? AppColors.primary : AppColors.inactive,
                 ),
               ),
               onTap: () {
                 if (isSelectActiveMode) {
-                  ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
+                  ref
+                      .read(activeShoppingListProvider.notifier)
+                      .setActiveList(listName);
                   Navigator.pop(context);
                 } else {
                   setState(() {
@@ -191,8 +207,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
           labelText: 'Create new list name',
           labelStyle: const TextStyle(color: AppColors.inactive),
           enabledBorder: OutlineInputBorder(
-            // --- FIX ---: Corrected .withValues to .withOpacity
-              borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5)),
+              borderSide: BorderSide(color: AppColors.inactive.withOpacity(0.5)),
               borderRadius: BorderRadius.circular(8.0)),
           focusedBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: AppColors.secondary),
@@ -215,11 +230,13 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               side: const BorderSide(color: AppColors.inactive),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('CANCEL',
-                style: TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: AppColors.inactive, fontWeight: FontWeight.bold)),
           ),
         ),
         const SizedBox(width: 16),
@@ -228,11 +245,13 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.secondary,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => _onConfirmAddPressed(notifier),
             child: const Text('CONFIRM',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -247,14 +266,16 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     final currentLists = ref.read(shoppingListsProvider);
 
     if (currentLists.any((list) => list.name == trimmedName)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('List name already exists')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('List name already exists')));
       return;
     }
 
     notifier.addEmptyList(trimmedName);
     ref.read(activeShoppingListProvider.notifier).setActiveList(trimmedName);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Created and selected "$trimmedName"')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Created and selected "$trimmedName"')));
   }
 
   void _onConfirmAddPressed(ShoppingListNotifier notifier) {
