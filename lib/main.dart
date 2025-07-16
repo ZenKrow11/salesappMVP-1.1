@@ -7,28 +7,20 @@ import 'package:intl/date_symbol_data_local.dart';
 
 // Import your other files
 import 'firebase_options.dart';
-import 'widgets/splash_screen.dart';
-import 'widgets/login_screen.dart';
-import 'pages/main_app_screen.dart';
+import 'widgets/splash_screen.dart'; // Assumes this is the correct path
+import 'widgets/login_screen.dart';   // Assumes this is the correct path
+import 'pages/main_app_screen.dart';  // Assumes this is the correct path
 
 //============================================================================
-//  MAIN FUNCTION - The App's Entry Point
+//  MAIN FUNCTION - The App's Entry Point (No changes needed here)
 //============================================================================
 Future<void> main() async {
-  // Ensure Flutter engine is ready
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('de_DE', null);
-
-
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Initialize Hive's file system path
   await Hive.initFlutter();
-
-  // Run the app within a ProviderScope for Riverpod
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -37,7 +29,7 @@ Future<void> main() async {
 }
 
 //============================================================================
-//  ROOT WIDGET
+//  ROOT WIDGET - REFACTORED
 //============================================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -48,15 +40,28 @@ class MyApp extends StatelessWidget {
       title: 'Sales App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        // You can define your app-wide theme here
       ),
-      // The app always starts at the SplashScreen
-      home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
+
+      // 1. Define the screen the app starts on using its route name.
+      initialRoute: SplashScreen.routeName,
+
+      // 2. Define all the app's top-level screens in the routes table.
+      // This is the fix for your "Could not find a generator for route" error.
+      routes: {
+        SplashScreen.routeName: (context) => const SplashScreen(),
+        LoginScreen.routeName: (context) => const LoginScreen(),
+        MainAppScreen.routeName: (context) => const MainAppScreen(),
+        // We also give the AuthGate a route name so the SplashScreen can navigate to it.
+        AuthGate.routeName: (context) => const AuthGate(),
+      },
     );
   }
 }
 
 //============================================================================
-//  AUTH STATE PROVIDER & AUTH GATE
+//  AUTH STATE PROVIDER & AUTH GATE (Minor change to add routeName)
 //============================================================================
 
 /// A stream provider that tells us the current user's auth state.
@@ -69,30 +74,31 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
+  // A routeName for navigating to this widget.
+  static const routeName = '/auth-gate';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We watch the auth state provider.
     final authState = ref.watch(authStateChangesProvider);
 
+    // This logic is excellent and doesn't need to change.
+    // It correctly returns a widget based on the auth state.
     return authState.when(
       data: (user) {
         if (user != null) {
-          // User is logged in, show the home page.
+          // User is logged in, show the main app screen.
           return const MainAppScreen();
         } else {
           // User is logged out, show the login screen.
           return const LoginScreen();
         }
       },
+      // These loading and error states are good fallbacks.
       loading: () => const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => Scaffold(
-        body: Center(
-          child: Text("Auth Error: $err"),
-        ),
+        body: Center(child: Text("Auth Error: $err")),
       ),
     );
   }

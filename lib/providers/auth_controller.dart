@@ -7,6 +7,7 @@ NotifierProvider<AuthController, AsyncValue<void>>(AuthController.new);
 
 class AuthController extends Notifier<AsyncValue<void>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   AsyncValue<void> build() => const AsyncData(null);
@@ -36,20 +37,17 @@ class AuthController extends Notifier<AsyncValue<void>> {
   Future<void> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      // Initialize GoogleSignIn singleton
-      await GoogleSignIn.instance.initialize(
-        serverClientId: '307296886319-48mgnkuihjsvdu9ssetrl4vellreek09.apps.googleusercontent.com',
-      );
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User canceled the sign-in
+        state = const AsyncData(null);
+        return;
+      }
 
-      // Listen for the next sign-in event only
-      final event = await GoogleSignIn.instance.authenticationEvents
-          .where((event) => event is GoogleSignInAuthenticationEventSignIn)
-          .first as GoogleSignInAuthenticationEventSignIn;
-
-      final googleUser = event.user;
-      final googleAuth = googleUser.authentication;
+      final googleAuth = await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
@@ -61,20 +59,10 @@ class AuthController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> startGoogleSignInFlow() async {
-    // Call this method from your UI to trigger the Google sign-in process
-    if (GoogleSignIn.instance.supportsAuthenticate()) {
-      await GoogleSignIn.instance.authenticate();
-    } else {
-      // For platforms that don't support authenticate(), use platform-specific flow
-      // (e.g., web: use the Google button widget)
-    }
-  }
-
   Future<void> signOut() async {
     state = const AsyncLoading();
     try {
-      await GoogleSignIn.instance.signOut();
+      await _googleSignIn.signOut();
       await _auth.signOut();
       state = const AsyncData(null);
     } catch (e, st) {

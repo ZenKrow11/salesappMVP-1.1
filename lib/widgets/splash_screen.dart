@@ -1,20 +1,23 @@
-// lib/screens/splash_screen.dart
+// lib/screens/splash_screen.dart (or wherever this file is located)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math'; // For min() function in animation
 
-import '../main.dart'; // For AuthGate
+// IMPORTANT: Make sure these paths are correct for your project structure
+import '../main.dart'; // For AuthGate.routeName
 import '../providers/storage_providers.dart'; // For hiveInitializationProvider
-import '../providers/products_provider.dart'; // For allProductsProvider
+import '../providers/products_provider.dart'; // For productFetchProvider
 import '../widgets/theme_color.dart'; // For your app's colors
 
 /// A stream provider that tells us the current user's auth state.
+/// This is already defined in main.dart, so you can technically remove this
+/// duplicate definition if you import main.dart, but having it here doesn't hurt.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-// --- NEW: Step 1 - Define a state class for our startup progress ---
 @immutable
 class StartupState {
   const StartupState({required this.progress, required this.message});
@@ -23,7 +26,6 @@ class StartupState {
   final String message;
 }
 
-// --- NEW: Step 2 - Create a StateNotifier to manage the startup process ---
 class StartupNotifier extends StateNotifier<StartupState> {
   StartupNotifier(this._ref) : super(const StartupState(progress: 0.0, message: 'Initializing...')) {
     _initialize();
@@ -31,54 +33,68 @@ class StartupNotifier extends StateNotifier<StartupState> {
 
   final Ref _ref;
 
-  // This method runs the startup tasks sequentially and updates the state.
+  Future<void> _animateProgress(double target, String message) async {
+    final double currentProgress = state.progress;
+    final int steps = ((target - currentProgress).abs() * 100).round();
+    if (steps == 0) return;
+
+    for (int i = 1; i <= steps; i++) {
+      final newProgress = min(currentProgress + (i * 0.01), target);
+      state = StartupState(progress: newProgress, message: message);
+      await Future.delayed(const Duration(milliseconds: 20));
+    }
+    state = StartupState(progress: target, message: message);
+  }
+
   Future<void> _initialize() async {
-    // Task 1: Initialize Hive (Let's say this is 50% of the work)
-    state = const StartupState(progress: 0.0, message: 'Preparing local storage...');
+    await _animateProgress(0.25, 'Preparing local storage...');
     await _ref.read(hiveInitializationProvider.future);
-    state = const StartupState(progress: 0.5, message: 'Loading latest deals...');
-
-    // Task 2: Fetch products (The other 50%)
+    await _animateProgress(0.5, 'Local storage ready.');
+    await Future.delayed(const Duration(milliseconds: 400));
+    await _animateProgress(0.75, 'Loading latest deals...');
+    // Make sure 'productFetchProvider' exists in your products_provider.dart file
     await _ref.read(productFetchProvider.future);
-    state = const StartupState(progress: 1.0, message: 'All set!');
-
-    // A small delay to allow the user to see the "All set!" message.
-    await Future.delayed(const Duration(milliseconds: 300));
+    await _animateProgress(1.0, 'All set!');
+    await Future.delayed(const Duration(milliseconds: 250));
   }
 }
 
-/// The provider that the UI will watch to get progress updates.
 final startupProvider = StateNotifierProvider<StartupNotifier, StartupState>((ref) {
   return StartupNotifier(ref);
 });
 
-// --- DEPRECATED: The old appReadyProvider is no longer needed. ---
-// final appReadyProvider = FutureProvider<void>((ref) async { ... });
-
-
+//============================================================================
+//  SPLASH SCREEN WIDGET - REFACTORED
+//============================================================================
 class SplashScreen extends ConsumerWidget {
+  // 1. ADD THE STATIC ROUTENAME. Your MaterialApp will use this.
+  static const routeName = '/';
+
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // --- MODIFIED: Watch our new startupProvider instead of the old one ---
     final startupState = ref.watch(startupProvider);
 
-    // Navigate when initialization is complete (progress is 1.0)
+    // 2. THIS IS THE ONLY CHANGE NEEDED.
+    // We listen for the progress to complete and then navigate using the named route.
     ref.listen(startupProvider, (previous, next) {
       if (next.progress == 1.0) {
-        // Use addPostFrameCallback to ensure the build method is complete.
+        // Use a post-frame callback to ensure the build method is complete
+        // before we try to navigate away.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AuthGate()),
-          );
+          // Check if the widget is still mounted (in the widget tree)
+          if (context.mounted) {
+            // THE REFACTORED LINE:
+            // Instead of building a MaterialPageRoute, we use the named route
+            // for the AuthGate that we defined in main.dart.
+            Navigator.of(context).pushReplacementNamed(AuthGate.routeName);
+          }
         });
       }
     });
 
-    // We don't need the .when() handler anymore as the UI is always visible
-    // and updates based on the startupState.
-
+    // The UI of your splash screen does not need any changes. It's already great.
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
@@ -92,7 +108,6 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              // --- MODIFIED: Show the dynamic message from our state ---
               startupState.message,
               style: const TextStyle(
                 fontSize: 18,
@@ -102,13 +117,13 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48.0),
-              // --- REPLACED: Use a LinearProgressIndicator ---
+              padding: const EdgeInsets.symmetric(horizontal: 80.0),
               child: LinearProgressIndicator(
-                // The value comes directly from our startup state
                 value: startupState.progress,
-                backgroundColor: AppColors.inactive.withValues(alpha: 10.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                minHeight: 8.0,
+                backgroundColor: AppColors.primary,
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.secondary),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ],

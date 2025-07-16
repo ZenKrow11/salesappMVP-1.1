@@ -34,7 +34,7 @@ dependencies:
   cloud_firestore: ^5.6.7
   firebase_auth: ^5.5.3
   flutter_riverpod: ^2.4.10
-  google_sign_in: ^7.1.0
+  google_sign_in: ^6.1.5
   url_launcher: ^6.3.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
@@ -45,6 +45,7 @@ dependencies:
   responsive_framework: ^1.5.1
   collection: ^1.19.1
   intl: ^0.20.2
+  flutter_svg: ^2.0.10+1
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -71,6 +72,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/store_logos/
+    - assets/icons/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

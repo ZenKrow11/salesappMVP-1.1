@@ -5,6 +5,7 @@ import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/theme_color.dart';
 
 class MainAppScreen extends StatefulWidget {
+  static const routeName = '/main-app';
   const MainAppScreen({super.key});
 
   @override
