@@ -42,10 +42,6 @@ class ComfortablePageScrollPhysics extends PageScrollPhysics {
     // ================== NEW ANIMATION LOGIC ==================
 
     // 1. Define the spring for the animation.
-    //    Tweak these values to change the feel of the animation.
-    //    - `stiffness`: Higher values make the animation faster and more aggressive.
-    //    - `damping`: Higher values reduce bounce/overshoot.
-    //    - `mass`: Affects the "weight" and overall duration.
     final SpringDescription spring = SpringDescription.withDampingRatio(
       mass: 0.5,
       stiffness: 100.0,
@@ -53,16 +49,26 @@ class ComfortablePageScrollPhysics extends PageScrollPhysics {
     );
 
     // 2. Decide if we are moving to the next/previous page or snapping back.
-    final double dragDistance = metrics.pixels - metrics.page! * metrics.viewportDimension;
+
+    // <<< FIX: This is the corrected way to calculate the drag distance.
+    // We measure the distance from the current pixel position to the center
+    // of the page we started on (the "rounded" page).
+    final double dragDistance = metrics.pixels - metrics.page!.round() * metrics.viewportDimension;
+
     final double flingVelocityThreshold = tolerance.velocity;
     final bool hasFlingVelocity = velocity.abs() > flingVelocityThreshold;
+
+    // A more robust threshold would be based on the viewport dimension,
+    // but we'll use the fixed one for this example.
     final bool hasDraggedPastThreshold = dragDistance.abs() > dragThreshold;
 
     double targetPage;
 
+    // This logic now works correctly because `dragDistance` is calculated properly.
     if (hasFlingVelocity || hasDraggedPastThreshold) {
       // We should move to a new page.
-      final double direction = velocity.abs() > 0.0 ? velocity.sign : dragDistance.sign;
+      // The direction is determined by the velocity if it exists, otherwise by the drag direction.
+      final double direction = velocity.sign != 0 ? velocity.sign : dragDistance.sign;
       targetPage = (metrics.page! + 0.5 * direction).round().toDouble();
     } else {
       // Snap back to the current page.
@@ -77,7 +83,6 @@ class ComfortablePageScrollPhysics extends PageScrollPhysics {
     final double targetPixels = targetPage * metrics.viewportDimension;
 
     // 5. Create and return the custom spring simulation.
-    //    This will animate from the current scroll position to the target.
     return ScrollSpringSimulation(
       spring,
       metrics.pixels, // current position

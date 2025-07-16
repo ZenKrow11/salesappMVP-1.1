@@ -92,42 +92,44 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
+  // --- THIS IS THE FIX ---
   /// A styled button that matches the design of the home page's action buttons.
   Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList ?? 'Select List';
 
-    return Expanded(
-      flex: 2, // Adjust flex factor as needed
-      child: TextButton.icon(
-        icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 24.0),
-        label: Text(
-          buttonText,
-          style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
+    // FIX: Removed the redundant `Expanded` widget from here.
+    // The method now just returns the button itself.
+    // The parent `_buildHeader` method is responsible for expanding it.
+    return TextButton.icon(
+      icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 24.0),
+      label: Text(
+        buttonText,
+        style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+      onPressed: () => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        backgroundColor: AppColors.background,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        onPressed: () => showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          useRootNavigator: true,
-          backgroundColor: AppColors.background,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (ctx) => const ShoppingListBottomSheet(),
-        ),
-        style: TextButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          minimumSize: const Size(0, 48), // Match height of store logo
-        ),
+        builder: (ctx) => const ShoppingListBottomSheet(),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        minimumSize: const Size(0, 48), // Match height of store logo
       ),
     );
   }
 
   Widget _buildCategoryRows() {
+    // ... rest of the file is unchanged ...
     return Row(
       children: [
         Expanded(child: CategoryChip(categoryName: product.category)),
@@ -290,7 +292,7 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildPriceRow() {
-    final cleanPercentage = product.discountPercentage.replaceAll(RegExp(r'[^0-9.]'), '');
+    final cleanPercentage = product.discountPercentage;
 
     return Row(
       children: [

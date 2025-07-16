@@ -18,6 +18,7 @@ class ProductTile extends ConsumerWidget {
   });
 
   @override
+
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
@@ -102,7 +103,7 @@ class ProductTile extends ConsumerWidget {
         children: [
           Expanded(
             child: _priceBox(
-              text: '${product.discountPercentage.replaceAll('%', '')}%',
+              text: '${product.discountPercentage}%',
               bgColor: Colors.red,
               textStyle: TextStyle(
                 fontSize: fontSize,

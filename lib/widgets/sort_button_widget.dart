@@ -1,29 +1,10 @@
+// lib/widgets/sort_button_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/models/filter_state.dart';
-import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
-
-/// Provides a user-friendly display name for each sort option.
-extension SortOptionExtension on SortOption {
-  String get displayName {
-    switch (this) {
-      case SortOption.storeAlphabetical:
-        return 'Store: A-Z';
-      case SortOption.productAlphabetical:
-        return 'Product: A-Z';
-      case SortOption.discountHighToLow:
-        return 'Discount: High-Low';
-      case SortOption.discountLowToHigh:
-        return 'Discount: Low-High';
-      case SortOption.priceHighToLow:
-        return 'Price: High-Low';
-      case SortOption.priceLowToHigh:
-        return 'Price: Low-High';
-
-    }
-  }
-}
+import 'package:sales_app_mvp/models/filter_state.dart'; // Imports SortOption and its extension
+import 'package:sales_app_mvp/providers/filter_state_provider.dart'; // Imports the provider
+import 'package:sales_app_mvp/widgets/theme_color.dart'; // Assuming this holds your AppColors
 
 /// A modular button that displays the current sort option and allows changing it via a dropdown.
 class SortButton extends ConsumerWidget {
@@ -31,14 +12,16 @@ class SortButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentSortOption = ref.watch(filterStateProvider.select((s) => s.sortOption));
+    // We only need the notifier to make changes
     final filterNotifier = ref.read(filterStateProvider.notifier);
 
     return PopupMenuButton<SortOption>(
       onSelected: (newSortOption) {
+        // Update the state when a new option is chosen
         filterNotifier.update((state) => state.copyWith(sortOption: newSortOption));
       },
       itemBuilder: (context) {
+        // This now works perfectly because `displayName` is imported from filter_state.dart
         return SortOption.values.map((option) {
           return PopupMenuItem<SortOption>(
             value: option,
@@ -46,11 +29,12 @@ class SortButton extends ConsumerWidget {
           );
         }).toList();
       },
-      color: AppColors.background,
+      color: AppColors.background, // Example color
+      // The child is the button that the user sees and taps
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: AppColors.primary, // Example color
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Row(
@@ -58,12 +42,11 @@ class SortButton extends ConsumerWidget {
           children: [
             const Icon(Icons.sort, color: AppColors.secondary, size: 24.0),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Sort',
-                style: const TextStyle(color: AppColors.inactive),
-                overflow: TextOverflow.ellipsis,
-              ),
+            // --- FIX: The illegal `Expanded` widget is removed to solve the layout error. ---
+            const Text(
+              'Sort',
+              style: TextStyle(color: AppColors.inactive),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

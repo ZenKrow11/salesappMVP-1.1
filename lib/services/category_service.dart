@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 
-// No changes to these data model classes
+// ... (CategoryStyle, SubCategory, MainCategory classes are unchanged) ...
 class CategoryStyle {
   final String displayName;
   final Color color;
@@ -29,8 +29,9 @@ class MainCategory {
   });
 }
 
-// No changes to the data itself
-final List<MainCategory> _allCategories = [
+
+// --- CHANGE 1: Make this list public by removing the underscore ---
+final List<MainCategory> allCategories = [
   // ... all your MainCategory definitions remain here ...
   MainCategory(firestoreName: 'Alkoholische Getränke', style: const CategoryStyle(displayName: 'Getränke', color: Color(0xFF8E44AD), icon: Icons.local_bar,), subcategories: const [SubCategory(name: 'Bier'), SubCategory(name: 'Spirituosen und Diverses'), SubCategory(name: 'Weine und Schaumweine'),],),
   MainCategory(firestoreName: 'Alkoholfreie Getränke', style: const CategoryStyle(displayName: 'Getränke', color: Color(0xFF8E44AD), icon: Icons.local_bar,), subcategories: const [SubCategory(name: 'Kaffe, Tee und Kakao'), SubCategory(name: 'Softdrinks und Alkoholfreies'), SubCategory(name: 'Wasser und Säfte'),],),
@@ -43,20 +44,18 @@ final List<MainCategory> _allCategories = [
   MainCategory(firestoreName: 'Vorräte', style: const CategoryStyle(displayName: 'Vorräte', color: Color(0xFF2C3E50), icon: Icons.inventory_2,), subcategories: const [SubCategory(name: 'Dosen, Öle, Saucen und Gewürze'), SubCategory(name: 'Honig, Konfitüre und Brotaufstrich'), SubCategory(name: 'Tiefkühlprodukte und Suppen'), SubCategory(name: 'Cerealien und Getreide'), SubCategory(name: 'Reis und Teigwaren'),],),
 ];
 
-const CategoryStyle _defaultCategoryStyle = CategoryStyle(displayName: 'Sonstiges', color: Colors.grey, icon: Icons.category,);
+// --- CHANGE 2: Make this style public by removing the underscore ---
+const CategoryStyle defaultCategoryStyle = CategoryStyle(displayName: 'Sonstiges', color: Colors.grey, icon: Icons.category,);
 
-/// The central service class for accessing category data and logic.
+// ... (The CategoryService class is unchanged) ...
 class CategoryService {
-  // Pre-computed maps and sets for very fast lookups.
   static final Map<String, CategoryStyle> _styleMap = _createStyleMap();
-  // +++ NEW: A set of all main category names +++
-  static final Set<String> _mainCategoryNames = _allCategories.map((c) => c.firestoreName).toSet();
-  // +++ NEW: A set of all subcategory names +++
-  static final Set<String> _subCategoryNames = _allCategories.expand((c) => c.subcategories).map((sc) => sc.name).toSet();
+  static final Set<String> _mainCategoryNames = allCategories.map((c) => c.firestoreName).toSet();
+  static final Set<String> _subCategoryNames = allCategories.expand((c) => c.subcategories).map((sc) => sc.name).toSet();
 
   static Map<String, CategoryStyle> _createStyleMap() {
     final map = <String, CategoryStyle>{};
-    for (var mainCat in _allCategories) {
+    for (var mainCat in allCategories) {
       map[mainCat.firestoreName] = mainCat.style;
       for (var subCat in mainCat.subcategories) {
         map[subCat.name] = mainCat.style;
@@ -64,20 +63,12 @@ class CategoryService {
     }
     return map;
   }
-
-  /// Finds the appropriate style for ANY category or subcategory name.
   static CategoryStyle getStyleForCategory(String categoryName) {
-    return _styleMap[categoryName] ?? _defaultCategoryStyle;
+    return _styleMap[categoryName] ?? defaultCategoryStyle;
   }
-
-  // +++ NEW HELPER METHOD +++
-  /// Checks if a given name is a defined main category.
   static bool isMainCategory(String categoryName) {
     return _mainCategoryNames.contains(categoryName);
   }
-
-  // +++ NEW HELPER METHOD +++
-  /// Checks if a given name is a defined subcategory.
   static bool isSubCategory(String categoryName) {
     return _subCategoryNames.contains(categoryName);
   }

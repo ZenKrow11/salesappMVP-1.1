@@ -22,7 +22,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       name: fields[2] as String,
       currentPrice: fields[3] as double,
       normalPrice: fields[4] as double,
-      discountPercentage: fields[5] as String,
+      discountPercentage: fields[5] as int,
       category: fields[6] as String,
       subcategory: fields[7] as String,
       url: fields[8] as String,
