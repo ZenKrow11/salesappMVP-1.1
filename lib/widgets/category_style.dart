@@ -24,12 +24,12 @@ final Map<String, CategoryStyle> categoryStyles = {
   // We explicitly define the style for each, removing the problematic self-reference.
   'Alkoholische Getränke': const CategoryStyle(
     displayName: 'Getränke',
-    color: Color(0xFF8E44AD),
+    color: Color(0xFF4FC3F7), // CHANGED: Light Blue for beverages
     icon: Icons.local_bar,
   ),
   'Alkoholfreie Getränke': const CategoryStyle(
     displayName: 'Getränke',
-    color: Color(0xFF8E44AD),
+    color: Color(0xFF4FC3F7), // CHANGED: Light Blue for beverages
     icon: Icons.local_bar,
   ),
 
@@ -41,7 +41,7 @@ final Map<String, CategoryStyle> categoryStyles = {
 
   'Fisch und Fleisch': const CategoryStyle(
     displayName: 'Fisch & Fleisch',
-    color: Color(0xFFC0392B),
+    color: Color(0xFFFA8072), // CHANGED: Salmon color for meat
     icon: Icons.set_meal,
   ),
 
@@ -53,7 +53,7 @@ final Map<String, CategoryStyle> categoryStyles = {
 
   'Milchprodukte und Eier': const CategoryStyle(
     displayName: 'Milchprodukte & Eier',
-    color: Color(0xFFF1C40F),
+    color: Color(0xFFF5F5F5), // CHANGED: Egg-white color for milk/eggs
     icon: Icons.egg,
   ),
 
@@ -65,7 +65,7 @@ final Map<String, CategoryStyle> categoryStyles = {
 
   'Spezifische Ernährung': const CategoryStyle(
     displayName: 'Spezifische Ernährung',
-    color: Color(0xFF7F8C8D),
+    color: Color(0xFF607D3B), // CHANGED: Moss green for specific diet
     icon: Icons.restaurant_menu,
   ),
 
