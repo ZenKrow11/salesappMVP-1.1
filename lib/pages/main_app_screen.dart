@@ -1,18 +1,23 @@
+// lib/pages/main_app_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // NEW: Import Riverpod
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+// NEW: Import the new theme provider
+import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-class MainAppScreen extends StatefulWidget {
+// CHANGED: The screen is now a ConsumerWidget to access the theme provider
+class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
   const MainAppScreen({super.key});
 
   @override
-  State<MainAppScreen> createState() => _MainAppScreenState();
+  ConsumerState<MainAppScreen> createState() => _MainAppScreenState();
 }
 
-class _MainAppScreenState extends State<MainAppScreen> {
+class _MainAppScreenState extends ConsumerState<MainAppScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -23,31 +28,29 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // We get the top padding (the height of the status bar) from the MediaQuery.
+    // NEW: Get the theme from the provider
+    final theme = ref.watch(themeProvider);
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      // We set the Scaffold's body to a Column to stack our widgets vertically.
       body: Column(
         children: [
-          // 1. A Container for the colored safe area at the top.
-          // Its height is set to the status bar height, and it has the primary color.
           Container(
             height: statusBarHeight,
-            color: AppColors.primary,
+            // CHANGED: Use the theme color
+            color: theme.primary,
           ),
-          // 2. An Expanded widget that takes up all the remaining vertical space.
-          // This is where your actual page content will be displayed.
           Expanded(
             child: _pages[_currentIndex],
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppColors.primary,
+        // CHANGED: Use theme colors
+        backgroundColor: theme.primary,
         currentIndex: _currentIndex,
-        selectedItemColor: AppColors.active,
-        unselectedItemColor: AppColors.inactive,
+        selectedItemColor: theme.secondary, // Changed from AppColors.active
+        unselectedItemColor: theme.inactive,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(

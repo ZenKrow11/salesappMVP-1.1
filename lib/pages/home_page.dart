@@ -14,7 +14,8 @@ import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 import 'package:sales_app_mvp/widgets/search_bar_widget.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/widgets/color_utilities.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -33,7 +34,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   Color? _previousCategoryColor;
   Color? _nextCategoryColor;
 
-  // This map is now built correctly using the public data from CategoryService.
   final Map<String, CategoryStyle> _styleByDisplayName = _getStyleByDisplayName();
 
   @override
@@ -49,14 +49,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
-  // --- CORRECTED METHOD ---
   static Map<String, CategoryStyle> _getStyleByDisplayName() {
     final Map<String, CategoryStyle> map = {};
-    // Use the now-public 'allCategories' list from the service file.
     for (final mainCat in allCategories) {
       map[mainCat.style.displayName] = mainCat.style;
     }
-    // Use the now-public 'defaultCategoryStyle' from the service file.
     map[defaultCategoryStyle.displayName] = defaultCategoryStyle;
     return map;
   }
@@ -158,16 +155,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    // ... rest of build method is unchanged ...
+    final theme = ref.watch(themeProvider);
     final fetchStatus = ref.watch(productFetchProvider);
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList ?? 'Select List';
-    const Color defaultFabColor = AppColors.secondary;
+
+    final fabUpBgColor = _previousCategoryColor ?? theme.secondary;
+    final fabUpFgColor = getContrastColor(fabUpBgColor);
+    final fabDownBgColor = _nextCategoryColor ?? theme.secondary;
+    final fabDownFgColor = getContrastColor(fabDownBgColor);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.background,
       floatingActionButton: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: _isFabVisible ? 1.0 : 0.0,
@@ -181,8 +183,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: FloatingActionButton.small(
                 heroTag: 'skip_up',
                 onPressed: null,
-                backgroundColor: _previousCategoryColor ?? defaultFabColor,
-                foregroundColor: AppColors.primary,
+                backgroundColor: fabUpBgColor,
+                foregroundColor: fabUpFgColor,
                 child: const Icon(Icons.keyboard_arrow_up),
               ),
             ),
@@ -193,8 +195,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: FloatingActionButton.small(
                 heroTag: 'skip_down',
                 onPressed: null,
-                backgroundColor: _nextCategoryColor ?? defaultFabColor,
-                foregroundColor: AppColors.primary,
+                backgroundColor: fabDownBgColor,
+                foregroundColor: fabDownFgColor,
                 child: const Icon(Icons.keyboard_arrow_down),
               ),
             ),
@@ -204,13 +206,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: Column(
         children: [
           Container(
-            color: AppColors.background,
-            padding: const EdgeInsets.all(12.0),
+            color: theme.primary,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildSearchBarAndCount(),
-                const SizedBox(height: 12),
+                // CHANGED: Reduced space for a more compact feel
+                const SizedBox(height: 0),
                 _buildActionButtons(buttonText),
               ],
             ),
@@ -238,8 +241,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildSearchBarAndCount() {
     return SizedBox(
-      height: 56,
+      height: 50,
       child: SearchBarWidget(
+        hasBorder: false,
         trailing: Consumer(
           builder: (context, ref, child) {
             final count = ref.watch(productCountProvider);
@@ -254,39 +258,34 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildActionButtons(String buttonText) {
+    final theme = ref.watch(themeProvider);
     return Row(
       children: [
-        Expanded(
-          flex: 2,
+        Expanded( // CHANGED: Removed flex: 2 for even spacing
           child: TextButton.icon(
-            icon: const Icon(Icons.add_shopping_cart,
-                color: AppColors.secondary, size: 24.0),
+            icon: Icon(Icons.add_shopping_cart, color: theme.secondary, size: 24.0),
             label: Text(buttonText,
-                style: const TextStyle(color: AppColors.inactive),
+                style: TextStyle(color: theme.inactive),
                 overflow: TextOverflow.ellipsis),
             onPressed: () => _showModalSheet(
-                    (_) => const ShoppingListBottomSheet(),
-                isScrollControlled: true),
+                    (_) => const ShoppingListBottomSheet(), isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
-        const SizedBox(width: 8),
+        VerticalDivider(width: 1, thickness: 1, color: theme.background.withOpacity(0.5)),
         Expanded(
-          flex: 1,
           child: TextButton.icon(
-            icon: const Icon(Icons.filter_alt,
-                color: AppColors.secondary, size: 24.0),
-            label: const Text('Filter',
-                style: TextStyle(color: AppColors.inactive),
+            icon: Icon(Icons.filter_alt, color: theme.secondary, size: 24.0),
+            label: Text('Filter',
+                style: TextStyle(color: theme.inactive),
                 overflow: TextOverflow.ellipsis),
             onPressed: () => _showModalSheet(
                     (_) => const FilterBottomSheet(), isScrollControlled: true),
             style: _actionButtonStyle(),
           ),
         ),
-        const SizedBox(width: 8),
+        VerticalDivider(width: 1, thickness: 1, color: theme.background.withOpacity(0.5)),
         const Expanded(
-          flex: 1,
           child: SortButton(),
         ),
       ],
@@ -295,9 +294,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   ButtonStyle _actionButtonStyle() {
     return TextButton.styleFrom(
-      backgroundColor: AppColors.primary,
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      // CHANGED: Reduced vertical padding to shrink height
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     );
   }
 
@@ -370,17 +369,27 @@ class _GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+    final Color contrastColor = getContrastColor(style.color);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: style.color,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
-          Icon(style.icon, color: style.color, size: 26),
+          Icon(style.icon, color: contrastColor, size: 26),
           const SizedBox(width: 12),
-          Text(style.displayName,
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: style.color)),
+          Text(
+            style.displayName,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: contrastColor,
+            ),
+          ),
         ],
       ),
     );
