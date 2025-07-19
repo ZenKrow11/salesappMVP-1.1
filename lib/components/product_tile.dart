@@ -1,9 +1,11 @@
+// lib/components/product_tile.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
 import '../models/product.dart';
 import '../widgets/store_logo.dart';
 
@@ -18,24 +20,32 @@ class ProductTile extends ConsumerWidget {
   });
 
   @override
-
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
+
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        elevation: 2,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border.all(
-              color: AppColors.primary,
-              width: 1.5,
+      // ============================================================
+      // === PHASE 3 REFACTOR: The "Subtle Card" with Shadow      ===
+      // ============================================================
+      child: Container(
+        decoration: BoxDecoration(
+          // 1. The background color of the tile itself
+          color: theme.background,
+          // 2. The rounded corners for the tile
+          borderRadius: BorderRadius.circular(12.0),
+          // 3. The custom shadow using the darkest theme color
+          boxShadow: [
+            BoxShadow(
+              color: theme.primary, // Using the darkest color for a deep shadow
+              blurRadius: 8.0,      // How soft and spread-out the shadow is
+              offset: const Offset(0, 4), // Pushes the shadow down by 4 pixels
             ),
-            borderRadius: BorderRadius.circular(11),
-          ),
+          ],
+        ),
+        // 4. This ensures that the content (like the image) is clipped to the rounded corners
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.0),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: _buildContent(context, ref),
@@ -49,7 +59,7 @@ class ProductTile extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeaderRow(),
+        _buildHeaderRow(context, ref),
         const SizedBox(height: 6),
         Expanded(
           child: ClipRRect(
@@ -67,7 +77,8 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderRow() {
+  Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -79,10 +90,10 @@ class ProductTile extends ConsumerWidget {
         Expanded(
           child: Text(
             product.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: theme.secondary,
             ),
             textAlign: TextAlign.right,
             maxLines: 2,
@@ -94,6 +105,7 @@ class ProductTile extends ConsumerWidget {
   }
 
   Widget _buildPriceRow(BuildContext context, WidgetRef ref, {double fontSize = 12}) {
+    final theme = ref.watch(themeProvider);
     const double rowHeight = 36.0;
 
     return SizedBox(
@@ -104,7 +116,7 @@ class ProductTile extends ConsumerWidget {
           Expanded(
             child: _priceBox(
               text: '${product.discountPercentage}%',
-              bgColor: Colors.red,
+              bgColor: theme.accent,
               textStyle: TextStyle(
                 fontSize: fontSize,
                 color: Colors.white,
@@ -127,27 +139,21 @@ class ProductTile extends ConsumerWidget {
           const SizedBox(width: 6),
           Expanded(
             child: ElevatedButton(
-              // --- (3) UPDATED: The onLongPress handler now uses the correct bottom sheet ---
               onLongPress: () {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   useRootNavigator: true,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: theme.background,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   ),
-                  // This opens the sheet in "add product to list" mode.
                   builder: (ctx) => ShoppingListBottomSheet(
                     product: product,
-                    onConfirm: (String selectedListName) {
-                      // The sheet already shows a snackbar on success.
-                      // No extra action needed here, but the callback is required by the constructor.
-                    },
+                    onConfirm: (String selectedListName) {},
                   ),
                 );
               },
-              // The quicksave logic for a regular tap remains unchanged.
               onPressed: () {
                 final activeListName = ref.read(activeShoppingListProvider);
                 final notifier = ref.read(shoppingListsProvider.notifier);
@@ -172,7 +178,7 @@ class ProductTile extends ConsumerWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
+                backgroundColor: theme.secondary,
                 padding: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -180,7 +186,7 @@ class ProductTile extends ConsumerWidget {
               ),
               child: Icon(
                 Icons.add_shopping_cart,
-                color: AppColors.primary,
+                color: theme.primary,
                 size: fontSize + 8,
               ),
             ),

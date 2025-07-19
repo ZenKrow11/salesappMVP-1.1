@@ -1,90 +1,110 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 
-// UNCHANGED: This class was accidentally deleted. It's restored now.
+/// A simple data class to hold product counts.
 class ProductCount {
   final int filtered;
   final int total;
+
   ProductCount({required this.filtered, required this.total});
 }
 
 // =========================================================================
-//  DATA & ACTION PROVIDERS (UNCHANGED and restored)
+// === FETCHING & SYNCING
 // =========================================================================
 
-/// Synchronously provides the current list of products from the local Hive cache.
-final productsProvider = Provider<List<Product>>((ref) {
-  final box = Hive.box<Product>('products');
-  return box.values.toList();
-});
+/// Top-level function that fetches products from Firestore and syncs with Hive.
+Future<List<Product>> _fetchAndSyncProducts() async {
+  final snapshot = await FirebaseFirestore.instance.collection('products').get();
 
-/// Handles the action of fetching products from Firestore and updating the local cache.
-final productFetchProvider = FutureProvider<void>((ref) async {
-  try {
-    final snapshot =
-    await FirebaseFirestore.instance.collection('products').get();
-    final products = snapshot.docs
-        .map((doc) => Product.fromFirestore(doc.id, doc.data()))
-        .toList();
+  final products = snapshot.docs
+      .map((doc) => Product.fromFirestore(doc.id, doc.data()))
+      .toList();
 
+  final productsBox = Hive.box<Product>('products');
+  final newProductsMap = {for (var p in products) p.id: p};
+
+  final oldKeys = productsBox.keys.toSet();
+  final keysToDelete = oldKeys.difference(newProductsMap.keys.toSet());
+
+  await productsBox.deleteAll(keysToDelete);
+  await productsBox.putAll(newProductsMap);
+
+  return products;
+}
+
+// =========================================================================
+// === PRODUCTS NOTIFIER
+// =========================================================================
+
+class ProductsNotifier extends AsyncNotifier<List<Product>> {
+  @override
+  Future<List<Product>> build() async {
     final productsBox = Hive.box<Product>('products');
-    await productsBox.clear();
-    await productsBox.addAll(products);
 
-    ref.invalidate(productsProvider);
-  } catch (e) {
-    throw Exception('Failed to load product data. Please check your connection.');
+    // Firestore fetch in background, don't await
+    _runFetchInBackground();
+
+    // Return cached data immediately
+    return productsBox.values.toList();
   }
-});
+
+  Future<void> _runFetchInBackground() async {
+    final result = await AsyncValue.guard(_fetchAndSyncProducts);
+    state = result;
+  }
+
+  /// Public refresh method for pull-to-refresh or manual reload
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    final result = await AsyncValue.guard(_fetchAndSyncProducts);
+    state = result;
+  }
+}
+
+final productsProvider =
+AsyncNotifierProvider<ProductsNotifier, List<Product>>(ProductsNotifier.new);
 
 // =========================================================================
-//  DERIVED PROVIDERS
+// === FILTERED PRODUCTS PROVIDER
 // =========================================================================
 
-/// --- MODIFIED ---
-/// Filters the product list based on the current filter state.
-/// NOTE: The sorting logic has been correctly removed from here.
 final filteredProductsProvider = Provider.autoDispose<List<Product>>((ref) {
+  final allProducts = ref.watch(productsProvider).value ?? [];
   final filter = ref.watch(filterStateProvider);
-  final allProducts = ref.watch(productsProvider);
 
-  List<Product> filteredList = allProducts;
-
-  if (filter.selectedStores.isNotEmpty) {
-    filteredList = filteredList
-        .where((p) => filter.selectedStores.contains(p.store))
-        .toList();
-  }
-  if (filter.selectedCategories.isNotEmpty) {
-    filteredList = filteredList
-        .where((p) => filter.selectedCategories.contains(p.category))
-        .toList();
-  }
-  if (filter.selectedSubcategories.isNotEmpty) {
-    filteredList = filteredList
-        .where((p) => filter.selectedSubcategories.contains(p.subcategory))
-        .toList();
-  }
-  if (filter.searchQuery.isNotEmpty) {
-    final query = filter.searchQuery.toLowerCase();
-    filteredList = filteredList.where((p) {
-      final nameMatch = p.name.toLowerCase().contains(query);
-      final keywordMatch = p.searchKeywords.any((k) => k.startsWith(query));
-      return nameMatch || keywordMatch;
-    }).toList();
+  if (allProducts.isEmpty || filter.isDefault) {
+    return allProducts;
   }
 
-  return filteredList;
+  return allProducts.where((product) {
+    if (filter.selectedStores.isNotEmpty &&
+        !filter.selectedStores.contains(product.store)) return false;
+    if (filter.selectedCategories.isNotEmpty &&
+        !filter.selectedCategories.contains(product.category)) return false;
+    if (filter.selectedSubcategories.isNotEmpty &&
+        !filter.selectedSubcategories.contains(product.subcategory)) return false;
+    if (filter.searchQuery.isNotEmpty) {
+      final query = filter.searchQuery.toLowerCase();
+      final nameMatch = product.name.toLowerCase().contains(query);
+      final keywordMatch =
+      product.searchKeywords.any((k) => k.startsWith(query));
+      if (!nameMatch && !keywordMatch) return false;
+    }
+    return true;
+  }).toList();
 });
 
-/// UNCHANGED: This provider was accidentally deleted. It's restored now.
-/// Calculates the total and filtered product counts based on the current state.
+// =========================================================================
+// === PRODUCT COUNT PROVIDER
+// =========================================================================
+
 final productCountProvider = Provider.autoDispose<ProductCount>((ref) {
-  final totalCount = ref.watch(productsProvider).length;
+  final totalCount = ref.watch(productsProvider).value?.length ?? 0;
   final filteredCount = ref.watch(filteredProductsProvider).length;
   return ProductCount(filtered: filteredCount, total: totalCount);
 });

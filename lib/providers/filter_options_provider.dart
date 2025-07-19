@@ -1,3 +1,5 @@
+// lib/providers/filter_options.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -11,20 +13,22 @@ List<String> _getUniqueOptions(
     ) {
   final options =
   products.map(getField).where((value) => value.isNotEmpty).toSet().toList();
-  options.sort();
+  options.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
   return options;
 }
 
 /// Provides a list of unique store names from the available products.
-final storeOptionsProvider = Provider<List<String>>((ref) {
-  final products = ref.watch(productsProvider);
+final storeOptionsProvider = Provider.autoDispose<List<String>>((ref) {
+  // CHANGED: Read from the new central productsProvider.
+  final products = ref.watch(productsProvider).value ?? [];
   return _getUniqueOptions(products, (p) => p.store);
 });
 
 /// A family provider that generates a list of category options based on a given filter state.
 final categoryOptionsProviderFamily =
-Provider.family<List<String>, FilterState>((ref, filterState) {
-  final products = ref.watch(productsProvider);
+Provider.autoDispose.family<List<String>, FilterState>((ref, filterState) {
+  // CHANGED: Read from the new central productsProvider.
+  final products = ref.watch(productsProvider).value ?? [];
   List<Product> relevantProducts = products;
 
   if (filterState.selectedStores.isNotEmpty) {
@@ -37,8 +41,9 @@ Provider.family<List<String>, FilterState>((ref, filterState) {
 
 /// A family provider that generates a list of subcategory options based on a given filter state.
 final subcategoryOptionsProviderFamily =
-Provider.family<List<String>, FilterState>((ref, filterState) {
-  final products = ref.watch(productsProvider);
+Provider.autoDispose.family<List<String>, FilterState>((ref, filterState) {
+  // CHANGED: Read from the new central productsProvider.
+  final products = ref.watch(productsProvider).value ?? [];
   List<Product> relevantProducts = products;
 
   if (filterState.selectedStores.isNotEmpty) {
@@ -55,13 +60,13 @@ Provider.family<List<String>, FilterState>((ref, filterState) {
 });
 
 /// Provides the current list of category options by watching the global filter state.
-final categoryOptionsProvider = Provider<List<String>>((ref) {
+final categoryOptionsProvider = Provider.autoDispose<List<String>>((ref) {
   final filterState = ref.watch(filterStateProvider);
   return ref.watch(categoryOptionsProviderFamily(filterState));
 });
 
 /// Provides the current list of subcategory options by watching the global filter state.
-final subcategoryOptionsProvider = Provider<List<String>>((ref) {
+final subcategoryOptionsProvider = Provider.autoDispose<List<String>>((ref) {
   final filterState = ref.watch(filterStateProvider);
   return ref.watch(subcategoryOptionsProviderFamily(filterState));
 });

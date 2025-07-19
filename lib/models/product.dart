@@ -96,13 +96,17 @@ class Product extends HiveObject {
     return Product.fromJson(id, data);
   }
 
+  // lib/models/product.dart
+
+// ... (all of your existing code from the top of the file down to toJson)
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
     'name': name,
     'currentPrice': currentPrice,
     'normalPrice': normalPrice,
-    'discountPercentage': discountPercentage, // This is now an int, which is fine for JSON.
+    'discountPercentage': discountPercentage,
     'category': category,
     'subcategory': subcategory,
     'url': url,
@@ -111,4 +115,29 @@ class Product extends HiveObject {
     'available_from': availableFrom,
     'sonderkondition': sonderkondition ?? 'Keine Sonderkondition',
   };
-}
+
+  // ===================================================
+  // === PASTE THE NEW METHOD HERE                     ===
+  // ===================================================
+  /// Creates a "plain" copy of this Product without any Hive database connection.
+  /// This makes it safe to send to a background isolate.
+  Product toPlainObject() {
+    return Product(
+      id: id,
+      store: store,
+      name: name,
+      currentPrice: currentPrice,
+      normalPrice: normalPrice,
+      discountPercentage: discountPercentage,
+      category: category,
+      subcategory: subcategory,
+      url: url,
+      imageUrl: imageUrl,
+      // It's good practice to create a new list instance as well.
+      searchKeywords: List<String>.from(searchKeywords),
+      availableFrom: availableFrom,
+      sonderkondition: sonderkondition,
+    );
+  }
+
+} // <-- This is the final closing brace of your Product class

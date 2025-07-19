@@ -53,7 +53,7 @@ class StartupNotifier extends StateNotifier<StartupState> {
     await Future.delayed(const Duration(milliseconds: 400));
     await _animateProgress(0.75, 'Loading latest deals...');
     // Make sure 'productFetchProvider' exists in your products_provider.dart file
-    await _ref.read(productFetchProvider.future);
+    await _ref.read(productsProvider.future);
     await _animateProgress(1.0, 'All set!');
     await Future.delayed(const Duration(milliseconds: 250));
   }

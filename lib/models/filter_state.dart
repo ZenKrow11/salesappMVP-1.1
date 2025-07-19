@@ -13,8 +13,6 @@ enum SortOption {
   priceHighToLow,
 }
 
-// --- FIX: The extension is now defined in the same file as the enum. ---
-// This makes `displayName` available wherever SortOption is imported.
 extension SortOptionExtension on SortOption {
   String get displayName {
     switch (this) {
@@ -43,4 +41,17 @@ class FilterState with _$FilterState {
     @Default([]) List<String> selectedSubcategories,
     @Default(SortOption.storeAlphabetical) SortOption sortOption,
   }) = _FilterState;
+
+  // Optional: Keep this only if you define custom methods (not needed here)
+  const FilterState._();
+}
+
+// ✅ Extension for derived logic like `isDefault`
+extension FilterStateX on FilterState {
+  bool get isDefault =>
+      selectedStores.isEmpty &&
+          selectedCategories.isEmpty &&
+          selectedSubcategories.isEmpty &&
+          searchQuery.isEmpty &&
+          sortOption == SortOption.storeAlphabetical;
 }
