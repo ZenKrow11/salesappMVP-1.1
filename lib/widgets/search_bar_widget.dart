@@ -1,22 +1,18 @@
-// lib/widgets/search_bar_widget.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/search_suggestions_provider.dart';
-// NEW: Import the theme provider
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 class SearchBarWidget extends ConsumerStatefulWidget {
   final Widget? trailing;
-  // NEW: Add a property to control the border/background visibility
   final bool hasBorder;
 
   const SearchBarWidget({
     super.key,
     this.trailing,
-    this.hasBorder = true, // Default to true for backward compatibility
+    this.hasBorder = true,
   });
 
   @override
@@ -24,14 +20,15 @@ class SearchBarWidget extends ConsumerStatefulWidget {
 }
 
 class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
-  // ... (all your existing state variables like _textController etc. are unchanged)
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
 
   OverlayEntry? _overlayEntry;
   Timer? _debounce;
-  List<String> _lastSuggestions = [];
+
+  // NEW: This now holds the full AsyncValue to track loading/error/data states.
+  AsyncValue<List<String>> _suggestionsState = const AsyncValue.data([]);
 
   @override
   void initState() {
@@ -42,17 +39,20 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _showOverlay();
-        _fetchSuggestions();
+        // Trigger an initial suggestion fetch when focused.
+        _triggerSuggestionFetch();
       } else {
         _removeOverlay();
       }
     });
 
     _textController.addListener(() {
+      // Debounce user input to avoid spamming the provider.
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), () {
-        _fetchSuggestions();
+        _triggerSuggestionFetch();
       });
+      // We still call setState to rebuild the clear button.
       setState(() {});
     });
   }
@@ -66,23 +66,55 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     super.dispose();
   }
 
+  void _triggerSuggestionFetch() {
+    if (!_focusNode.hasFocus || !mounted) return;
+    final query = _textController.text;
+
+    // --- FIX IS HERE ---
+    // 1. Manually read the current state of the provider once.
+    // This gives us the initial value immediately (which might be loading, data, etc.).
+    final currentState = ref.read(searchSuggestionsProvider(query));
+    if (mounted) {
+      setState(() {
+        _suggestionsState = currentState;
+      });
+    }
+
+    // 2. Set up the listener for all *future* changes.
+    // This will not be called for the initial value we just read, only for subsequent updates.
+    ref.listen<AsyncValue<List<String>>>(
+      searchSuggestionsProvider(query),
+          (previous, next) {
+        if (!mounted) return;
+        // When the provider emits a new state, update our local state.
+        setState(() {
+          _suggestionsState = next;
+        });
+        // We still need to tell the overlay to rebuild itself with the new state.
+        _overlayEntry?.markNeedsBuild();
+      },
+    );
+  }
+
   void _commitSearch(String query) {
     _textController.text = query;
     _textController.selection =
         TextSelection.fromPosition(TextPosition(offset: query.length));
-    ref.read(filterStateProvider.notifier).update((state) => state.copyWith(searchQuery: query));
+    ref
+        .read(filterStateProvider.notifier)
+        .update((state) => state.copyWith(searchQuery: query));
     _focusNode.unfocus();
   }
 
   void _clearSearch() {
     _textController.clear();
-    ref.read(filterStateProvider.notifier).update((state) => state.copyWith(searchQuery: ''));
+    ref
+        .read(filterStateProvider.notifier)
+        .update((state) => state.copyWith(searchQuery: ''));
   }
-
 
   @override
   Widget build(BuildContext context) {
-    // NEW: Get theme for colors
     final theme = ref.watch(themeProvider);
     final bool showClearButton = _textController.text.isNotEmpty;
 
@@ -92,13 +124,10 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
         controller: _textController,
         focusNode: _focusNode,
         onSubmitted: _commitSearch,
-        // CHANGED: Use white for text color
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Search products...',
-          // CHANGED: Use theme color
           hintStyle: TextStyle(color: theme.inactive),
-          // CHANGED: Use theme color
           prefixIcon: Icon(Icons.search, color: theme.secondary),
           suffixIcon: Row(
             mainAxisSize: MainAxisSize.min,
@@ -110,7 +139,6 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
                     ? IconButton(
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  // CHANGED: Use theme color
                   icon: Icon(Icons.clear, color: theme.accent),
                   onPressed: _clearSearch,
                 )
@@ -120,7 +148,6 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
                 Container(
                   height: 24.0,
                   width: 1.0,
-                  // CHANGED: Use theme color
                   color: theme.secondary.withOpacity(0.5),
                   margin: const EdgeInsets.only(right: 8.0),
                 ),
@@ -129,16 +156,13 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
             ],
           ),
           filled: true,
-          // CHANGED: Fill color is now conditional
           fillColor: widget.hasBorder ? theme.primary : Colors.transparent,
-          // CHANGED: Border is now conditional
           border: widget.hasBorder
               ? OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
             borderSide: BorderSide.none,
           )
-              : InputBorder.none, // No border when it's part of the panel
-          // NEW: Ensure no extra border appears when focused
+              : InputBorder.none,
           enabledBorder: widget.hasBorder
               ? OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
@@ -156,7 +180,8 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     );
   }
 
-  // ... (Overlay logic below is unchanged but updated to use theme colors)
+  // --- OVERLAY LOGIC ---
+
   void _showOverlay() {
     if (_overlayEntry != null) return;
     final OverlayState? overlay = Overlay.of(context, rootOverlay: true);
@@ -188,42 +213,66 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _overlayEntry = null;
   }
 
-  void _fetchSuggestions() {
-    if (!_focusNode.hasFocus || !mounted) return;
-    final query = _textController.text;
-    final suggestions = ref.read(searchSuggestionsProvider(query));
-    if (!mounted) return;
-    setState(() {
-      _lastSuggestions = suggestions;
-    });
-    _overlayEntry?.markNeedsBuild();
-  }
+  // THIS METHOD IS NO LONGER NEEDED, its logic is now in `_triggerSuggestionFetch`
+  // void _fetchSuggestions() { ... }
 
+  // REFACTORED: This now uses the `_suggestionsState` to build the UI.
   Widget _buildSuggestionsOverlay() {
-    if (_lastSuggestions.isEmpty || !_focusNode.hasFocus) {
+    // Hide the overlay if the search bar loses focus.
+    if (!_focusNode.hasFocus) {
       return const SizedBox.shrink();
     }
-    final theme = ref.watch(themeProvider); // Get theme for overlay
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.primary,
-        borderRadius: BorderRadius.circular(10),
+    final theme = ref.watch(themeProvider);
+
+    // Use .when to handle the async state gracefully.
+    return _suggestionsState.when(
+      loading: () => Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: theme.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        // Show a subtle loading indicator.
+        child: const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))),
       ),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        itemCount: _lastSuggestions.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          final suggestion = _lastSuggestions[index];
-          return ListTile(
-            title: Text(
-              suggestion,
-              style: const TextStyle(color: Colors.white),
-            ),
-            onTap: () => _commitSearch(suggestion),
-          );
-        },
+      error: (err, stack) => Container(
+        decoration: BoxDecoration(
+          color: theme.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ListTile(
+          leading: Icon(Icons.error_outline, color: theme.accent),
+          title: Text(
+            'Could not load suggestions',
+            style: TextStyle(color: theme.accent),
+          ),
+        ),
       ),
+      data: (suggestions) {
+        // Don't show the overlay if there are no suggestions.
+        if (suggestions.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.primary,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            itemCount: suggestions.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final suggestion = suggestions[index];
+              return ListTile(
+                title: Text(suggestion, style: const TextStyle(color: Colors.white)),
+                onTap: () => _commitSearch(suggestion),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

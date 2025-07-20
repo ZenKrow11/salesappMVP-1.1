@@ -6,10 +6,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
+// UPDATED: Import the new provider file
 import 'package:sales_app_mvp/providers/products_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 
-// Your existing const list remains unchanged.
+// --- All the top-level constants, classes, and background functions remain exactly the same ---
+// const List<String> categoryDisplayOrder = ...
+// class ProductGroup { ... }
+// class _GroupAndSortInput { ... }
+// List<ProductGroup> _groupAndSortProductsInBackground(...) { ... }
+// class _FilterAndGroupInput { ... }
+// List<ProductGroup> _filterAndGroupProductsInBackground(...) { ... }
+// --- No changes needed for the code above this line ---
+
 const List<String> categoryDisplayOrder = [
   'Brot & Backwaren',
   'Fisch & Fleisch',
@@ -21,52 +30,27 @@ const List<String> categoryDisplayOrder = [
   'Vorräte',
   'Sonstiges',
 ];
-
-// Your existing class remains unchanged.
 class ProductGroup {
   final CategoryStyle style;
   final List<Product> products;
   ProductGroup({required this.style, required this.products});
 }
-
-// =========================================================================
-// === STEP 1 OF 3: THE HELPER CLASS FOR ISOLATE INPUT                  ===
-// =========================================================================
-
-/// A helper class to bundle the data needed for the background isolate.
-/// The compute() function can only accept a single argument.
 class _GroupAndSortInput {
   final List<Product> products;
   final FilterState filter;
-
   _GroupAndSortInput({required this.products, required this.filter});
 }
-
-
-// =========================================================================
-// === STEP 2 OF 3: THE TOP-LEVEL FUNCTION FOR THE ISOLATE             ===
-// =========================================================================
-
-/// This function will be executed in a separate isolate to avoid blocking the UI thread.
-/// It contains all the heavy grouping and sorting logic.
 List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
-  // Unpack the input data
   final products = input.products;
   final filter = input.filter;
-
-  debugPrint("[ISOLATE] Grouping and sorting running in background... Input: ${products.length} products.");
-
   if (products.isEmpty) {
     return [];
   }
-
-  // --- All your existing logic is copied here ---
   final groupedByDisplayName = groupBy(
     products,
         (Product product) =>
     CategoryService.getStyleForCategory(product.category).displayName,
   );
-
   final categoryGroups = <ProductGroup>[];
   for (final displayName in categoryDisplayOrder) {
     if (groupedByDisplayName.containsKey(displayName)) {
@@ -76,7 +60,6 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
       categoryGroups.add(ProductGroup(style: style, products: productList));
     }
   }
-
   for (final group in categoryGroups) {
     group.products.sort((a, b) {
       switch (filter.sortOption) {
@@ -95,36 +78,76 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
       }
     });
   }
-
-  debugPrint("[ISOLATE] Background work complete. Returning ${categoryGroups.length} sorted groups.\n");
-
   return categoryGroups;
 }
-
+class _FilterAndGroupInput {
+  final List<Product> allProducts; // The full, plain list
+  final FilterState filter;
+  _FilterAndGroupInput({required this.allProducts, required this.filter});
+}
+List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput input) {
+  final allProducts = input.allProducts;
+  final filter = input.filter;
+  debugPrint("[ISOLATE-COMBO] Starting filter and group task...");
+  List<Product> filteredProducts;
+  if (allProducts.isEmpty || filter.isDefault) {
+    filteredProducts = allProducts;
+  } else {
+    filteredProducts = allProducts.where((product) {
+      if (filter.selectedStores.isNotEmpty && !filter.selectedStores.contains(product.store)) return false;
+      if (filter.selectedCategories.isNotEmpty && !filter.selectedCategories.contains(product.category)) return false;
+      if (filter.selectedSubcategories.isNotEmpty && !filter.selectedSubcategories.contains(product.subcategory)) return false;
+      if (filter.searchQuery.isNotEmpty) {
+        final query = filter.searchQuery.toLowerCase();
+        final nameMatch = product.name.toLowerCase().contains(query);
+        final keywordMatch = product.searchKeywords.any((k) => k.startsWith(query));
+        if (!nameMatch && !keywordMatch) return false;
+      }
+      return true;
+    }).toList();
+  }
+  debugPrint("[ISOLATE-COMBO] Filtering complete. ${filteredProducts.length} products remaining.");
+  final groupingInput = _GroupAndSortInput(products: filteredProducts, filter: filter);
+  final groupedAndSortedProducts = _groupAndSortProductsInBackground(groupingInput);
+  debugPrint("[ISOLATE-COMBO] Task complete. Returning ${groupedAndSortedProducts.length} groups.");
+  return groupedAndSortedProducts;
+}
 
 // =========================================================================
-// === STEP 3 OF 3: THE NEW ASYNCHRONOUS PROVIDER                      ===
+// === HOMEPAGE PROVIDER - UPDATED
 // =========================================================================
 
-/// This provider is now a FutureProvider. It watches for changes in filters
-/// or products and re-runs the expensive grouping/sorting logic in a
-/// background isolate, preventing any UI freezes.
-final groupedProductsProvider = FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
-  // Watch the dependencies as before.
-  final filter = ref.watch(filterStateProvider);
-  final products = ref.watch(filteredProductsProvider);
+/// The ONLY provider your homepage should watch. It's more efficient.
+final homePageProductsProvider =
+FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
 
-  // An optimization: if there's nothing to process, return immediately.
-  if (products.isEmpty) {
+  final stopwatch = Stopwatch()..start();
+  debugPrint("[TIMER-COMBO] homePageProductsProvider: START");
+
+  // A. Get the full product list from our NEW STABLE provider
+  //    This is the only change needed in this provider.
+  final allProductsAsync = ref.watch(initialProductsProvider);
+
+  final allProducts = allProductsAsync.value ?? [];
+  if (allProducts.isEmpty) {
+    debugPrint("[TIMER-COMBO] homePageProductsProvider: END (empty) in ${stopwatch.elapsedMilliseconds}ms");
+    stopwatch.stop();
     return [];
   }
 
-  // THIS IS THE FIX: Convert live HiveObjects to plain objects
-  final plainProducts = products.map((p) => p.toPlainObject()).toList();
+  // B. Get the current filter
+  final filter = ref.watch(filterStateProvider);
 
-  // Bundle the NEW plain data into our helper class.
-  final input = _GroupAndSortInput(products: plainProducts, filter: filter);
+  // C. Convert to plain objects
+  final plainProducts = allProducts.map((p) => p.toPlainObject()).toList();
 
-  // Call compute() to run our function in the background. This will now succeed.
-  return compute(_groupAndSortProductsInBackground, input);
+  // D. Bundle and run the SINGLE background task
+  final input =
+  _FilterAndGroupInput(allProducts: plainProducts, filter: filter);
+  final result = await compute(_filterAndGroupProductsInBackground, input);
+
+  debugPrint("[TIMER-COMBO] homePageProductsProvider: END - Total time: ${stopwatch.elapsedMilliseconds}ms");
+  stopwatch.stop();
+
+  return result;
 });

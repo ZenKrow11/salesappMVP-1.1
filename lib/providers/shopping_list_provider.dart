@@ -1,5 +1,6 @@
 // lib/providers/shopping_list_provider.dart
 
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,51 +8,70 @@ import 'package:sales_app_mvp/models/named_list.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/services/hive_storage_service.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
+// NEW: Import the products provider to get the latest product list
+import 'package:sales_app_mvp/providers/products_provider.dart';
+
 
 const String merklisteListName = 'Merkliste';
-// A list of wrongly named 'NamedList's to also migrate.
 const List<String> _oldNamedListNames = ['Favorites', 'Merkzettel'];
 
+// --- UPDATED ShoppingListNotifier ---
 class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   final HiveStorageService _storageService;
+  final Ref _ref;
 
-  ShoppingListNotifier(this._storageService) : super([]) {
+  ShoppingListNotifier(this._storageService, this._ref) : super([]) {
     _loadAndMigrateLists();
   }
 
   /// This function runs on startup. It performs a one-time data migration
-  /// from the old `favorites` box and any incorrectly named lists into the
-  /// standardized "Merkliste", then loads the final state.
+  /// and ensures that only currently existing products are in the lists.
   Future<void> _loadAndMigrateLists() async {
+    // Wait for the master product list to be ready first.
+    final allProducts = await _ref.read(initialProductsProvider.future);
+    final allProductIds = allProducts.map((p) => p.id).toSet();
+
     // --- MIGRATION PART 1: From the old `favorites` Box ---
-    // We access the box directly here just for the migration.
     final oldFavoritesBox = Hive.box<Product>('favorites');
     if (oldFavoritesBox.isNotEmpty) {
-      print("MIGRATION: Old 'favorites' box found with items. Migrating to '$merklisteListName'...");
-
-      // Ensure "Merkliste" exists.
+      print("MIGRATION: Old 'favorites' box found. Migrating...");
       if (!_storageService.getShoppingLists().any((list) => list.name == merklisteListName)) {
         await _storageService.createShoppingList(merklisteListName, -1);
       }
-      // Add all products from the old box to the new list.
       for (final product in oldFavoritesBox.values) {
-        await _storageService.addToShoppingList(merklisteListName, product);
+        if (allProductIds.contains(product.id)) {
+          await _storageService.addToShoppingList(merklisteListName, product);
+        }
       }
-      // Clear the old box to prevent this from running again.
       await oldFavoritesBox.clear();
-      print("MIGRATION: Completed. Old 'favorites' box is now empty.");
+      print("MIGRATION: 'favorites' box migration complete.");
     }
 
     // --- MIGRATION PART 2: From incorrectly named 'NamedList's ---
     for (final oldName in _oldNamedListNames) {
-      final oldList = _storageService.getShoppingLists().where((l) => l.name == oldName).firstOrNull;
+      final oldList = _storageService.getShoppingLists().firstWhereOrNull((l) => l.name == oldName);
       if (oldList != null) {
         print("MIGRATION: Incorrectly named list '$oldName' found. Merging...");
-        for(final product in oldList.items) {
-          await _storageService.addToShoppingList(merklisteListName, product);
+        for (final product in oldList.items) {
+          if (allProductIds.contains(product.id)) {
+            await _storageService.addToShoppingList(merklisteListName, product);
+          }
         }
         await _storageService.deleteShoppingList(oldName);
         print("MIGRATION: Merged and deleted '$oldName'.");
+      }
+    }
+
+    // --- CORRECTED: Data Integrity Check ---
+    final allLoadedLists = _storageService.getShoppingLists();
+    for (final list in allLoadedLists) {
+      final staleItems = list.items.where((item) => !allProductIds.contains(item.id)).toList();
+      if (staleItems.isNotEmpty) {
+        print("CLEANUP: Removing ${staleItems.length} stale products from '${list.name}'.");
+        for (final staleItem in staleItems) {
+          // Use the existing service method to remove stale items one by one.
+          await _storageService.removeFromShoppingList(list.name, staleItem.id);
+        }
       }
     }
 
@@ -68,6 +88,7 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
     state = _storageService.getShoppingLists();
   }
 
+  // --- No changes needed to the public methods below ---
   Future<void> addEmptyList(String listName) async {
     final nonSpecialListCount = state.where((list) => list.name != merklisteListName).length;
     await _storageService.createShoppingList(listName, nonSpecialListCount);
@@ -76,9 +97,7 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
 
   Future<void> deleteList(String listName) async {
     if (listName == merklisteListName) return;
-
     await _storageService.deleteShoppingList(listName);
-    // Re-index remaining lists after deletion
     final remainingLists = _storageService.getShoppingLists()
         .where((list) => list.name != merklisteListName)
         .toList();
@@ -102,9 +121,10 @@ class ShoppingListNotifier extends StateNotifier<List<NamedList>> {
   }
 }
 
+// --- UPDATED: Pass the Ref object to the notifier ---
 final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, List<NamedList>>((ref) {
   final storageService = ref.watch(hiveStorageServiceProvider);
-  return ShoppingListNotifier(storageService);
+  return ShoppingListNotifier(storageService, ref);
 });
 
 // --- ACTIVE LIST PROVIDER (No changes needed) ---

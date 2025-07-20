@@ -19,8 +19,7 @@ mixin _$FilterState {
   String get searchQuery => throw _privateConstructorUsedError;
   List<String> get selectedStores => throw _privateConstructorUsedError;
   List<String> get selectedCategories => throw _privateConstructorUsedError;
-  List<String> get selectedSubcategories =>
-      throw _privateConstructorUsedError; // Change the default to a more sensible option
+  List<String> get selectedSubcategories => throw _privateConstructorUsedError;
   SortOption get sortOption => throw _privateConstructorUsedError;
 
   /// Create a copy of FilterState
@@ -152,7 +151,7 @@ class __$$FilterStateImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$FilterStateImpl implements _FilterState {
+class _$FilterStateImpl extends _FilterState {
   const _$FilterStateImpl(
       {this.searchQuery = '',
       final List<String> selectedStores = const [],
@@ -161,7 +160,8 @@ class _$FilterStateImpl implements _FilterState {
       this.sortOption = SortOption.storeAlphabetical})
       : _selectedStores = selectedStores,
         _selectedCategories = selectedCategories,
-        _selectedSubcategories = selectedSubcategories;
+        _selectedSubcategories = selectedSubcategories,
+        super._();
 
   @override
   @JsonKey()
@@ -195,7 +195,6 @@ class _$FilterStateImpl implements _FilterState {
     return EqualUnmodifiableListView(_selectedSubcategories);
   }
 
-// Change the default to a more sensible option
   @override
   @JsonKey()
   final SortOption sortOption;
@@ -240,13 +239,14 @@ class _$FilterStateImpl implements _FilterState {
       __$$FilterStateImplCopyWithImpl<_$FilterStateImpl>(this, _$identity);
 }
 
-abstract class _FilterState implements FilterState {
+abstract class _FilterState extends FilterState {
   const factory _FilterState(
       {final String searchQuery,
       final List<String> selectedStores,
       final List<String> selectedCategories,
       final List<String> selectedSubcategories,
       final SortOption sortOption}) = _$FilterStateImpl;
+  const _FilterState._() : super._();
 
   @override
   String get searchQuery;
@@ -255,8 +255,7 @@ abstract class _FilterState implements FilterState {
   @override
   List<String> get selectedCategories;
   @override
-  List<String>
-      get selectedSubcategories; // Change the default to a more sensible option
+  List<String> get selectedSubcategories;
   @override
   SortOption get sortOption;
 

@@ -1,12 +1,14 @@
 // lib/providers/filter_options.dart
 
+import 'package:flutter/foundation.dart'; // IMPORTANT: Import for `compute`
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/products_provider.dart';
 
-/// Helper function to extract and sort unique string values from a list of products.
+// --- HELPER FUNCTION (UNCHANGED) ---
+// This function is fine, it will be called inside the isolate.
 List<String> _getUniqueOptions(
     List<Product> products,
     String Function(Product) getField,
@@ -17,56 +19,110 @@ List<String> _getUniqueOptions(
   return options;
 }
 
-/// Provides a list of unique store names from the available products.
-final storeOptionsProvider = Provider.autoDispose<List<String>>((ref) {
-  // CHANGED: Read from the new central productsProvider.
-  final products = ref.watch(productsProvider).value ?? [];
-  return _getUniqueOptions(products, (p) => p.store);
-});
+// =========================================================================
+// === NEW: HELPERS FOR BACKGROUND OPTION GENERATION
+// =========================================================================
 
-/// A family provider that generates a list of category options based on a given filter state.
-final categoryOptionsProviderFamily =
-Provider.autoDispose.family<List<String>, FilterState>((ref, filterState) {
-  // CHANGED: Read from the new central productsProvider.
-  final products = ref.watch(productsProvider).value ?? [];
-  List<Product> relevantProducts = products;
+/// A single input class can be used for all option types.
+/// This bundles the data needed for the background isolate.
+class _OptionsInput {
+  final List<Product> products;
+  final FilterState filterState;
 
-  if (filterState.selectedStores.isNotEmpty) {
-    relevantProducts = products
-        .where((p) => filterState.selectedStores.contains(p.store))
+  _OptionsInput({required this.products, required this.filterState});
+}
+
+/// Top-level function to generate STORE options in an isolate.
+List<String> _generateStoreOptionsInBackground(_OptionsInput input) {
+  debugPrint("[ISOLATE] Generating store options...");
+  return _getUniqueOptions(input.products, (p) => p.store);
+}
+
+/// Top-level function to generate CATEGORY options in an isolate.
+List<String> _generateCategoryOptionsInBackground(_OptionsInput input) {
+  debugPrint("[ISOLATE] Generating category options...");
+  List<Product> relevantProducts = input.products;
+  // Filter products by selected stores before generating category options
+  if (input.filterState.selectedStores.isNotEmpty) {
+    relevantProducts = input.products
+        .where((p) => input.filterState.selectedStores.contains(p.store))
         .toList();
   }
   return _getUniqueOptions(relevantProducts, (p) => p.category);
-});
+}
 
-/// A family provider that generates a list of subcategory options based on a given filter state.
-final subcategoryOptionsProviderFamily =
-Provider.autoDispose.family<List<String>, FilterState>((ref, filterState) {
-  // CHANGED: Read from the new central productsProvider.
-  final products = ref.watch(productsProvider).value ?? [];
-  List<Product> relevantProducts = products;
-
-  if (filterState.selectedStores.isNotEmpty) {
+/// Top-level function to generate SUBCATEGORY options in an isolate.
+List<String> _generateSubcategoryOptionsInBackground(_OptionsInput input) {
+  debugPrint("[ISOLATE] Generating subcategory options...");
+  List<Product> relevantProducts = input.products;
+  // Filter products by stores first
+  if (input.filterState.selectedStores.isNotEmpty) {
     relevantProducts = relevantProducts
-        .where((p) => filterState.selectedStores.contains(p.store))
+        .where((p) => input.filterState.selectedStores.contains(p.store))
         .toList();
   }
-  if (filterState.selectedCategories.isNotEmpty) {
+  // Then filter by categories
+  if (input.filterState.selectedCategories.isNotEmpty) {
     relevantProducts = relevantProducts
-        .where((p) => filterState.selectedCategories.contains(p.category))
+        .where((p) => input.filterState.selectedCategories.contains(p.category))
         .toList();
   }
   return _getUniqueOptions(relevantProducts, (p) => p.subcategory);
+}
+
+// =========================================================================
+// === REFACTORED ASYNC PROVIDERS
+// =========================================================================
+
+/// A private helper provider to get the plain product list once.
+/// This avoids repeating the `map` operation in every option provider.
+final _plainProductsProvider = Provider.autoDispose<List<Product>>((ref) {
+  // Watch the master list of products
+  final productsAsyncValue = ref.watch(initialProductsProvider);
+  // Get the list of products, or an empty list if loading/error
+  final products = productsAsyncValue.value ?? [];
+  // Convert HiveObjects to plain objects, ready for the isolate
+  return products.map((p) => p.toPlainObject()).toList();
 });
 
-/// Provides the current list of category options by watching the global filter state.
-final categoryOptionsProvider = Provider.autoDispose<List<String>>((ref) {
-  final filterState = ref.watch(filterStateProvider);
-  return ref.watch(categoryOptionsProviderFamily(filterState));
+/// Provides a list of unique store names asynchronously.
+final storeOptionsProvider = FutureProvider.autoDispose<List<String>>((ref) {
+  final plainProducts = ref.watch(_plainProductsProvider);
+  if (plainProducts.isEmpty) return [];
+
+  // We don't need the filter state for store options, so we pass a default one.
+  final input = _OptionsInput(
+    products: plainProducts,
+    filterState: const FilterState(),
+  );
+
+  return compute(_generateStoreOptionsInBackground, input);
 });
 
-/// Provides the current list of subcategory options by watching the global filter state.
-final subcategoryOptionsProvider = Provider.autoDispose<List<String>>((ref) {
+/// Provides the current list of category options asynchronously.
+final categoryOptionsProvider = FutureProvider.autoDispose<List<String>>((ref) {
+  final plainProducts = ref.watch(_plainProductsProvider);
+  if (plainProducts.isEmpty) return [];
+
+  // Watch the global filter state to react to changes
   final filterState = ref.watch(filterStateProvider);
-  return ref.watch(subcategoryOptionsProviderFamily(filterState));
+  final input = _OptionsInput(products: plainProducts, filterState: filterState);
+
+  return compute(_generateCategoryOptionsInBackground, input);
 });
+
+/// Provides the current list of subcategory options asynchronously.
+final subcategoryOptionsProvider =
+FutureProvider.autoDispose<List<String>>((ref) {
+  final plainProducts = ref.watch(_plainProductsProvider);
+  if (plainProducts.isEmpty) return [];
+
+  // Watch the global filter state to react to changes
+  final filterState = ref.watch(filterStateProvider);
+  final input = _OptionsInput(products: plainProducts, filterState: filterState);
+
+  return compute(_generateSubcategoryOptionsInBackground, input);
+});
+
+// The old family providers are no longer needed and can be deleted.
+// The three providers above are the complete replacement.
