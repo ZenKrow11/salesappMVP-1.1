@@ -20,7 +20,7 @@ class AppThemeData {
     required this.background,
     required this.accent,
     required this.inactive,
-    required this.pageBackground, // NEW: Add to constructor
+    required this.pageBackground,
   });
 }
 

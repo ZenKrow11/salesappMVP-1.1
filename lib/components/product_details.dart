@@ -25,134 +25,184 @@ class ProductDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Dismissible(
-      key: ValueKey('dismissible_${product.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(color: Colors.transparent),
-      secondaryBackground: Container(
-        color: AppColors.primary,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Open Link',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+    return Center(
+      child: Dismissible(
+        key: ValueKey('dismissible_${product.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(color: Colors.transparent),
+        secondaryBackground: Container(
+          color: AppColors.primary,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Open Link',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
-            ),
-            SizedBox(width: 16),
-            Icon(Icons.open_in_new, color: AppColors.primary, size: 28),
-          ],
+              SizedBox(width: 16),
+              Icon(Icons.open_in_new, color: Colors.white, size: 28),
+            ],
+          ),
         ),
-      ),
+        confirmDismiss: (direction) async {
+          _launchURL(context, product.url);
+          return false;
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(20.0),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary,
+                blurRadius: 10.0,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20.0),
+            // ===================================================================
+            // === KEY CHANGE: Use LayoutBuilder to create an adaptive layout ===
+            // ===================================================================
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Container(
+                    // 1. Force the content column to fill the available height
+                    height: constraints.maxHeight,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context, ref),
+                        const SizedBox(height: 12),
+                        _buildCategoryRows(),
+                        const SizedBox(height: 12),
+                        _buildProductName(),
 
-      // The rest of the Dismissible is unchanged.
-      confirmDismiss: (direction) async {
-        _launchURL(context, product.url);
-        return false;
-      },
+                        // 2. Add a Spacer to push content apart vertically
+                        const Spacer(),
 
-      // The child is your original SingleChildScrollView with all its contents.
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, ref),
-            const SizedBox(height: 16),
-            _buildCategoryRows(),
-            const SizedBox(height: 16),
-            _buildProductName(),
-            const SizedBox(height: 12),
-            _buildImageContainer(context, ref),
-            const SizedBox(height: 20),
-            _buildAvailabilityInfo(),
-            _buildSonderkonditionInfo(),
-            if (product.sonderkondition != null)
-              const Divider(height: 32, color: Colors.white24),
-            _buildPriceRow(),
-          ],
+                        _buildImageContainer(context, ref),
+
+                        // 3. Add another Spacer to push the prices to the bottom
+                        const Spacer(),
+
+                        _buildAvailabilityInfo(),
+                        _buildSonderkonditionInfo(),
+                        _buildPriceRow(),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
   }
 
-  // ALL OTHER METHODS BELOW THIS LINE ARE COMPLETELY UNCHANGED.
+  // ALL OTHER METHODS BELOW THIS LINE ARE UNCHANGED.
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Expanded(
           flex: 3,
-          child: StoreLogo(storeName: product.store, height: 48),
+          child: StoreLogo(storeName: product.store, height: 40),
         ),
-        const Spacer(flex: 1),
+        const SizedBox(width: 12),
         Expanded(
-          flex: 2,
-          child: _buildCounter(),
-        ),
-        const Spacer(flex: 1),
-        Expanded(
-          flex: 3,
-          child: _buildActiveListButton(context, ref),
+          flex: 5,
+          child: _buildCombinedHeaderButton(context, ref),
         ),
       ],
     );
   }
 
-  Widget _buildCounter() {
+  Widget _buildCombinedHeaderButton(BuildContext context, WidgetRef ref) {
+    final activeList = ref.watch(activeShoppingListProvider);
+    final buttonText = activeList ?? 'Merkl...';
+
     return Container(
-      constraints: const BoxConstraints(minWidth: 90),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      height: 48,
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: Text(
-        '$currentIndex / $totalItems',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: AppColors.inactive,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    '$currentIndex / $totalItems',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.inactive,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              VerticalDivider(
+                color: AppColors.inactive.withOpacity(0.4),
+                thickness: 1,
+                width: 1,
+              ),
+              Expanded(
+                flex: 3,
+                child: InkWell(
+                  onTap: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    useRootNavigator: true,
+                    backgroundColor: AppColors.background,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (ctx) => const ShoppingListBottomSheet(),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.playlist_add_check,
+                        color: AppColors.secondary,
+                        size: 24.0,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        buttonText,
+                        style: const TextStyle(
+                          color: AppColors.inactive,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
-    final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList ?? 'Select List';
-    return TextButton.icon(
-      icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 24.0),
-      label: Text(
-        buttonText,
-        style: const TextStyle(color: AppColors.inactive, fontWeight: FontWeight.bold),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-      onPressed: () => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useRootNavigator: true,
-        backgroundColor: AppColors.background,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (ctx) => const ShoppingListBottomSheet(),
-      ),
-      style: TextButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-        minimumSize: const Size(0, 48),
       ),
     );
   }
@@ -170,18 +220,15 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildProductName() {
-    return SizedBox(
-      height: 85.0,
-      child: Text(
-        product.name,
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textSecondary,
-        ),
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
+    return Text(
+      product.name,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textSecondary,
       ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -206,10 +253,12 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildImageContainer(BuildContext context, WidgetRef ref) {
+    final double imageMaxHeight = MediaQuery.of(context).size.height * 0.3;
+
     return Stack(
       children: [
         Container(
-          height: 300,
+          constraints: BoxConstraints(maxHeight: imageMaxHeight),
           width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.black.withOpacity(0.2),
@@ -220,7 +269,7 @@ class ProductDetails extends ConsumerWidget {
             child: ImageWithAspectRatio(
               imageUrl: product.imageUrl,
               maxWidth: double.infinity,
-              maxHeight: 300,
+              maxHeight: imageMaxHeight,
             ),
           ),
         ),
@@ -320,14 +369,16 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildPriceRow() {
     final cleanPercentage = product.discountPercentage;
+    const double priceFontSize = 24;
+
     return Row(
       children: [
         Expanded(
           child: _priceBox(
             product.normalPrice.toStringAsFixed(2),
             Colors.grey.shade300,
-            const TextStyle(
-              fontSize: 30,
+            TextStyle(
+              fontSize: priceFontSize,
               fontWeight: FontWeight.bold,
               decoration: TextDecoration.lineThrough,
               color: Colors.black54,
@@ -339,8 +390,8 @@ class ProductDetails extends ConsumerWidget {
           child: _priceBox(
             '$cleanPercentage%',
             Colors.redAccent,
-            const TextStyle(
-              fontSize: 30,
+            TextStyle(
+              fontSize: priceFontSize,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -351,8 +402,8 @@ class ProductDetails extends ConsumerWidget {
           child: _priceBox(
             product.currentPrice.toStringAsFixed(2),
             Colors.yellow.shade600,
-            const TextStyle(
-              fontSize: 30,
+            TextStyle(
+              fontSize: priceFontSize,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -364,7 +415,7 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _priceBox(String value, Color bgColor, TextStyle textStyle) {
     return Container(
-      height: 75,
+      height: 60,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bgColor,
