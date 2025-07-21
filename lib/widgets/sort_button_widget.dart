@@ -12,7 +12,6 @@ class SortButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // This button now triggers a custom modal sheet, matching the app's aesthetic.
     return TextButton.icon(
       icon: const Icon(Icons.sort, color: AppColors.secondary, size: 24.0),
       label: const Text(
@@ -24,7 +23,11 @@ class SortButton extends ConsumerWidget {
         showModalBottomSheet(
           context: context,
           useRootNavigator: true,
-          backgroundColor: Colors.transparent, // Important for custom shape
+          backgroundColor: Colors.transparent,
+          // ===================================================================
+          // === KEY CHANGE 1: Allow the sheet to grow to fit its content    ===
+          // ===================================================================
+          isScrollControlled: true,
           builder: (_) => const _SortOptionsBottomSheet(),
         );
       },
@@ -38,7 +41,6 @@ class SortButton extends ConsumerWidget {
 }
 
 /// The private widget for the content of the bottom sheet.
-/// This keeps the main `SortButton` widget clean and focused.
 class _SortOptionsBottomSheet extends ConsumerWidget {
   const _SortOptionsBottomSheet();
 
@@ -48,7 +50,6 @@ class _SortOptionsBottomSheet extends ConsumerWidget {
     final filterNotifier = ref.read(filterStateProvider.notifier);
     final currentSortOption = filterState.sortOption;
 
-    // The main container that provides the background and rounded corners.
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.background,
@@ -59,59 +60,57 @@ class _SortOptionsBottomSheet extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // A clear header for the sheet.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Sort By',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.accent),
-                  onPressed: () => Navigator.pop(context),
-                )
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Dynamically create a list of sort options.
-            ...SortOption.values.map((option) {
-              final bool isSelected = option == currentSortOption;
-
-              // Use a styled ListTile for a consistent look and feel.
-              return Card(
-                elevation: 0,
-                color: isSelected ? AppColors.secondary : Colors.transparent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  title: Text(
-                    option.displayName,
+        // ===================================================================
+        // === KEY CHANGE 2: Wrap the Column in a scroll view              ===
+        // ===================================================================
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Sort By',
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      // The text color logic you requested.
-                      color: isSelected ? AppColors.primary : AppColors.inactive,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
                     ),
                   ),
-                  onTap: () {
-                    // Update the state with the chosen option.
-                    filterNotifier.update((state) => state.copyWith(sortOption: option));
-                    // Close the bottom sheet after selection.
-                    Navigator.pop(context);
-                  },
-                ),
-              );
-            }).toList(),
-          ],
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.accent),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...SortOption.values.map((option) {
+                final bool isSelected = option == currentSortOption;
+
+                return Card(
+                  elevation: 0,
+                  color: isSelected ? AppColors.secondary : Colors.transparent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    title: Text(
+                      option.displayName,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? AppColors.primary : AppColors.inactive,
+                      ),
+                    ),
+                    onTap: () {
+                      filterNotifier.update((state) => state.copyWith(sortOption: option));
+                      Navigator.pop(context);
+                    },
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
         ),
       ),
     );
