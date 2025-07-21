@@ -1,4 +1,4 @@
-// lib/providers/products_provider.dart
+// lib/models/products_provider.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';

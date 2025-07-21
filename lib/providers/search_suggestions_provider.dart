@@ -3,7 +3,7 @@
 import 'package:flutter/foundation.dart'; // IMPORTANT: Import for `compute`
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/providers/products_provider.dart';
+import 'package:sales_app_mvp/models/products_provider.dart';
 
 // =========================================================================
 // === NEW: HELPERS FOR BACKGROUND SEARCH

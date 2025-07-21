@@ -1,4 +1,5 @@
 // lib/providers/home_page_state_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Manages the UI state for the HomePage.
@@ -7,8 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// currently at the top of the HomePage's scroll view.
 final currentCategoryIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
 
-// This provider will hold the unique display names of the categories that are expanded.
-final expandedCategoriesProvider = StateProvider<Set<String>>((ref) {
-  // It starts as an empty set, meaning all categories are collapsed by default.
+
+// =========================================================================
+// === NEW PAGINATION LOGIC
+// =========================================================================
+
+// The number of items to show in a collapsed category.
+const int kCollapsedItemLimit = 30;
+// The number of items to add with each press of "Show More".
+const int kPaginationIncrement = 30;
+
+/// This provider holds a map of {CategoryName: NumberOfItemsToShow}.
+/// This is the new state management for the collapsible/paginated categories.
+final categoryPaginationProvider = StateProvider<Map<String, int>>((ref) {
+  // Starts as an empty map. The UI will use kCollapsedItemLimit as the default.
   return {};
 });

@@ -7,7 +7,7 @@ import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 // UPDATED: Import the new provider file
-import 'package:sales_app_mvp/providers/products_provider.dart';
+import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 
 // --- All the top-level constants, classes, and background functions remain exactly the same ---

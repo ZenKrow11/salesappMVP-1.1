@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-import 'package:sales_app_mvp/providers/products_provider.dart';
+import 'package:sales_app_mvp/models/products_provider.dart';
 
 // --- HELPER FUNCTION (UNCHANGED) ---
 // This function is fine, it will be called inside the isolate.

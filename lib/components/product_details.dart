@@ -1,3 +1,5 @@
+// lib/pages/product_details.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,57 +25,90 @@ class ProductDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, ref),
-          const SizedBox(height: 16),
-          _buildCategoryRows(),
-          const SizedBox(height: 16),
-          _buildProductName(),
-          const SizedBox(height: 12),
-          _buildImageContainer(context, ref),
-          const SizedBox(height: 20),
-          _buildAvailabilityInfo(),
-          _buildSonderkonditionInfo(),
-          if (product.sonderkondition != null)
-            const Divider(height: 32, color: Colors.white24),
-          _buildPriceRow(),
-        ],
+    return Dismissible(
+      key: ValueKey('dismissible_${product.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(color: Colors.transparent),
+      secondaryBackground: Container(
+        color: AppColors.primary,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Open Link',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            SizedBox(width: 16),
+            Icon(Icons.open_in_new, color: AppColors.primary, size: 28),
+          ],
+        ),
+      ),
+
+      // The rest of the Dismissible is unchanged.
+      confirmDismiss: (direction) async {
+        _launchURL(context, product.url);
+        return false;
+      },
+
+      // The child is your original SingleChildScrollView with all its contents.
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context, ref),
+            const SizedBox(height: 16),
+            _buildCategoryRows(),
+            const SizedBox(height: 16),
+            _buildProductName(),
+            const SizedBox(height: 12),
+            _buildImageContainer(context, ref),
+            const SizedBox(height: 20),
+            _buildAvailabilityInfo(),
+            _buildSonderkonditionInfo(),
+            if (product.sonderkondition != null)
+              const Divider(height: 32, color: Colors.white24),
+            _buildPriceRow(),
+          ],
+        ),
       ),
     );
   }
 
-  /// Header with Store Logo (left), Centered Counter, and List Button (right).
+  // ALL OTHER METHODS BELOW THIS LINE ARE COMPLETELY UNCHANGED.
+
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Expanded(
-          flex: 3, // Give more space to the logo
+          flex: 3,
           child: StoreLogo(storeName: product.store, height: 48),
         ),
-        const Spacer(flex: 1), // Add a spacer to push the counter
+        const Spacer(flex: 1),
         Expanded(
-          flex: 2, // Give space to the counter
+          flex: 2,
           child: _buildCounter(),
         ),
-        const Spacer(flex: 1), // Add a spacer to push the button
+        const Spacer(flex: 1),
         Expanded(
-          flex: 3, // Give more space to the button
+          flex: 3,
           child: _buildActiveListButton(context, ref),
         ),
       ],
     );
   }
 
-  /// A styled counter that matches the design of the home page's ItemCountWidget.
   Widget _buildCounter() {
     return Container(
-      constraints: const BoxConstraints(minWidth: 90), // Ensure minimum width
+      constraints: const BoxConstraints(minWidth: 90),
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       decoration: BoxDecoration(
         color: AppColors.primary,
@@ -92,15 +127,9 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- THIS IS THE FIX ---
-  /// A styled button that matches the design of the home page's action buttons.
   Widget _buildActiveListButton(BuildContext context, WidgetRef ref) {
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList ?? 'Select List';
-
-    // FIX: Removed the redundant `Expanded` widget from here.
-    // The method now just returns the button itself.
-    // The parent `_buildHeader` method is responsible for expanding it.
     return TextButton.icon(
       icon: const Icon(Icons.playlist_add_check, color: AppColors.secondary, size: 24.0),
       label: Text(
@@ -123,13 +152,12 @@ class ProductDetails extends ConsumerWidget {
         backgroundColor: AppColors.primary,
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-        minimumSize: const Size(0, 48), // Match height of store logo
+        minimumSize: const Size(0, 48),
       ),
     );
   }
 
   Widget _buildCategoryRows() {
-    // ... rest of the file is unchanged ...
     return Row(
       children: [
         Expanded(child: CategoryChip(categoryName: product.category)),
@@ -269,7 +297,6 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildSonderkonditionInfo() {
     if (product.sonderkondition == null) return const SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -293,7 +320,6 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildPriceRow() {
     final cleanPercentage = product.discountPercentage;
-
     return Row(
       children: [
         Expanded(

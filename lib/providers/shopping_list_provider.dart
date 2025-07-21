@@ -9,7 +9,7 @@ import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/services/hive_storage_service.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 // NEW: Import the products provider to get the latest product list
-import 'package:sales_app_mvp/providers/products_provider.dart';
+import 'package:sales_app_mvp/models/products_provider.dart';
 
 
 const String merklisteListName = 'Merkliste';

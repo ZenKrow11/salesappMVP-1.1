@@ -7,7 +7,7 @@ import 'dart:math';
 import '../main.dart';
 import '../providers/storage_providers.dart';
 // UPDATED import
-import '../providers/products_provider.dart';
+import '../models/products_provider.dart';
 import '../providers/grouped_products_provider.dart';
 import '../widgets/theme_color.dart';
 

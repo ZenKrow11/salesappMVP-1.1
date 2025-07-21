@@ -1,4 +1,4 @@
-// lib/providers/idle_precache_service.dart
+// lib/services/idle_precache_service.dart
 
 import 'dart:async'; // Correct import for Timer
 import 'package:flutter/widgets.dart';
