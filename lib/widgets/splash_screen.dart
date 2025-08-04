@@ -1,19 +1,16 @@
-// lib/screens/splash_screen.dart
+// lib/widgets/splash_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math';
 
-import '../main.dart';
-import '../providers/storage_providers.dart';
-// UPDATED import
-import '../models/products_provider.dart';
-import '../providers/grouped_products_provider.dart';
-import '../widgets/theme_color.dart';
+import 'package:sales_app_mvp/pages/main_app_screen.dart'; // IMPORTANT: Import the correct screen
+import 'package:sales_app_mvp/providers/storage_providers.dart';
+import 'package:sales_app_mvp/models/products_provider.dart';
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+import 'package:sales_app_mvp/widgets/theme_color.dart';
 
-// StartupState class and StartupNotifier can remain mostly the same,
-// but we'll update the _initialize method.
-
+// StartupState class remains unchanged.
 @immutable
 class StartupState {
   const StartupState({required this.progress, required this.message});
@@ -21,6 +18,7 @@ class StartupState {
   final String message;
 }
 
+// StartupNotifier remains unchanged. Its logic is correct.
 class StartupNotifier extends StateNotifier<StartupState> {
   StartupNotifier(this._ref)
       : super(const StartupState(progress: 0.0, message: 'Initializing...')) {
@@ -42,22 +40,18 @@ class StartupNotifier extends StateNotifier<StartupState> {
     state = StartupState(progress: target, message: message);
   }
 
-  // THE CORRECTED INITIALIZE METHOD
   Future<void> _initialize() async {
-    // Step 1: Initialize Hive (0% -> 20%)
+    // Note: The hiveInitializationProvider is already complete because we awaited it in main().
+    // This will resolve instantly.
     await _animateProgress(0.20, 'Preparing local storage...');
     await _ref.read(hiveInitializationProvider.future);
 
-    // Step 2: Fetch products using the new stable provider (20% -> 50%)
-    // This now handles both cache-first and initial-sync scenarios.
     await _animateProgress(0.50, 'Loading latest deals...');
     await _ref.read(initialProductsProvider.future);
 
-    // Step 3: Pre-process the homepage view (50% -> 90%)
     await _animateProgress(0.90, 'Getting things ready...');
     await _ref.read(homePageProductsProvider.future);
 
-    // Step 4: Finalize (90% -> 100%)
     await _animateProgress(1.0, 'All set!');
     await Future.delayed(const Duration(milliseconds: 250));
   }
@@ -68,7 +62,7 @@ StateNotifierProvider<StartupNotifier, StartupState>((ref) {
   return StartupNotifier(ref);
 });
 
-// The SplashScreen widget itself does not need any changes.
+// The SplashScreen widget with the corrected navigation.
 class SplashScreen extends ConsumerWidget {
   static const routeName = '/';
   const SplashScreen({super.key});
@@ -76,16 +70,23 @@ class SplashScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final startupState = ref.watch(startupProvider);
+
+    // This listener waits for the startup process to complete.
     ref.listen(startupProvider, (previous, next) {
       if (next.progress == 1.0) {
+        // When progress is 100%, navigate to the main app screen.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {
-            Navigator.of(context).pushReplacementNamed(AuthGate.routeName);
+            // THE FIX: Navigate to MainAppScreen using its routeName.
+            // We use pushReplacementNamed so the user cannot press "back" to get to the splash screen.
+            Navigator.of(context).pushReplacementNamed(MainAppScreen.routeName);
           }
         });
       }
     });
-    return Scaffold( /* ... Your existing splash screen UI ... */
+
+    // The UI of the splash screen remains the same.
+    return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
         child: Column(

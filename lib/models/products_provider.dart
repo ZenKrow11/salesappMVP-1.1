@@ -23,8 +23,12 @@ class ProductCount {
 }
 
 // This function is now used by both the initial fetch and the refresher.
+// lib/models/products_provider.dart (CORRECTED _fetchAndSyncProducts)
+
 Future<List<Product>> _fetchAndSyncProducts() async {
   debugPrint("[SYNC] Starting Firestore fetch and Hive sync...");
+
+  // The 'get()' call will throw an exception on network failure, which is what we want.
   final snapshot = await FirebaseFirestore.instance.collection('products').get();
 
   final products = snapshot.docs
@@ -40,7 +44,8 @@ Future<List<Product>> _fetchAndSyncProducts() async {
   await productsBox.deleteAll(keysToDelete);
   await productsBox.putAll(newProductsMap);
 
-  debugPrint("[SYNC] Completed. Synced ${products.length} products.");
+  debugPrint("[SYNC] Successfully synced ${products.length} products from Firebase.");
+  // Return the FRESH products, not what's in the box.
   return products;
 }
 
@@ -52,22 +57,35 @@ Future<List<Product>> _fetchAndSyncProducts() async {
 /// It fetches data once and then stays in the `data` state.
 /// This prevents the "double load" flicker in the UI.
 /// We use `keepAlive` so it doesn't get disposed and re-run needlessly.
+// lib/models/products_provider.dart (CORRECTED VERSION)
+
 @Riverpod(keepAlive: true)
 Future<List<Product>> initialProducts(InitialProductsRef ref) async {
-  // On first run, check if Hive has data. If so, return it immediately
-  // to make the startup feel instant.
   final productsBox = Hive.box<Product>('products');
-  if (productsBox.isNotEmpty) {
-    debugPrint("[initialProducts] Returning ${productsBox.length} products from Hive cache immediately.");
-    // Trigger a background sync, but don't wait for it. The user sees the
-    // cached data instantly. The refresh logic will update the provider later.
-    ref.read(productsRefresherProvider.notifier).refresh();
-    return productsBox.values.toList();
-  }
 
-  // If Hive is empty (first-ever launch), perform the full fetch and wait for it.
-  debugPrint("[initialProducts] Hive is empty. Performing first-time sync...");
-  return _fetchAndSyncProducts();
+  try {
+    // --- STEP 1: ALWAYS TRY TO FETCH/SYNC FROM FIREBASE FIRST ---
+    // We reuse your existing function which is perfect. It fetches from
+    // Firebase and updates Hive automatically.
+    final freshProducts = await _fetchAndSyncProducts();
+
+    // If successful, return the fresh data.
+    return freshProducts;
+
+  } catch (e) {
+    // --- STEP 2: HANDLE OFFLINE / ERROR SCENARIO ---
+    debugPrint("[initialProducts] Firebase sync failed: $e. Falling back to Hive cache.");
+
+    // If the network call fails, only then do we read from the Hive box.
+    if (productsBox.isNotEmpty) {
+      debugPrint("[initialProducts] Returning ${productsBox.length} products from Hive cache.");
+      return productsBox.values.toList();
+    } else {
+      // Worst case: No internet connection on a fresh install.
+      debugPrint("[initialProducts] CRITICAL: Firebase failed and Hive cache is empty.");
+      throw Exception("Could not load products. Please check your internet connection.");
+    }
+  }
 }
 
 

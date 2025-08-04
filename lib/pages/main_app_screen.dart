@@ -1,14 +1,15 @@
 // lib/pages/main_app_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // NEW: Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
-// NEW: Import the new theme provider
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/pages/debug_page.dart';
 
-// CHANGED: The screen is now a ConsumerWidget to access the theme provider
+
+
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
   const MainAppScreen({super.key});
@@ -28,28 +29,31 @@ class _MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // NEW: Get the theme from the provider
     final theme = ref.watch(themeProvider);
+    // We need the status bar height to manually color that area.
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
+      // The background for the main content area.
+      backgroundColor: theme.pageBackground,
       body: Column(
         children: [
+          // This Container draws the color behind the system status bar icons (time, wifi, etc.)
           Container(
             height: statusBarHeight,
-            // CHANGED: Use the theme color
-            color: theme.primary,
+            color: theme.primary, // This must match the color of your top bar in HomePage
           ),
+          // This Expanded widget is CRUCIAL. It tells the child page how much space it can fill.
+          // This is what will fix the sliver stacking bug.
           Expanded(
             child: _pages[_currentIndex],
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        // CHANGED: Use theme colors
         backgroundColor: theme.primary,
         currentIndex: _currentIndex,
-        selectedItemColor: theme.secondary, // Changed from AppColors.active
+        selectedItemColor: theme.secondary,
         unselectedItemColor: theme.inactive,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [

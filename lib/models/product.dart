@@ -96,10 +96,6 @@ class Product extends HiveObject {
     return Product.fromJson(id, data);
   }
 
-  // lib/models/product.dart
-
-// ... (all of your existing code from the top of the file down to toJson)
-
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
@@ -139,5 +135,4 @@ class Product extends HiveObject {
       sonderkondition: sonderkondition,
     );
   }
-
-} // <-- This is the final closing brace of your Product class
+}

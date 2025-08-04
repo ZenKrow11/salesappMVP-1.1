@@ -10,14 +10,6 @@ import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 
-// --- All the top-level constants, classes, and background functions remain exactly the same ---
-// const List<String> categoryDisplayOrder = ...
-// class ProductGroup { ... }
-// class _GroupAndSortInput { ... }
-// List<ProductGroup> _groupAndSortProductsInBackground(...) { ... }
-// class _FilterAndGroupInput { ... }
-// List<ProductGroup> _filterAndGroupProductsInBackground(...) { ... }
-// --- No changes needed for the code above this line ---
 
 const List<String> categoryDisplayOrder = [
   'Brot & Backwaren',

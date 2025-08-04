@@ -4,11 +4,11 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:sales_app_mvp/models/named_list.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/services/hive_storage_service.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
-// NEW: Import the products provider to get the latest product list
 import 'package:sales_app_mvp/models/products_provider.dart';
 
 

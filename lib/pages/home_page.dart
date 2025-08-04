@@ -2,23 +2,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 import 'package:sales_app_mvp/widgets/search_bar_widget.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
-import 'package:sliver_tools/sliver_tools.dart';
+
+import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
+
 
 const double kHeaderVerticalPadding = 8.0;
 const double kHeaderHeight = 44.0;
@@ -36,34 +40,37 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = ref.watch(themeProvider);
     final asyncGroups = ref.watch(homePageProductsProvider);
 
-    return Scaffold(
-      backgroundColor: theme.pageBackground,
-      body: Column(
-        children: [
-          Container(
-            color: theme.primary,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [_buildSearchBarAndCount(), _buildActionButtons()],
-            ),
+    return Column(
+      children: [
+        Container(
+          color: theme.primary,
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [_buildSearchBarAndCount(), _buildActionButtons()],
           ),
-          Expanded(
-            child: asyncGroups.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Error: $error')),
-              data: (groups) {
-                if (groups.isEmpty) {
-                  return const Center(child: Text('No products found matching your criteria.'));
-                }
-                return _ProductList(groups: groups);
-              },
-            ),
+        ),
+        Expanded(
+          child: asyncGroups.when(
+            // ADDED BACK: The required loading handler
+            loading: () => const Center(child: CircularProgressIndicator()),
+
+            // ADDED BACK: The required error handler
+            error: (error, stack) => Center(child: Text('Error: $error')),
+
+            // The data handler remains the same
+            data: (groups) {
+              if (groups.isEmpty) {
+                return const Center(child: Text('No products found matching your criteria.'));
+              }
+              return _ProductList(groups: groups);
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+
 
   Widget _buildSearchBarAndCount() {
     return SizedBox(
@@ -142,38 +149,37 @@ class _ProductList extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
+        // The for-loop now directly adds the slivers to the CustomScrollView
         for (final group in groups) ...[
-          MultiSliver(
-            children: [
-              SliverPinnedHeader(
-                child: _GroupHeader(
-                  style: group.style,
-                  itemCount: group.products.length,
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
-                sliver: _buildSliverGrid(ref, group, paginationState),
-              ),
-              if ((paginationState[group.style.displayName] ?? kCollapsedItemLimit) < group.products.length)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
-                    child: _ShowMoreButton(
-                      totalItemCount: group.products.length,
-                      showingItemCount: paginationState[group.style.displayName] ?? kCollapsedItemLimit,
-                      onPressed: () {
-                        ref.read(categoryPaginationProvider.notifier).update((state) {
-                          final categoryName = group.style.displayName;
-                          final newCount = (state[categoryName] ?? kCollapsedItemLimit) + kPaginationIncrement;
-                          return {...state, categoryName: newCount};
-                        });
-                      },
-                    ),
-                  ),
-                ),
-            ],
+          // REMOVED the MultiSliver wrapper from here
+          SliverToBoxAdapter(
+            child: _GroupHeader(
+              style: group.style,
+              itemCount: group.products.length,
+            ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
+            sliver: _buildSliverGrid(ref, group, paginationState),
+          ),
+          if ((paginationState[group.style.displayName] ?? kCollapsedItemLimit) < group.products.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24.0),
+                child: _ShowMoreButton(
+                  totalItemCount: group.products.length,
+                  showingItemCount: paginationState[group.style.displayName] ?? kCollapsedItemLimit,
+                  onPressed: () {
+                    ref.read(categoryPaginationProvider.notifier).update((state) {
+                      final categoryName = group.style.displayName;
+                      final newCount = (state[categoryName] ?? kCollapsedItemLimit) + kPaginationIncrement;
+                      return {...state, categoryName: newCount};
+                    });
+                  },
+                ),
+              ),
+            ),
+          // REMOVED the closing of MultiSliver
         ],
       ],
     );
@@ -199,11 +205,16 @@ class _ProductList extends ConsumerWidget {
             onTap: () {
               final flatSortedProducts = groups.expand((g) => g.products).toList();
               final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
+
+              // Use a variable to hold the widget instance before passing it to the route.
+              // This often helps the Dart analyzer resolve types correctly.
+              final Widget swiperPage = ProductSwiperScreen(
+                products: flatSortedProducts,
+                initialIndex: initialIndex != -1 ? initialIndex : 0,
+              );
+
               Navigator.of(context).push(SlideUpPageRoute(
-                page: ProductSwiperScreen(
-                  products: flatSortedProducts,
-                  initialIndex: initialIndex != -1 ? initialIndex : 0,
-                ),
+                page: swiperPage, // Now pass the variable
               ));
             },
           );
@@ -224,39 +235,42 @@ class _GroupHeader extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final textColor = getContrastColor(style.color);
 
-    return Container(
+    // Replace the root Container with a Material widget
+    return Material(
       color: theme.pageBackground,
-      padding: const EdgeInsets.symmetric(vertical: kHeaderVerticalPadding, horizontal: 8.0),
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: style.color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(style.icon, color: textColor, size: 26),
-            const SizedBox(width: 12),
-            Text(
-              style.displayName,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-            const Spacer(),
-            if (itemCount != null)
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: kHeaderVerticalPadding, horizontal: 8.0),
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: style.color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(style.icon, color: textColor, size: 26),
+              const SizedBox(width: 12),
               Text(
-                '[ $itemCount ]',
+                style.displayName,
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: textColor.withOpacity(0.85),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
-          ],
+              const Spacer(),
+              if (itemCount != null)
+                Text(
+                  '[ $itemCount ]',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: textColor.withOpacity(0.85),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

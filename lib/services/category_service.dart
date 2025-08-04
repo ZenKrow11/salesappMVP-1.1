@@ -1,6 +1,8 @@
+// lib/services/category_service.dart
+
 import 'package:flutter/material.dart';
 
-// ... (CategoryStyle, SubCategory, MainCategory classes are unchanged) ...
+
 class CategoryStyle {
   final String displayName;
   final Color color;

@@ -10,6 +10,17 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
     transitionDuration: const Duration(milliseconds: 400),
     reverseTransitionDuration: const Duration(milliseconds: 400),
 
+    // --- KEY CHANGE 1: Make the route non-opaque ---
+    // This is the crucial property. Setting it to false tells Flutter to
+    // keep drawing the previous route (the homepage) underneath this one.
+    opaque: false,
+
+    // --- KEY CHANGE 2: Remove the default modal barrier color ---
+    // By default, non-opaque routes have a semi-transparent black barrier.
+    // Setting this to transparent removes that shadow, so you only see
+    // your own fading background.
+    barrierColor: Colors.transparent,
+
     // The pageBuilder simply returns the widget that should be displayed.
     pageBuilder: (
         BuildContext context,

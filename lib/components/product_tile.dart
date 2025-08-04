@@ -3,11 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import '../models/product.dart';
-import '../widgets/store_logo.dart';
+import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 
 class ProductTile extends ConsumerWidget {
   final Product product;
@@ -19,41 +20,54 @@ class ProductTile extends ConsumerWidget {
     required this.onTap,
   });
 
+  // Utility from the new script: darkens a color
+  Color _darken(Color color, [double amount = 0.1]) {
+    assert(amount >= 0 && amount <= 1);
+    final hsl = HSLColor.fromColor(color);
+    final hslDark = hsl.withLightness(
+      (hsl.lightness - amount).clamp(0.0, 1.0),
+    );
+    return hslDark.toColor();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider);
+    // Logic from the new script to determine background color
+    final categoryStyle =
+    CategoryService.getStyleForCategory(product.category);
+    final Color backgroundTint =
+    _darken(categoryStyle.color, 0.4).withOpacity(0.15);
 
     return GestureDetector(
       onTap: onTap,
-      // ============================================================
-      // === PHASE 3 REFACTOR: The "Subtle Card" with Shadow      ===
-      // ============================================================
       child: Container(
+        // Decoration combines ideas from both scripts:
+        // - backgroundTint from the new script for the color.
+        // - A standard black shadow for better contrast on a colored background.
         decoration: BoxDecoration(
-          // 1. The background color of the tile itself
-          color: theme.background,
-          // 2. The rounded corners for the tile
+          color: backgroundTint,
           borderRadius: BorderRadius.circular(12.0),
-          // 3. The custom shadow using the darkest theme color
           boxShadow: [
             BoxShadow(
-              color: theme.primary, // Using the darkest color for a deep shadow
-              blurRadius: 8.0,      // How soft and spread-out the shadow is
-              offset: const Offset(0, 4), // Pushes the shadow down by 4 pixels
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8.0,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        // 4. This ensures that the content (like the image) is clipped to the rounded corners
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12.0),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
+            // The existing, feature-rich content structure is fully preserved.
             child: _buildContent(context, ref),
           ),
         ),
       ),
     );
   }
+
+  // The rest of the widget's methods are from the original script and are unchanged.
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     return Column(
@@ -93,7 +107,7 @@ class ProductTile extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: theme.secondary,
+              color: theme.inactive,
             ),
             textAlign: TextAlign.right,
             maxLines: 2,
@@ -104,7 +118,8 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, WidgetRef ref, {double fontSize = 12}) {
+  Widget _buildPriceRow(BuildContext context, WidgetRef ref,
+      {double fontSize = 12}) {
     final theme = ref.watch(themeProvider);
     const double rowHeight = 36.0;
 
@@ -146,7 +161,8 @@ class ProductTile extends ConsumerWidget {
                   useRootNavigator: true,
                   backgroundColor: theme.background,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   builder: (ctx) => ShoppingListBottomSheet(
                     product: product,

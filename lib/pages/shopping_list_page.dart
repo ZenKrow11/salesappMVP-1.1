@@ -4,13 +4,15 @@ import '../components/shopping_list_bottom_sheet.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
-import '../widgets/theme_color.dart';
+import '../widgets/app_theme.dart'; // CORRECTED: Import the theme provider file
 
 class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Correctly watch the theme provider to get theme data
+    final theme = ref.watch(themeProvider);
     final shoppingLists = ref.watch(shoppingListsProvider);
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
@@ -20,28 +22,33 @@ class ShoppingListPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // Use the theme object for colors
+      backgroundColor: theme.primary,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: AppColors.background,
+            backgroundColor: theme.background,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
             builder: (ctx) => const ShoppingListBottomSheet(initialTabIndex: 1),
           );
         },
-        backgroundColor: AppColors.secondary,
-        child: const Icon(Icons.add, size: 32, color: AppColors.primary),
+        backgroundColor: theme.secondary,
+        child: Icon(Icons.add, size: 32, color: theme.primary),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 22.0),
-            child: Text('Shopping Lists', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
+            child: Text(
+              'Saved Lists',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.secondary),
+            ),
           ),
-          _buildListCard(context, ref, merkliste, allowDelete: false),
+          // Pass the theme object down to the helper method
+          _buildListCard(context, ref, merkliste, theme: theme, allowDelete: false),
           const SizedBox(height: 16),
           Consumer(
             builder: (context, ref, child) {
@@ -62,7 +69,7 @@ class ShoppingListPage extends ConsumerWidget {
                   shoppingListNotifier.reorderCustomLists(reordered);
                 },
                 children: otherLists.map((list) {
-                  return _buildListCard(context, ref, list, allowDelete: true, key: ValueKey(list.name));
+                  return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
                 }).toList(),
               );
             },
@@ -72,36 +79,41 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildListCard(BuildContext context, WidgetRef ref, NamedList list, {required bool allowDelete, Key? key}) {
+  // Helper method now accepts the theme data
+  Widget _buildListCard(BuildContext context, WidgetRef ref, NamedList list, {required AppThemeData theme, required bool allowDelete, Key? key}) {
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
     return Card(
       key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      color: AppColors.primary,
+      color: theme.pageBackground,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         shape: const Border(),
         collapsedShape: const Border(),
-        backgroundColor: AppColors.secondary.withAlpha(25),
-        iconColor: AppColors.secondary,
-        collapsedIconColor: AppColors.secondary,
+        backgroundColor: theme.pageBackground,
+        iconColor: theme.inactive,
+        collapsedIconColor: theme.secondary,
         tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
         title: Row(
           children: [
             if (list.name == merklisteListName) ...[
-              const Icon(Icons.note_alt_outlined, color: AppColors.secondary, size: 24),
+              Icon(Icons.note_alt_outlined, color: theme.inactive, size: 24),
               const SizedBox(width: 12),
             ],
             Expanded(
-              child: Text(list.name, style: const TextStyle(color: AppColors.secondary, fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              child: Text(
+                list.name,
+                style: TextStyle(color: theme.inactive, fontSize: 18, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         trailing: allowDelete ? IconButton(
-          icon: const Icon(Icons.delete_outline, color: AppColors.accent, size: 28),
+          icon: Icon(Icons.delete, color: theme.accent, size: 28),
           onPressed: () {
             showDialog(
               context: context,
@@ -116,7 +128,7 @@ class ShoppingListPage extends ConsumerWidget {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted "${list.name}"'), duration: const Duration(seconds: 1)));
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Delete', style: TextStyle(color: AppColors.accent)),
+                    child: Text('Delete', style: TextStyle(color: theme.accent)),
                   ),
                 ],
               ),
@@ -129,6 +141,7 @@ class ShoppingListPage extends ConsumerWidget {
           return ShoppingListItemTile(
             product: product,
             listName: list.name,
+            theme: theme, // Pass theme down to the item tile
             onRemove: () {
               shoppingListNotifier.removeItemFromList(list.name, product);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Removed from "${list.name}"'), duration: const Duration(seconds: 1)));
@@ -140,21 +153,102 @@ class ShoppingListPage extends ConsumerWidget {
   }
 }
 
+/// The item tile widget, now receiving the theme data via its constructor.
 class ShoppingListItemTile extends StatelessWidget {
   final Product product;
   final String listName;
+  final AppThemeData theme; // Field to hold the theme data
   final VoidCallback onRemove;
 
-  const ShoppingListItemTile({super.key, required this.product, required this.listName, required this.onRemove});
+  const ShoppingListItemTile({
+    super.key,
+    required this.product,
+    required this.listName,
+    required this.theme, // Make theme a required parameter
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(product.name, style: const TextStyle(color: AppColors.active)),
-      subtitle: Text(product.store, style: TextStyle(color: Colors.grey.shade700)),
-      trailing: IconButton(
-        icon: const Icon(Icons.close, color: AppColors.accent, size: 24),
-        onPressed: onRemove,
+    final priceString = product.currentPrice.toStringAsFixed(2) ?? 'N/A';
+    final discount = product.discountPercentage ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left: Product Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6.0),
+              child: Image.network(
+                product.imageUrl ?? '',
+                width: 100,
+                height: 56.25,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 100,
+                  height: 56.25,
+                  color: theme.background, // Use theme object
+                  child: Icon(Icons.broken_image, color: theme.inactive.withOpacity(0.5)),
+                ),
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : Container(width: 100, height: 56.25, color: theme.background),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Middle: Title & Store Name
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    product.name,
+                    style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    product.store,
+                    style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Right: Price & Discount Badge
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  '$priceString Fr.',
+                  style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                if (discount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: theme.primary, // Use theme object
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '$discount%',
+                      style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+            // Far Right: Remove Button
+            IconButton(
+              icon: Icon(Icons.close, color: theme.accent, size: 24), // Use theme object
+              onPressed: onRemove,
+            ),
+          ],
+        ),
       ),
     );
   }
