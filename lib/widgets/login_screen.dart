@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// NOTE: Add flutter_svg to your pubspec.yaml for the Google icon
-// flutter_svg: ^2.0.10+1 or latest
 import 'package:flutter_svg/flutter_svg.dart';
-
-import '../providers/auth_controller.dart';
-// Import the app's theme colors, as seen in the FilterBottomSheet
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:sales_app_mvp/providers/auth_controller.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
 
 class LoginScreen extends ConsumerStatefulWidget {
   static const routeName = '/login';
@@ -32,7 +28,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
+        content: const Text(
+          "message",
+          style: TextStyle(color: Colors.white), // Standard white for error message is fine
+        ),
         backgroundColor: Colors.redAccent.shade400,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -70,7 +69,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final theme = Theme.of(context);
+    final materialTheme = Theme.of(context);
+    final appTheme = ref.watch(themeProvider); // Get theme from provider
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       next.whenOrNull(
@@ -83,7 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: appTheme.background, // UPDATED
         appBar: AppBar(
           toolbarHeight: 80,
           backgroundColor: Colors.transparent,
@@ -91,16 +91,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           centerTitle: true,
           title: Text(
             'Get Started',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: AppColors.secondary,
+            style: materialTheme.textTheme.headlineMedium?.copyWith(
+              color: appTheme.secondary, // UPDATED
               fontWeight: FontWeight.bold,
             ),
           ),
           bottom: TabBar(
-            indicatorColor: AppColors.secondary,
+            indicatorColor: appTheme.secondary, // UPDATED
             indicatorWeight: 3.0,
-            labelColor: AppColors.secondary,
-            unselectedLabelColor: AppColors.inactive,
+            labelColor: appTheme.secondary, // UPDATED
+            unselectedLabelColor: appTheme.inactive, // UPDATED
             labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             unselectedLabelStyle: const TextStyle(fontSize: 16),
             tabs: const [
@@ -123,6 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildForm({required bool isLogin, required bool isLoading}) {
+    final appTheme = ref.watch(themeProvider); // Get theme
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -149,7 +150,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
             SizedBox(height: isLogin ? 24 : 40),
             if (isLoading)
-              const Center(child: CircularProgressIndicator(color: AppColors.secondary))
+              Center(child: CircularProgressIndicator(color: appTheme.secondary)) // UPDATED
             else
               _buildAuthActions(isLogin: isLogin, isLoading: isLoading),
           ],
@@ -164,30 +165,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required IconData icon,
     bool isPassword = false,
   }) {
+    final appTheme = ref.watch(themeProvider); // Get theme
     return TextField(
       controller: controller,
       obscureText: isPassword,
       keyboardType: isPassword ? TextInputType.visiblePassword : TextInputType.emailAddress,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: appTheme.inactive), // UPDATED (was textPrimary)
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.inactive),
-        prefixIcon: Icon(icon, color: AppColors.inactive),
+        labelStyle: TextStyle(color: appTheme.inactive), // UPDATED
+        prefixIcon: Icon(icon, color: appTheme.inactive), // UPDATED
         filled: true,
-        fillColor: AppColors.primary.withValues(alpha: 0.05),
+        fillColor: appTheme.primary.withOpacity(0.5), // UPDATED & FIXED
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.inactive.withValues(alpha: 0.2)),
+          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)), // UPDATED & FIXED
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+          borderSide: BorderSide(color: appTheme.secondary, width: 2), // UPDATED
         ),
       ),
     );
   }
 
   Widget _buildLoginOptions() {
+    final appTheme = ref.watch(themeProvider); // Get theme
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -196,22 +199,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Checkbox(
               value: _keepLoggedIn,
               onChanged: (val) => setState(() => _keepLoggedIn = val ?? true),
-              activeColor: AppColors.secondary,
-              checkColor: AppColors.background,
-              side: BorderSide(color: AppColors.inactive.withValues(alpha: 0.5), width: 2),
+              activeColor: appTheme.secondary, // UPDATED
+              checkColor: appTheme.background, // UPDATED
+              side: BorderSide(color: appTheme.inactive.withOpacity(0.5), width: 2), // UPDATED & FIXED
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ),
             GestureDetector(
               onTap: () => setState(() => _keepLoggedIn = !_keepLoggedIn),
-              child: const Text("Remember me", style: TextStyle(color: AppColors.textPrimary)),
+              child: Text("Remember me", style: TextStyle(color: appTheme.inactive)), // UPDATED (was textPrimary)
             ),
           ],
         ),
         TextButton(
           onPressed: () => _showErrorSnackBar("Forgot Password clicked!"),
-          child: const Text(
+          child: Text(
             'Forgot Password?',
-            style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600),
+            style: TextStyle(color: appTheme.secondary, fontWeight: FontWeight.w600), // UPDATED
           ),
         ),
       ],
@@ -219,13 +222,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildAuthActions({required bool isLogin, required bool isLoading}) {
+    final appTheme = ref.watch(themeProvider); // Get theme
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.primary,
+            backgroundColor: appTheme.secondary, // UPDATED
+            foregroundColor: appTheme.primary, // UPDATED
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
@@ -237,26 +241,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(child: Divider(color: AppColors.inactive.withValues(alpha: 0.3))),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text("OR", style: TextStyle(color: AppColors.inactive)),
+            Expanded(child: Divider(color: appTheme.inactive.withOpacity(0.3))), // UPDATED & FIXED
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text("OR", style: TextStyle(color: appTheme.inactive)), // UPDATED
             ),
-            Expanded(child: Divider(color: AppColors.inactive.withValues(alpha: 0.3))),
+            Expanded(child: Divider(color: appTheme.inactive.withOpacity(0.3))), // UPDATED & FIXED
           ],
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
-          icon: SvgPicture.asset('assets/icons/google.svg', height: 22), // Add your asset
+          icon: SvgPicture.asset('assets/icons/google.svg', height: 22),
           label: const Text('Continue with Google'),
           onPressed: isLoading ? null : _signInWithGoogle,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.textPrimary,
+            backgroundColor: appTheme.pageBackground, // UPDATED (primary might be too dark)
+            foregroundColor: appTheme.inactive, // UPDATED (was textPrimary)
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: AppColors.inactive.withValues(alpha: 0.3)),
+              side: BorderSide(color: appTheme.inactive.withOpacity(0.3)), // UPDATED & FIXED
             ),
             elevation: 0,
             textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

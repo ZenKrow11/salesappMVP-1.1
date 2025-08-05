@@ -5,7 +5,7 @@ import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED Import
 
 class FilterBottomSheet extends ConsumerStatefulWidget {
   const FilterBottomSheet({super.key});
@@ -57,12 +57,15 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    // Get theme from Riverpod provider
+    final theme = ref.watch(themeProvider);
+
     return Container(
       constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.65),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: theme.background, // UPDATED
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -92,6 +95,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
 
   Widget _buildStoresTab() {
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
+    final theme = ref.watch(themeProvider); // Get theme
 
     return asyncStoreOptions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -111,22 +115,22 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                   height: 56,
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: theme.primary, // UPDATED
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected
                           ? (_isIncludeMode
-                          ? AppColors.secondary
-                          : AppColors.accent)
-                          : Colors.white.withOpacity(0.5),
+                          ? theme.secondary // UPDATED
+                          : theme.accent) // UPDATED
+                          : theme.inactive.withOpacity(0.5), // UPDATED
                       width: isSelected ? 2.5 : 1.5,
                     ),
                     boxShadow: isSelected
                         ? [
                       BoxShadow(
                         color: (_isIncludeMode
-                            ? AppColors.secondary
-                            : AppColors.accent)
+                            ? theme.secondary // UPDATED
+                            : theme.accent) // UPDATED
                             .withAlpha(75),
                         blurRadius: 5,
                         spreadRadius: 1,
@@ -134,7 +138,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                     ]
                         : [
                       BoxShadow(
-                        color: Colors.black.withAlpha(50),
+                        color: theme.primary.withAlpha(50), // UPDATED
                         blurRadius: 2,
                         offset: const Offset(1, 1),
                       )
@@ -149,8 +153,8 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                       height: 56,
                       decoration: BoxDecoration(
                         color: (_isIncludeMode
-                            ? AppColors.secondary
-                            : AppColors.accent)
+                            ? theme.secondary // UPDATED
+                            : theme.accent) // UPDATED
                             .withAlpha(150),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -158,7 +162,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                         _isIncludeMode
                             ? Icons.check_circle
                             : Icons.do_not_disturb_on,
-                        color: Colors.white,
+                        color: theme.inactive, // UPDATED
                         size: 32,
                       ),
                     ),
@@ -261,6 +265,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
   Widget _buildActionBar() {
     final filterNotifier = ref.read(filterStateProvider.notifier);
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
+    final theme = ref.watch(themeProvider); // Get theme
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -270,7 +275,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
             child: TextButton(
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppColors.inactive),
+                side: BorderSide(color: theme.inactive), // UPDATED
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -280,10 +285,10 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                 _tappedStores.clear();
                 _localFilterState = const FilterState();
               }),
-              child: const Text(
+              child: Text(
                 'RESET',
                 style: TextStyle(
-                  color: AppColors.inactive,
+                  color: theme.inactive, // UPDATED
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -293,7 +298,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
           Expanded(
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
+                backgroundColor: theme.secondary, // UPDATED
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -316,10 +321,10 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                 filterNotifier.state = _localFilterState;
                 Navigator.pop(context);
               },
-              child: const Text(
+              child: Text(
                 'APPLY',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: theme.primary, // UPDATED
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -330,29 +335,21 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     );
   }
 
-  // lib/widgets/filter_bottom_sheet.dart
-
   // =========================================================================
   // === HELPER WIDGETS
   // =========================================================================
 
   Widget _buildModeToggleTile() {
+    final theme = ref.watch(themeProvider); // Get theme
     final iconData =
     _isIncludeMode ? Icons.add_circle : Icons.remove_circle;
     final iconColor =
-    _isIncludeMode ? AppColors.secondary : AppColors.accent;
+    _isIncludeMode ? theme.secondary : theme.accent; // UPDATED
 
     return GestureDetector(
-      // REFACTORED LOGIC IS HERE
       onTap: () {
         setState(() {
-          // 1. Toggle the mode
           _isIncludeMode = !_isIncludeMode;
-
-          // 2. Clear the current user selections.
-          // This resets the visual state, so when switching to "exclude"
-          // mode, the user starts with a clean slate instead of seeing
-          // all other stores selected.
           _tappedStores.clear();
         });
       },
@@ -361,7 +358,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
         width: 72,
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: theme.primary, // UPDATED
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: iconColor, width: 2.0),
           boxShadow: [
@@ -380,21 +377,22 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
   }
 
   Widget _buildHeader() {
+    final theme = ref.watch(themeProvider); // Get theme
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 12, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Filter Products',
             style: TextStyle(
               fontSize: 20,
-              color: AppColors.secondary,
+              color: theme.secondary, // UPDATED
               fontWeight: FontWeight.bold,
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: AppColors.accent, size: 28),
+            icon: Icon(Icons.close, color: theme.accent, size: 28), // UPDATED
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -403,11 +401,12 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
   }
 
   Widget _buildTabBar() {
+    final theme = ref.watch(themeProvider); // Get theme
     return TabBar(
       controller: _tabController,
-      labelColor: AppColors.secondary,
-      unselectedLabelColor: AppColors.inactive,
-      indicatorColor: AppColors.secondary,
+      labelColor: theme.secondary, // UPDATED
+      unselectedLabelColor: theme.inactive, // UPDATED
+      indicatorColor: theme.secondary, // UPDATED
       dividerColor: Colors.transparent,
       tabs: const [
         Tab(text: 'Stores'),
@@ -417,17 +416,18 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
   }
 
   Widget _buildLoadingExpansionTile(String title) {
+    final theme = ref.watch(themeProvider); // Get theme
     return Card(
       elevation: 0,
-      color: AppColors.inactive.withOpacity(0.05),
+      color: theme.inactive.withOpacity(0.05), // UPDATED
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: theme.secondary, // UPDATED (was textPrimary)
           ),
         ),
         trailing: const SizedBox(
@@ -440,20 +440,21 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
   }
 
   Widget _buildErrorExpansionTile(String title) {
+    final theme = ref.watch(themeProvider); // Get theme
     return Card(
       elevation: 0,
-      color: AppColors.accent.withOpacity(0.1),
+      color: theme.accent.withOpacity(0.1), // UPDATED
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         title: Text(
           'Error loading $title',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.accent,
+            color: theme.accent, // UPDATED
           ),
         ),
-        trailing: const Icon(Icons.error_outline, color: AppColors.accent),
+        trailing: Icon(Icons.error_outline, color: theme.accent), // UPDATED
       ),
     );
   }
@@ -468,37 +469,38 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     required bool isExpanded,
     String emptyMessage = 'No options available.',
   }) {
+    final theme = ref.watch(themeProvider); // Get theme
     return Card(
       elevation: 0,
       color: isExpanded
-          ? AppColors.inactive.withOpacity(0.15)
-          : AppColors.inactive.withOpacity(0.05),
+          ? theme.inactive.withOpacity(0.15) // UPDATED
+          : theme.inactive.withOpacity(0.05), // UPDATED
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         key: key,
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: theme.secondary, // UPDATED (was textPrimary)
           ),
         ),
-        iconColor: AppColors.accent,
-        collapsedIconColor: AppColors.inactive,
+        iconColor: theme.accent, // UPDATED
+        collapsedIconColor: theme.inactive, // UPDATED
         initiallyExpanded: isExpanded,
         onExpansionChanged: onExpansionChanged,
         childrenPadding: const EdgeInsets.only(bottom: 8),
         children: [
-          const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.inactive),
+          Divider(height: 1, indent: 16, endIndent: 16, color: theme.inactive), // UPDATED
           if (options.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
                 emptyMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.inactive),
+                style: TextStyle(color: theme.inactive), // UPDATED
               ),
             )
           else
@@ -511,14 +513,14 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
                   final option = options[index];
                   final isSelected = selectedOptions.contains(option);
                   return CheckboxListTile(
-                    title: Text(option, style: const TextStyle(color: AppColors.textPrimary)),
+                    title: Text(option, style: TextStyle(color: theme.secondary)), // UPDATED (was textPrimary)
                     value: isSelected,
                     onChanged: (_) => onOptionToggled(option),
-                    activeColor: AppColors.secondary,
-                    checkColor: AppColors.primary,
+                    activeColor: theme.secondary, // UPDATED
+                    checkColor: theme.primary, // UPDATED
                     dense: true,
                     controlAffinity: ListTileControlAffinity.leading,
-                    side: const BorderSide(color: AppColors.inactive),
+                    side: BorderSide(color: theme.inactive), // UPDATED
                   );
                 },
               ),

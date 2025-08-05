@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ADDED
+import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
 
-class ItemCountWidget extends StatelessWidget {
+// UPDATED to ConsumerWidget to access the theme provider
+class ItemCountWidget extends ConsumerWidget {
   final int filtered;
   final int total;
 
@@ -12,19 +14,19 @@ class ItemCountWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // REMOVED: The outer Padding widget.
+  Widget build(BuildContext context, WidgetRef ref) { // ADDED WidgetRef
+    final theme = ref.watch(themeProvider); // Get theme from provider
+
     return Container(
-      // The padding is now inside the container
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       decoration: BoxDecoration(
-        color: AppColors.primary, // Or maybe a slightly different color
+        color: theme.primary, // UPDATED
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Text(
         '$filtered/$total',
-        style: const TextStyle(
-          color: AppColors.inactive,
+        style: TextStyle(
+          color: theme.inactive, // UPDATED
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),

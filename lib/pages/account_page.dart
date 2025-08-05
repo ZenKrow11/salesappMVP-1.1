@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:sales_app_mvp/widgets/theme_color.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ADDED
+import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
 
-class AccountPage extends StatelessWidget {
+// UPDATED to ConsumerWidget to access theme via ref
+class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
 
   // Helper method to create an expandable Card with consistent styling
@@ -10,26 +12,27 @@ class AccountPage extends StatelessWidget {
     required IconData icon,
     required String title,
     required List<Widget> children,
+    required AppThemeData theme, // ADDED theme parameter
   }) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      color: AppColors.primary,
+      color: theme.primary, // UPDATED
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
-        shape: const Border(), // Remove the default border when expanded
-        collapsedShape: const Border(), // Remove the default border when collapsed
-        collapsedBackgroundColor: AppColors.primary,
-        iconColor: AppColors.secondary,
-        collapsedIconColor: AppColors.secondary,
+        backgroundColor: theme.secondary.withOpacity(0.1), // UPDATED & FIXED
+        shape: const Border(),
+        collapsedShape: const Border(),
+        collapsedBackgroundColor: theme.primary, // UPDATED
+        iconColor: theme.secondary, // UPDATED
+        collapsedIconColor: theme.secondary, // UPDATED
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Icon(icon, color: AppColors.secondary, size: 28),
+        leading: Icon(icon, color: theme.secondary, size: 28), // UPDATED
         title: Text(
           title,
-          style: const TextStyle(
-            color: AppColors.secondary,
+          style: TextStyle(
+            color: theme.secondary, // UPDATED
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -40,12 +43,15 @@ class AccountPage extends StatelessWidget {
   }
 
   // Helper method for the content inside expandable tiles
-  Widget _buildSubListItem(String title, BuildContext context) {
+  Widget _buildSubListItem(
+      String title,
+      BuildContext context, {
+        required AppThemeData theme, // ADDED theme parameter
+      }) {
     return ListTile(
-      title: Text(title, style: const TextStyle(color: AppColors.active)),
-      contentPadding: const EdgeInsets.only(left: 72.0, right: 16.0), // Align with title
+      title: Text(title, style: TextStyle(color: theme.secondary)), // UPDATED (was active)
+      contentPadding: const EdgeInsets.only(left: 72.0, right: 16.0),
       onTap: () {
-        // Placeholder for future functionality
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$title feature is not yet implemented.'),
@@ -57,26 +63,24 @@ class AccountPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Get the current user to display their email
+  Widget build(BuildContext context, WidgetRef ref) { // UPDATED to include WidgetRef
+    final theme = ref.watch(themeProvider); // Get theme from provider
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.pageBackground, // UPDATED
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20.0),
         children: [
           // Page Header
-          const Center(
+          Center(
             child: Text('My Account',
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.secondary)),
+                    color: theme.secondary)), // UPDATED
           ),
-          // Removed Divider
-          // const Divider(height: 24, indent: 20, endIndent: 20),
-          const SizedBox(height: 10), // Added SizedBox for spacing
+          const SizedBox(height: 10),
 
           // User Info Header
           if (user != null)
@@ -84,20 +88,20 @@ class AccountPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               child: Column(
                 children: [
-                  const Icon(Icons.account_circle,
-                      size: 60, color: AppColors.secondary),
+                  Icon(Icons.account_circle,
+                      size: 60, color: theme.secondary), // UPDATED
                   const SizedBox(height: 8),
                   Text(
                     'Logged in as',
-                    style: TextStyle(color: AppColors.inactive, fontSize: 14),
+                    style: TextStyle(color: theme.inactive, fontSize: 14), // UPDATED
                   ),
                   const SizedBox(height: 4),
                   Text(
                     user.email ?? 'No email available',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.active),
+                        color: theme.secondary), // UPDATED (was active)
                   ),
                 ],
               ),
@@ -108,10 +112,11 @@ class AccountPage extends StatelessWidget {
           _buildAccountCard(
             icon: Icons.person_outline,
             title: 'Account',
+            theme: theme, // Pass theme
             children: [
-              _buildSubListItem('Edit Profile', context),
-              _buildSubListItem('Change Password', context),
-              _buildSubListItem('My Details', context),
+              _buildSubListItem('Edit Profile', context, theme: theme),
+              _buildSubListItem('Change Password', context, theme: theme),
+              _buildSubListItem('My Details', context, theme: theme),
             ],
           ),
 
@@ -119,10 +124,11 @@ class AccountPage extends StatelessWidget {
           _buildAccountCard(
             icon: Icons.settings_outlined,
             title: 'Settings',
+            theme: theme, // Pass theme
             children: [
-              _buildSubListItem('Notifications', context),
-              _buildSubListItem('Theme', context),
-              _buildSubListItem('Language', context),
+              _buildSubListItem('Notifications', context, theme: theme),
+              _buildSubListItem('Theme', context, theme: theme),
+              _buildSubListItem('Language', context, theme: theme),
             ],
           ),
 
@@ -130,34 +136,34 @@ class AccountPage extends StatelessWidget {
           _buildAccountCard(
             icon: Icons.help_outline,
             title: 'Contact',
+            theme: theme, // Pass theme
             children: [
-              _buildSubListItem('Help & FAQ', context),
-              _buildSubListItem('Report an Issue', context),
+              _buildSubListItem('Help & FAQ', context, theme: theme),
+              _buildSubListItem('Report an Issue', context, theme: theme),
             ],
           ),
 
           const SizedBox(height: 20),
 
-          // Logout Button (Not expandable, styled as a distinct Card)
+          // Logout Button
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
-            color: AppColors.primary,
+            color: theme.primary, // UPDATED
             child: ListTile(
               contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: const Icon(Icons.logout, color: AppColors.accent, size: 28),
-              title: const Text(
+              leading: Icon(Icons.logout, color: theme.accent, size: 28), // UPDATED
+              title: Text(
                 'Logout',
                 style: TextStyle(
-                  color: AppColors.secondary,
+                  color: theme.secondary, // UPDATED
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               onTap: () async {
-                // Show a confirmation dialog before logging out
                 showDialog(
                   context: context,
                   builder: (BuildContext dialogContext) {
@@ -168,20 +174,14 @@ class AccountPage extends StatelessWidget {
                         TextButton(
                           child: const Text('Cancel'),
                           onPressed: () {
-                            Navigator.of(dialogContext).pop(); // Close the dialog
+                            Navigator.of(dialogContext).pop();
                           },
                         ),
                         TextButton(
-                          child: const Text('Logout', style: TextStyle(color: AppColors.accent)),
+                          child: Text('Logout', style: TextStyle(color: theme.accent)), // UPDATED
                           onPressed: () async {
-                            // Close the dialog first
                             Navigator.of(dialogContext).pop();
-
-                            // Perform the sign out
                             await FirebaseAuth.instance.signOut();
-
-                            // Navigate to login screen and remove all previous routes
-                            // This prevents the user from pressing 'back' to get into the app.
                             Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/login', (Route<dynamic> route) => false);
                           },
