@@ -1,4 +1,4 @@
-// lib/widgets/category_chip.dart
+// lib/components/category_chip.dart
 
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/services/category_service.dart';

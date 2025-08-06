@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ADDED
-import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-// UPDATED to ConsumerWidget to access theme via ref
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
 
@@ -12,22 +11,22 @@ class AccountPage extends ConsumerWidget {
     required IconData icon,
     required String title,
     required List<Widget> children,
-    required AppThemeData theme, // ADDED theme parameter
+    required AppThemeData theme,
   }) {
+    // UPDATED: Card styling now matches new cohesive design
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      color: theme.primary, // UPDATED
+      color: theme.background, // UPDATED
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        backgroundColor: theme.secondary.withOpacity(0.1), // UPDATED & FIXED
+        backgroundColor: theme.background,
         shape: const Border(),
         collapsedShape: const Border(),
-        collapsedBackgroundColor: theme.primary, // UPDATED
         iconColor: theme.secondary, // UPDATED
         collapsedIconColor: theme.secondary, // UPDATED
-        tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
         leading: Icon(icon, color: theme.secondary, size: 28), // UPDATED
         title: Text(
           title,
@@ -46,11 +45,11 @@ class AccountPage extends ConsumerWidget {
   Widget _buildSubListItem(
       String title,
       BuildContext context, {
-        required AppThemeData theme, // ADDED theme parameter
+        required AppThemeData theme,
       }) {
     return ListTile(
-      title: Text(title, style: TextStyle(color: theme.secondary)), // UPDATED (was active)
-      contentPadding: const EdgeInsets.only(left: 72.0, right: 16.0),
+      title: Text(title, style: TextStyle(color: theme.inactive)),
+      contentPadding: const EdgeInsets.only(left: 72.0, right: 16.0, bottom: 8.0),
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -63,22 +62,22 @@ class AccountPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // UPDATED to include WidgetRef
-    final theme = ref.watch(themeProvider); // Get theme from provider
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: theme.pageBackground, // UPDATED
+      backgroundColor: theme.pageBackground, // Correctly using the designated page background
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20.0),
         children: [
-          // Page Header
-          Center(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
             child: Text('My Account',
                 style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: theme.secondary)), // UPDATED
+                    color: theme.secondary)),
           ),
           const SizedBox(height: 10),
 
@@ -89,11 +88,11 @@ class AccountPage extends ConsumerWidget {
               child: Column(
                 children: [
                   Icon(Icons.account_circle,
-                      size: 60, color: theme.secondary), // UPDATED
+                      size: 60, color: theme.secondary),
                   const SizedBox(height: 8),
                   Text(
                     'Logged in as',
-                    style: TextStyle(color: theme.inactive, fontSize: 14), // UPDATED
+                    style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 14),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -101,7 +100,7 @@ class AccountPage extends ConsumerWidget {
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: theme.secondary), // UPDATED (was active)
+                        color: theme.inactive),
                   ),
                 ],
               ),
@@ -112,7 +111,7 @@ class AccountPage extends ConsumerWidget {
           _buildAccountCard(
             icon: Icons.person_outline,
             title: 'Account',
-            theme: theme, // Pass theme
+            theme: theme,
             children: [
               _buildSubListItem('Edit Profile', context, theme: theme),
               _buildSubListItem('Change Password', context, theme: theme),
@@ -124,7 +123,7 @@ class AccountPage extends ConsumerWidget {
           _buildAccountCard(
             icon: Icons.settings_outlined,
             title: 'Settings',
-            theme: theme, // Pass theme
+            theme: theme,
             children: [
               _buildSubListItem('Notifications', context, theme: theme),
               _buildSubListItem('Theme', context, theme: theme),
@@ -136,7 +135,7 @@ class AccountPage extends ConsumerWidget {
           _buildAccountCard(
             icon: Icons.help_outline,
             title: 'Contact',
-            theme: theme, // Pass theme
+            theme: theme,
             children: [
               _buildSubListItem('Help & FAQ', context, theme: theme),
               _buildSubListItem('Report an Issue', context, theme: theme),
@@ -150,11 +149,11 @@ class AccountPage extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
-            color: theme.primary, // UPDATED
+            color: theme.background, // UPDATED
             child: ListTile(
               contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: Icon(Icons.logout, color: theme.accent, size: 28), // UPDATED
+              const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
+              leading: Icon(Icons.logout, color: theme.accent, size: 28),
               title: Text(
                 'Logout',
                 style: TextStyle(
@@ -178,7 +177,7 @@ class AccountPage extends ConsumerWidget {
                           },
                         ),
                         TextButton(
-                          child: Text('Logout', style: TextStyle(color: theme.accent)), // UPDATED
+                          child: Text('Logout', style: TextStyle(color: theme.accent)),
                           onPressed: () async {
                             Navigator.of(dialogContext).pop();
                             await FirebaseAuth.instance.signOut();
