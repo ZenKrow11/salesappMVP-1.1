@@ -9,6 +9,7 @@ class AppThemeData {
   final Color secondary;     // Main interactive/highlight color (turquoise)
   final Color background;    // Lighter gray for content tiles
   final Color accent;        // A secondary accent color for special cases
+  final Color alternateAccent; // A secondary accent color for special cases;
   final Color inactive;      // New: white color
 
   // NEW: A color for the main page background, between primary and background.
@@ -19,6 +20,7 @@ class AppThemeData {
     required this.secondary,
     required this.background,
     required this.accent,
+    required this.alternateAccent,
     required this.inactive,
     required this.pageBackground,
   });
@@ -29,6 +31,7 @@ final AppThemeData defaultTheme = AppThemeData(
   secondary: const Color(0xFF30D1DA),
   background: const Color(0xFF3D485A),      // Lightest gray
   accent: const Color(0xFFFF6F61),
+  alternateAccent: const Color(0xFFFDED00),
   inactive: const Color(0xFFFFFFFF),
   pageBackground: const Color(0xFF313846), // In-between color
 );

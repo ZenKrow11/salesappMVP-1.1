@@ -39,7 +39,6 @@ class ProductDetails extends ConsumerStatefulWidget {
 
 class _ProductDetailsState extends ConsumerState<ProductDetails>
     with SingleTickerProviderStateMixin {
-
   // --- STATE MANAGEMENT ---
 
   // Controller for the "swipe up" animation (fly away/snap back).
@@ -96,7 +95,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
     // Determine gesture type on the first update.
     if (_gestureType == _GestureType.none) {
-      _gestureType = details.delta.dy < 0 ? _GestureType.swipingUp : _GestureType.swipingDown;
+      _gestureType =
+      details.delta.dy < 0 ? _GestureType.swipingUp : _GestureType.swipingDown;
       setState(() {}); // Rebuild to show the correct UI (single card vs stack).
     }
 
@@ -108,12 +108,12 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       });
       // Update the parent's background opacity based on drag progress.
       widget.onDragUpdate(_dragDownOffset.abs() / screenHeight);
-    }
-    else if (_gestureType == _GestureType.swipingUp) {
+    } else if (_gestureType == _GestureType.swipingUp) {
       final screenHeight = MediaQuery.of(context).size.height;
       // Directly drive the animation controller with the drag progress.
       // We use a negative delta because swiping up gives a negative dy.
-      double progress = _swipeUpController.value - (details.delta.dy / (screenHeight * 0.5));
+      double progress =
+          _swipeUpController.value - (details.delta.dy / (screenHeight * 0.5));
       _swipeUpController.value = progress.clamp(0.0, 1.0);
     }
   }
@@ -139,8 +139,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         });
         widget.onDismissCancelled(); // Reset parent background.
       }
-    }
-    else if (_gestureType == _GestureType.swipingUp) {
+    } else if (_gestureType == _GestureType.swipingUp) {
       // Complete the "fly away" if dragged more than 40% or with a high velocity.
       if (_swipeUpController.value > 0.4 || flingVelocity < -800) {
         _swipeUpController.forward();
@@ -164,18 +163,34 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       onVerticalDragStart: _onVerticalDragStart,
       onVerticalDragUpdate: _onVerticalDragUpdate,
       onVerticalDragEnd: _onVerticalDragEnd,
+      onDoubleTap: () => _handleDoubleTapSave(context, ref),
+      onLongPress: () {
+        final theme = ref.read(themeProvider);
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          useRootNavigator: true,
+          backgroundColor: theme.background,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (ctx) => const ShoppingListBottomSheet(),
+        );
+      },
       child: AnimatedBuilder(
         animation: _swipeUpController,
         builder: (context, _) {
           // This is the single, reusable card content widget.
           final cardContent = _buildCardContent(context, ref);
 
-          if (_gestureType == _GestureType.swipingUp || _swipeUpController.isAnimating || _swipeUpController.isCompleted) {
+          if (_gestureType == _GestureType.swipingUp ||
+              _swipeUpController.isAnimating ||
+              _swipeUpController.isCompleted) {
             // --- UI FOR SWIPE UP ---
             // Build the Stack with a static clone and a transformed top card.
 
             final scale = 1.0 - (_swipeUpController.value * 0.25); // 1.0 -> 0.75
-            final slideOffset = _swipeUpController.value * -1.0; // 0.0 -> -1.0
+            final slideOffset =
+                _swipeUpController.value * -1.0; // 0.0 -> -1.0
 
             // NEW: Calculate the opacity. 1.0 -> 0.5 as the controller goes from 0.0 to 1.0
             final opacity = 1.0 - (_swipeUpController.value * 0.5);
@@ -187,7 +202,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
                 // The top card that transforms.
                 Transform.translate(
-                  offset: Offset(0, slideOffset * MediaQuery.of(context).size.height * 0.7),
+                  offset: Offset(
+                      0, slideOffset * MediaQuery.of(context).size.height * 0.7),
                   child: Transform.scale(
                     scale: scale,
                     // NEW: Wrap the cardContent in an Opacity widget.
@@ -219,7 +235,9 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     final activeList = ref.read(activeShoppingListProvider);
     final theme = ref.read(themeProvider);
     if (activeList != null) {
-      ref.read(shoppingListsProvider.notifier).addToList(activeList, widget.product);
+      ref
+          .read(shoppingListsProvider.notifier)
+          .addToList(activeList, widget.product);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Added to "$activeList"')),
       );
@@ -228,7 +246,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         context: context,
         isScrollControlled: true,
         backgroundColor: theme.background,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => const ShoppingListBottomSheet(),
       );
     }
@@ -256,7 +275,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
         decoration: BoxDecoration(
-          color: theme.background,
+          color: theme.primary,
           borderRadius: BorderRadius.circular(20.0),
           boxShadow: [
             BoxShadow(
@@ -280,15 +299,21 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                     children: [
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      _buildCategoryRows(),
+                      CategoryChip(categoryName: widget.product.category),
+                      if (widget.product.subcategory.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        CategoryChip(categoryName: widget.product.subcategory),
+                      ],
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
-                      _buildImageContainer(context, ref, theme, onDoubleTap: () => _handleDoubleTapSave(context, ref)),
+                      _buildSonderkonditionInfo(theme),
+                      const SizedBox(height: 8),
+                      _buildImageContainer(context, ref, theme),
+                      const SizedBox(height: 12),
+                      _buildPriceRow(),
                       const Spacer(),
                       _buildAvailabilityInfo(theme),
-                      _buildSonderkonditionInfo(theme),
-                      _buildPriceRow(),
                     ],
                   ),
                 ),
@@ -300,133 +325,69 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
-
-  Widget _buildImageContainer(BuildContext context, WidgetRef ref, AppThemeData theme, {required VoidCallback onDoubleTap}) {
-    final double imageMaxHeight = MediaQuery.of(context).size.height * 0.3;
-
-    return GestureDetector(
-      onDoubleTap: onDoubleTap,
-      child: Container(
-        constraints: BoxConstraints(maxHeight: imageMaxHeight),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: ImageWithAspectRatio(
-            imageUrl: widget.product.imageUrl,
-            maxWidth: double.infinity,
-            maxHeight: imageMaxHeight,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
+  Widget _buildHeader(
+      BuildContext context, WidgetRef ref, AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        Expanded(
-          flex: 3,
-          child: StoreLogo(storeName: widget.product.store, height: 40),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 5,
-          child: _buildCombinedHeaderButton(context, ref, theme),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCombinedHeaderButton(BuildContext context, WidgetRef ref, AppThemeData theme) {
-    final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList ?? 'Merkl...';
-
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: theme.primary,
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(
-                    '${widget.currentIndex} / ${widget.totalItems}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: theme.inactive,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              VerticalDivider(
-                color: theme.inactive.withOpacity(0.4),
-                thickness: 1,
-                width: 1,
-              ),
-              Expanded(
-                flex: 3,
-                child: InkWell(
-                  onTap: () => showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    useRootNavigator: true,
-                    backgroundColor: theme.background,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (ctx) => const ShoppingListBottomSheet(),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.playlist_add_check,
-                        color: theme.secondary,
-                        size: 24.0,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        buttonText,
-                        style: TextStyle(
-                          color: theme.inactive,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+        StoreLogo(storeName: widget.product.store, height: 40),
+        const SizedBox(width: 16),
+        Text(
+          '${widget.currentIndex} / ${widget.totalItems}',
+          style: TextStyle(
+            color: theme.inactive.withOpacity(0.7),
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
         ),
-      ),
+        const Spacer(),
+        _buildSelectListButton(context, ref, theme),
+      ],
     );
   }
 
-  Widget _buildCategoryRows() {
-    return Row(
-      children: [
-        Expanded(child: CategoryChip(categoryName: widget.product.category)),
-        if (widget.product.subcategory.isNotEmpty) ...[
-          const SizedBox(width: 16.0),
-          Expanded(child: CategoryChip(categoryName: widget.product.subcategory)),
-        ],
-      ],
+  Widget _buildSelectListButton(BuildContext context, WidgetRef ref, AppThemeData theme) {
+    final activeList = ref.watch(activeShoppingListProvider);
+    final buttonText = activeList ?? 'Select List';
+
+    return InkWell(
+      onTap: () => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        backgroundColor: theme.background,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => const ShoppingListBottomSheet(),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.playlist_add_check,
+              color: theme.secondary,
+              size: 20.0,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              buttonText,
+              style: TextStyle(
+                color: theme.inactive,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -434,18 +395,60 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     return Text(
       widget.product.name,
       style: TextStyle(
-        fontSize: 20,
+        fontSize: 25,
         fontWeight: FontWeight.bold,
         color: theme.inactive,
       ),
-      maxLines: 2,
+      maxLines: 3,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildSonderkonditionInfo(AppThemeData theme) {
+    if (widget.product.sonderkondition == null) return const SizedBox.shrink();
+    return Row(
+      children: [
+        const Icon(Icons.star_border, color: Colors.yellow, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            widget.product.sonderkondition!,
+            style: TextStyle(
+              color: theme.inactive,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageContainer(
+      BuildContext context, WidgetRef ref, AppThemeData theme) {
+    final double imageMaxHeight = MediaQuery.of(context).size.height * 0.3;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: imageMaxHeight),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ImageWithAspectRatio(
+          imageUrl: widget.product.imageUrl,
+          maxWidth: double.infinity,
+          maxHeight: imageMaxHeight,
+        ),
+      ),
     );
   }
 
   Widget _buildAvailabilityInfo(AppThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
       child: Row(
         children: [
           Icon(Icons.calendar_today, color: theme.secondary, size: 16),
@@ -453,30 +456,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
           Expanded(
             child: Text(
               widget.product.availableFrom,
-              style: TextStyle(color: theme.inactive, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSonderkonditionInfo(AppThemeData theme) {
-    if (widget.product.sonderkondition == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          const Icon(Icons.star_border, color: Colors.yellow, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              widget.product.sonderkondition!,
-              style: TextStyle(
-                color: theme.inactive,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: theme.inactive, fontSize: 16),
             ),
           ),
         ],
@@ -485,45 +465,36 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
   }
 
   Widget _buildPriceRow() {
+    final theme = ref.watch(themeProvider);
     final cleanPercentage = widget.product.discountPercentage;
-    const double priceFontSize = 24;
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(
-          child: _priceBox(
-            widget.product.normalPrice.toStringAsFixed(2),
-            Colors.grey.shade300,
-            TextStyle(
-              fontSize: priceFontSize,
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.lineThrough,
-              color: Colors.black54,
-            ),
+        Text(
+          '${widget.product.normalPrice.toStringAsFixed(2)} Fr.',
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.w500,
+            decoration: TextDecoration.lineThrough,
+            color: theme.inactive.withOpacity(0.6),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _priceBox(
-            '$cleanPercentage%',
-            Colors.redAccent,
-            TextStyle(
-              fontSize: priceFontSize,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        Text(
+          '$cleanPercentage%',
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            color: theme.secondary,
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _priceBox(
-            widget.product.currentPrice.toStringAsFixed(2),
-            Colors.yellow.shade600,
-            TextStyle(
-              fontSize: priceFontSize,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+        Text(
+          '${widget.product.currentPrice.toStringAsFixed(2)} Fr.',
+          style: TextStyle(
+            fontSize: 35,
+            fontWeight: FontWeight.bold,
+            color: theme.inactive,
           ),
         ),
       ],

@@ -37,9 +37,48 @@ class ProductTile extends ConsumerWidget {
     CategoryService.getStyleForCategory(product.category);
     final Color backgroundTint =
     _darken(categoryStyle.color, 0.4).withOpacity(0.15);
+    final theme = ref.watch(themeProvider);
 
     return GestureDetector(
       onTap: onTap,
+      onDoubleTap: () {
+        final activeListName = ref.read(activeShoppingListProvider);
+        final notifier = ref.read(shoppingListsProvider.notifier);
+
+        if (activeListName == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No active list. Long press to choose one.'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          notifier.addToList(activeListName, product);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added to "$activeListName"'),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onLongPress: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          useRootNavigator: true,
+          backgroundColor: theme.background,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) => ShoppingListBottomSheet(
+            product: product,
+            onConfirm: (String selectedListName) {},
+          ),
+        );
+      },
       child: Container(
         // Decoration combines ideas from both scripts:
         // - backgroundTint from the new script for the color.
@@ -118,97 +157,31 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, WidgetRef ref,
-      {double fontSize = 12}) {
+  Widget _buildPriceRow(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    const double rowHeight = 36.0;
 
-    return SizedBox(
-      height: rowHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _priceBox(
-              text: '${product.discountPercentage}%',
-              bgColor: theme.accent,
-              textStyle: TextStyle(
-                fontSize: fontSize,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          '${product.discountPercentage}%',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: theme.secondary,
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _priceBox(
-              text: product.currentPrice.toStringAsFixed(2),
-              bgColor: Colors.yellow[600],
-              textStyle: TextStyle(
-                fontSize: fontSize + 2,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+        ),
+        const Spacer(),
+        Text(
+          '${product.currentPrice.toStringAsFixed(2)} Fr.',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: theme.inactive,
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: ElevatedButton(
-              onLongPress: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  useRootNavigator: true,
-                  backgroundColor: theme.background,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (ctx) => ShoppingListBottomSheet(
-                    product: product,
-                    onConfirm: (String selectedListName) {},
-                  ),
-                );
-              },
-              onPressed: () {
-                final activeListName = ref.read(activeShoppingListProvider);
-                final notifier = ref.read(shoppingListsProvider.notifier);
-
-                if (activeListName == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No active list. Long press to choose one.'),
-                      duration: Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                } else {
-                  notifier.addToList(activeListName, product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Added to "$activeListName"'),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.secondary,
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Icon(
-                Icons.add_shopping_cart,
-                color: theme.primary,
-                size: fontSize + 8,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
