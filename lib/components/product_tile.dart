@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -9,6 +10,7 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProductTile extends ConsumerWidget {
   final Product product;
@@ -73,10 +75,11 @@ class ProductTile extends ConsumerWidget {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          builder: (ctx) => ShoppingListBottomSheet(
-            product: product,
-            onConfirm: (String selectedListName) {},
-          ),
+          builder: (ctx) =>
+              ShoppingListBottomSheet(
+                product: product,
+                onConfirm: (String selectedListName) {},
+              ),
         );
       },
       child: Container(
@@ -166,7 +169,7 @@ class ProductTile extends ConsumerWidget {
       children: [
         Text(
           '${product.discountPercentage}%',
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: theme.secondary,
@@ -175,7 +178,7 @@ class ProductTile extends ConsumerWidget {
         const Spacer(),
         Text(
           '${product.currentPrice.toStringAsFixed(2)} Fr.',
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: theme.inactive,
@@ -185,6 +188,7 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
+// Move this out from inside _buildPriceRow
   Widget _priceBox({
     required String text,
     required Color? bgColor,

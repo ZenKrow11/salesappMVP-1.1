@@ -11,6 +11,7 @@ import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // Enum to manage the gesture state.
 enum _GestureType { none, swipingUp, swipingDown }
@@ -203,7 +204,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                 // The top card that transforms.
                 Transform.translate(
                   offset: Offset(
-                      0, slideOffset * MediaQuery.of(context).size.height * 0.7),
+                      0, slideOffset * MediaQuery.of(context).size.height),
                   child: Transform.scale(
                     scale: scale,
                     // NEW: Wrap the cardContent in an Opacity widget.
@@ -451,12 +452,12 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
       child: Row(
         children: [
-          Icon(Icons.calendar_today, color: theme.secondary, size: 16),
+          Icon(Icons.calendar_today, color: theme.secondary, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               widget.product.availableFrom,
-              style: TextStyle(color: theme.inactive, fontSize: 16),
+              style: TextStyle(color: theme.inactive, fontSize: 18),
             ),
           ),
         ],
@@ -474,7 +475,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       children: [
         Text(
           '${widget.product.normalPrice.toStringAsFixed(2)} Fr.',
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 25,
             fontWeight: FontWeight.w500,
             decoration: TextDecoration.lineThrough,
@@ -483,7 +484,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         ),
         Text(
           '$cleanPercentage%',
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 25,
             fontWeight: FontWeight.bold,
             color: theme.secondary,
@@ -491,7 +492,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         ),
         Text(
           '${widget.product.currentPrice.toStringAsFixed(2)} Fr.',
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 35,
             fontWeight: FontWeight.bold,
             color: theme.inactive,

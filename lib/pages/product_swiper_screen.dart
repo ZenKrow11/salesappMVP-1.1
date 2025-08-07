@@ -61,6 +61,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     // This immediately disables the IgnorePointer on the PageView.
     setState(() {
       _isPopping = true;
+      _backgroundOpacity = 0.0;
     });
   }
 
