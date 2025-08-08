@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
@@ -22,6 +23,7 @@ import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
+import 'package:sales_app_mvp/widgets/category_style.dart';
 
 
 const double kHeaderVerticalPadding = 8.0;
@@ -235,7 +237,6 @@ class _GroupHeader extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final textColor = getContrastColor(style.color);
 
-    // Replace the root Container with a Material widget
     return Material(
       color: theme.pageBackground,
       child: Padding(
@@ -249,7 +250,13 @@ class _GroupHeader extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(style.icon, color: textColor, size: 26),
+              // REPLACED Icon with SvgPicture
+              SvgPicture.asset(
+                style.iconAssetPath,
+                width: 26,
+                height: 26,
+                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+              ),
               const SizedBox(width: 12),
               Text(
                 style.displayName,

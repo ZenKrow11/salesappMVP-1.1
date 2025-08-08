@@ -23,6 +23,8 @@ class ProductDetails extends ConsumerStatefulWidget {
   final Function(double progress) onDragUpdate;
   final VoidCallback onDismissCancelled;
   final VoidCallback onDismissConfirmed;
+  final VoidCallback onPrevious; // <-- NEW
+  final VoidCallback onNext;     // <-- NEW
 
   const ProductDetails({
     super.key,
@@ -32,6 +34,8 @@ class ProductDetails extends ConsumerStatefulWidget {
     required this.onDragUpdate,
     required this.onDismissCancelled,
     required this.onDismissConfirmed,
+    required this.onPrevious, // <-- NEW
+    required this.onNext,     // <-- NEW
   });
 
   @override
@@ -272,7 +276,9 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   Widget _buildCardContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    return Center(
+
+    // This is the actual card UI, which will be the base layer of our Stack
+    final cardUi = Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
         decoration: BoxDecoration(
@@ -290,6 +296,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
           borderRadius: BorderRadius.circular(20.0),
           child: LayoutBuilder(
             builder: (context, constraints) {
+              // The internal content of the card
               return SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 child: Container(
@@ -324,7 +331,43 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         ),
       ),
     );
+
+    // --- NEW: Return a Stack that combines the card and the navigation buttons ---
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Layer 1: The card itself
+        cardUi,
+
+        // Layer 2: The navigation overlays
+        // Using Padding to position the buttons inside the card's horizontal margin
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              // Show "Previous" button if not the first item
+              if (widget.currentIndex > 1)
+                _NavigationButton(
+                  icon: Icons.arrow_back_ios_new,
+                  onTap: widget.onPrevious,
+                ),
+
+              const Spacer(), // Pushes the next button to the other side
+
+              // Show "Next" button if not the last item
+              if (widget.currentIndex < widget.totalItems)
+                _NavigationButton(
+                  icon: Icons.arrow_forward_ios,
+                  onTap: widget.onNext,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
+
+
 
   Widget _buildHeader(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
@@ -471,12 +514,13 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
           '${widget.product.normalPrice.toStringAsFixed(2)} Fr.',
           style: GoogleFonts.montserrat(
-            fontSize: 25,
+            fontSize: 20,
             fontWeight: FontWeight.w500,
             decoration: TextDecoration.lineThrough,
             color: theme.inactive.withOpacity(0.6),
@@ -485,7 +529,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         Text(
           '$cleanPercentage%',
           style: GoogleFonts.montserrat(
-            fontSize: 25,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: theme.secondary,
           ),
@@ -511,6 +555,33 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(value, style: textStyle, textAlign: TextAlign.center),
+    );
+  }
+}
+
+// --- NEW: A dedicated, reusable widget for the navigation buttons ---
+class _NavigationButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _NavigationButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3), // Semi-transparent background
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white.withOpacity(0.8), // Slightly transparent icon
+          size: 28.0,
+        ),
+      ),
     );
   }
 }

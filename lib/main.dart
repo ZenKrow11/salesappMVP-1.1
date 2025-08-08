@@ -8,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-// Import your other files
 import 'firebase_options.dart';
 import 'widgets/splash_screen.dart';
 import 'widgets/login_screen.dart';

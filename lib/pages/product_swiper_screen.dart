@@ -25,9 +25,7 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
 
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   late final PageController _pageController;
-
   double _backgroundOpacity = 1.0;
-  // NEW: Flag to disable gestures when the screen is popping.
   bool _isPopping = false;
 
   @override
@@ -43,7 +41,6 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   }
 
   void _onDragUpdate(double progress) {
-    // Prevent background updates if we are already popping.
     if (_isPopping) return;
     setState(() {
       _backgroundOpacity = 1.0 - progress;
@@ -56,9 +53,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     });
   }
 
-  // NEW: Callback to be triggered when a downward dismiss is confirmed.
   void _onDismissConfirmed() {
-    // This immediately disables the IgnorePointer on the PageView.
     setState(() {
       _isPopping = true;
       _backgroundOpacity = 0.0;
@@ -81,7 +76,6 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
               color: theme.primary.withOpacity(_backgroundOpacity),
             ),
             Expanded(
-              // NEW: Wrap PageView in an IgnorePointer to prevent gestures during pop.
               child: IgnorePointer(
                 ignoring: _isPopping,
                 child: PageView.builder(
@@ -93,13 +87,33 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
                   itemBuilder: (context, index) {
                     final product = widget.products[index];
                     return ProductDetails(
+                      // Use a ValueKey to ensure widgets are rebuilt correctly when swiping
+                      key: ValueKey(product.id),
                       product: product,
                       currentIndex: index + 1,
                       totalItems: widget.products.length,
                       onDragUpdate: _onDragUpdate,
                       onDismissCancelled: _onDismissCancelled,
-                      // NEW: Pass the new callback down to the child.
                       onDismissConfirmed: _onDismissConfirmed,
+                      // --- NEW: Pass the navigation callbacks ---
+                      onPrevious: () {
+                        // Check if we are not on the first page
+                        if (_pageController.page?.round() != 0) {
+                          _pageController.previousPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
+                      onNext: () {
+                        // Check if we are not on the last page
+                        if (_pageController.page?.round() != widget.products.length - 1) {
+                          _pageController.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
                     );
                   },
                 ),

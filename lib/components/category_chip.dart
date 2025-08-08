@@ -1,6 +1,7 @@
 // lib/components/category_chip.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Import the SVG package
 import 'package:sales_app_mvp/services/category_service.dart';
 
 class CategoryChip extends StatelessWidget {
@@ -13,45 +14,40 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If the category name is empty, don't build anything.
     if (categoryName.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 1. Get the base style from the service. This will be the parent style.
     final style = CategoryService.getStyleForCategory(categoryName);
-
-    // 2. Ask the service if this is a subcategory.
     final bool isSub = CategoryService.isSubCategory(categoryName);
 
-    // 3. Define colors based on whether it's a subcategory or not.
-    //    - Subcategories will have a less intense color.
-    //    - We use `withOpacity` for a consistent shading effect.
-    final Color chipColor = isSub ? style.color.withValues(alpha: 0.7) : style.color;
-    final Color backgroundColor = chipColor; // Use the chip color for a solid background.
+    // Use withAlpha for a more subtle shading effect on subcategories
+    final Color chipColor = isSub ? style.color.withAlpha(200) : style.color;
+    final Color backgroundColor = chipColor;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: backgroundColor,
-        // The border takes on the main or shaded color.
         border: Border.all(color: chipColor, width: 1.5),
-        borderRadius: BorderRadius.circular(5.0), // A rounded, "pill" shape
+        borderRadius: BorderRadius.circular(5.0),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min, // Keep the chip tight around its content
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            style.icon,
-            size: 16,
-            color: Colors.white, // Icon is white.
+          // REPLACED Icon with SvgPicture
+          SvgPicture.asset(
+            style.iconAssetPath,
+            height: 16,
+            width: 16,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
           const SizedBox(width: 6),
-          Flexible( // Prevents long names from causing a layout overflow
+          Flexible(
             child: Text(
               categoryName,
-              style: TextStyle(
-                fontSize: 12, // Text is white.
+              style: const TextStyle(
+                fontSize: 12,
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
