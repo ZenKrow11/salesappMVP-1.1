@@ -305,23 +305,51 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // --- TOP SECTION (Stays at the top) ---
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      CategoryChip(categoryName: widget.product.category),
+                      // MODIFIED: Wrapped in SizedBox to extend width
+                      SizedBox(
+                        width: double.infinity,
+                        child: CategoryChip(categoryName: widget.product.category),
+                      ),
                       if (widget.product.subcategory.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        CategoryChip(categoryName: widget.product.subcategory),
+                        // MODIFIED: Wrapped in SizedBox to extend width
+                        SizedBox(
+                          width: double.infinity,
+                          child:
+                          CategoryChip(categoryName: widget.product.subcategory),
+                        ),
                       ],
                       const SizedBox(height: 12),
                       _buildProductName(theme),
-                      const Spacer(),
-                      _buildSonderkonditionInfo(theme),
-                      const SizedBox(height: 8),
-                      _buildImageContainer(context, ref, theme),
-                      const SizedBox(height: 12),
-                      _buildPriceRow(),
-                      const Spacer(),
-                      _buildAvailabilityInfo(theme),
+                      const SizedBox(height: 12), // Add some space after the title
+
+                      // --- EXPANDED SECTION (Fills remaining space) ---
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Spacer to push the middle content away from the top
+                            const Spacer(),
+
+                            // --- MIDDLE CONTENT (Centered group) ---
+                            _buildSonderkonditionInfo(theme),
+                            if (widget.product.sonderkondition != null)
+                              const SizedBox(height: 8),
+                            _buildImageContainer(context, ref, theme),
+                            const SizedBox(height: 12),
+                            _buildPriceRow(),
+
+                            // Spacer to push the availability info to the bottom
+                            const Spacer(),
+
+                            // --- BOTTOM CONTENT (Pinned to the bottom) ---
+                            _buildAvailabilityInfo(theme),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

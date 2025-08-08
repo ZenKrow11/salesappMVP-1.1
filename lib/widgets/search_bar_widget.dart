@@ -1,3 +1,5 @@
+// lib/widgets/search_bar_widget.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,8 +29,8 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
   OverlayEntry? _overlayEntry;
   Timer? _debounce;
 
-  // NEW: This now holds the full AsyncValue to track loading/error/data states.
-  AsyncValue<List<String>> _suggestionsState = const AsyncValue.data([]);
+  // REMOVED: No longer need to manually track the suggestions state.
+  // AsyncValue<List<String>> _suggestionsState = const AsyncValue.data([]);
 
   @override
   void initState() {
@@ -39,20 +41,19 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _showOverlay();
-        // Trigger an initial suggestion fetch when focused.
-        _triggerSuggestionFetch();
       } else {
         _removeOverlay();
       }
     });
 
     _textController.addListener(() {
-      // Debounce user input to avoid spamming the provider.
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), () {
-        _triggerSuggestionFetch();
+        // When the text changes, just tell the overlay to rebuild itself.
+        // The overlay's Consumer will automatically fetch new suggestions.
+        _overlayEntry?.markNeedsBuild();
       });
-      // We still call setState to rebuild the clear button.
+      // Rebuild the widget to show/hide the clear button.
       setState(() {});
     });
   }
@@ -66,35 +67,8 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     super.dispose();
   }
 
-  void _triggerSuggestionFetch() {
-    if (!_focusNode.hasFocus || !mounted) return;
-    final query = _textController.text;
-
-    // --- FIX IS HERE ---
-    // 1. Manually read the current state of the provider once.
-    // This gives us the initial value immediately (which might be loading, data, etc.).
-    final currentState = ref.read(searchSuggestionsProvider(query));
-    if (mounted) {
-      setState(() {
-        _suggestionsState = currentState;
-      });
-    }
-
-    // 2. Set up the listener for all *future* changes.
-    // This will not be called for the initial value we just read, only for subsequent updates.
-    ref.listen<AsyncValue<List<String>>>(
-      searchSuggestionsProvider(query),
-          (previous, next) {
-        if (!mounted) return;
-        // When the provider emits a new state, update our local state.
-        setState(() {
-          _suggestionsState = next;
-        });
-        // We still need to tell the overlay to rebuild itself with the new state.
-        _overlayEntry?.markNeedsBuild();
-      },
-    );
-  }
+  // REMOVED: This complex logic is no longer needed.
+  // void _triggerSuggestionFetch() { ... }
 
   void _commitSearch(String query) {
     _textController.text = query;
@@ -111,6 +85,8 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     ref
         .read(filterStateProvider.notifier)
         .update((state) => state.copyWith(searchQuery: ''));
+    // Also tell the overlay to rebuild, which will cause it to hide.
+    _overlayEntry?.markNeedsBuild();
   }
 
   @override
@@ -191,18 +167,24 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     final size = renderBox.size;
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0.0, size.height + 8.0),
-          child: Material(
-            elevation: 4.0,
-            borderRadius: BorderRadius.circular(12),
-            child: _buildSuggestionsOverlay(),
-          ),
-        ),
+      // MODIFIED: The builder is now a Consumer.
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          return Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0.0, size.height + 8.0),
+              child: Material(
+                elevation: 4.0,
+                borderRadius: BorderRadius.circular(12),
+                // Pass the ref from the Consumer to the build method.
+                child: _buildSuggestionsOverlay(ref),
+              ),
+            ),
+          );
+        },
       ),
     );
     overlay.insert(_overlayEntry!);
@@ -213,27 +195,35 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
     _overlayEntry = null;
   }
 
-  // THIS METHOD IS NO LONGER NEEDED, its logic is now in `_triggerSuggestionFetch`
-  // void _fetchSuggestions() { ... }
-
-  // REFACTORED: This now uses the `_suggestionsState` to build the UI.
-  Widget _buildSuggestionsOverlay() {
-    // Hide the overlay if the search bar loses focus.
+  // MODIFIED: This now accepts a WidgetRef and uses ref.watch.
+  Widget _buildSuggestionsOverlay(WidgetRef ref) {
     if (!_focusNode.hasFocus) {
       return const SizedBox.shrink();
     }
     final theme = ref.watch(themeProvider);
+    final query = _textController.text;
 
-    // Use .when to handle the async state gracefully.
-    return _suggestionsState.when(
+    // Don't show anything for an empty query.
+    if (query.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // THE KEY FIX: Watch the provider here. Riverpod handles the entire
+    // async lifecycle (loading, data, error) for you.
+    final suggestionsState = ref.watch(searchSuggestionsProvider(query));
+
+    return suggestionsState.when(
       loading: () => Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: theme.primary,
           borderRadius: BorderRadius.circular(10),
         ),
-        // Show a subtle loading indicator.
-        child: const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+        child: const Center(
+            child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2))),
       ),
       error: (err, stack) => Container(
         decoration: BoxDecoration(
@@ -249,7 +239,6 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
         ),
       ),
       data: (suggestions) {
-        // Don't show the overlay if there are no suggestions.
         if (suggestions.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -266,7 +255,8 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
             itemBuilder: (context, index) {
               final suggestion = suggestions[index];
               return ListTile(
-                title: Text(suggestion, style: const TextStyle(color: Colors.white)),
+                title:
+                Text(suggestion, style: const TextStyle(color: Colors.white)),
                 onTap: () => _commitSearch(suggestion),
               );
             },
