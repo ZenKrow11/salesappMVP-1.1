@@ -19,15 +19,12 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProductSwiperScreen> createState() =>
-      _ProductSwiperScreenState();
+  ConsumerState<ProductSwiperScreen> createState() => _ProductSwiperScreenState();
 }
 
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   late final PageController _pageController;
-
   double _backgroundOpacity = 1.0;
-  // NEW: Flag to disable gestures when the screen is popping.
   bool _isPopping = false;
 
   @override
@@ -43,22 +40,15 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   }
 
   void _onDragUpdate(double progress) {
-    // Prevent background updates if we are already popping.
     if (_isPopping) return;
-    setState(() {
-      _backgroundOpacity = 1.0 - progress;
-    });
+    setState(() => _backgroundOpacity = 1.0 - progress);
   }
 
   void _onDismissCancelled() {
-    setState(() {
-      _backgroundOpacity = 1.0;
-    });
+    setState(() => _backgroundOpacity = 1.0);
   }
 
-  // NEW: Callback to be triggered when a downward dismiss is confirmed.
   void _onDismissConfirmed() {
-    // This immediately disables the IgnorePointer on the PageView.
     setState(() {
       _isPopping = true;
       _backgroundOpacity = 0.0;
@@ -76,30 +66,34 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
         color: theme.background.withOpacity(_backgroundOpacity),
         child: Column(
           children: [
-            Container(
-              height: statusBarHeight,
-              color: theme.primary.withOpacity(_backgroundOpacity),
-            ),
+            Container(height: statusBarHeight, color: theme.primary.withOpacity(_backgroundOpacity)),
             Expanded(
-              // NEW: Wrap PageView in an IgnorePointer to prevent gestures during pop.
               child: IgnorePointer(
                 ignoring: _isPopping,
                 child: PageView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const ComfortablePageScrollPhysics(dragThreshold: 15.0),
-                  dragStartBehavior: DragStartBehavior.down,
                   controller: _pageController,
+                  physics: const ComfortablePageScrollPhysics(dragThreshold: 15.0),
                   itemCount: widget.products.length,
                   itemBuilder: (context, index) {
                     final product = widget.products[index];
                     return ProductDetails(
+                      key: ValueKey(product.id),
                       product: product,
                       currentIndex: index + 1,
                       totalItems: widget.products.length,
                       onDragUpdate: _onDragUpdate,
                       onDismissCancelled: _onDismissCancelled,
-                      // NEW: Pass the new callback down to the child.
                       onDismissConfirmed: _onDismissConfirmed,
+                      onPrevious: () {
+                        if (_pageController.page?.round() != 0) {
+                          _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        }
+                      },
+                      onNext: () {
+                        if (_pageController.page?.round() != widget.products.length - 1) {
+                          _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        }
+                      },
                     );
                   },
                 ),

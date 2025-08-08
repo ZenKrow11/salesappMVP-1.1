@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
@@ -12,7 +13,6 @@ import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
@@ -22,6 +22,8 @@ import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
+import 'package:sales_app_mvp/models/category_style.dart';
+import 'package:sales_app_mvp/widgets/color_utilities.dart';
 
 
 const double kHeaderVerticalPadding = 8.0;
@@ -235,11 +237,11 @@ class _GroupHeader extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final textColor = getContrastColor(style.color);
 
-    // Replace the root Container with a Material widget
     return Material(
       color: theme.pageBackground,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: kHeaderVerticalPadding, horizontal: 8.0),
+        padding: const EdgeInsets.symmetric(
+            vertical: kHeaderVerticalPadding, horizontal: 8.0),
         child: Container(
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -249,7 +251,14 @@ class _GroupHeader extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(style.icon, color: textColor, size: 26),
+              // --- THIS IS THE FIX ---
+              // Replaced Icon with SvgPicture.asset
+              SvgPicture.asset(
+                style.iconAssetPath,
+                width: 26,
+                height: 26,
+                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+              ),
               const SizedBox(width: 12),
               Text(
                 style.displayName,
@@ -266,7 +275,7 @@ class _GroupHeader extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: textColor.withOpacity(0.85),
+                    color: textColor.withAlpha(220), // .withValues() is better but this works
                   ),
                 ),
             ],
