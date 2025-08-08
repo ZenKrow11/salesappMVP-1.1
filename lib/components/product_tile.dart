@@ -188,26 +188,4 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-// Move this out from inside _buildPriceRow
-  Widget _priceBox({
-    required String text,
-    required Color? bgColor,
-    required TextStyle textStyle,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: textStyle,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      ),
-    );
-  }
 }

@@ -6,8 +6,6 @@ import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/pages/debug_page.dart';
-
 
 
 class MainAppScreen extends ConsumerStatefulWidget {

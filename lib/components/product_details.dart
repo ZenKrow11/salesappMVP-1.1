@@ -501,16 +501,4 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       ],
     );
   }
-
-  Widget _priceBox(String value, Color bgColor, TextStyle textStyle) {
-    return Container(
-      height: 60,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(value, style: textStyle, textAlign: TextAlign.center),
-    );
-  }
 }
