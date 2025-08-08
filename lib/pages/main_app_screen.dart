@@ -31,45 +31,57 @@ class _MainAppScreenState extends ConsumerState<MainAppScreen> {
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
     // We need the status bar height to manually color that area.
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    final double statusBarHeight = MediaQuery
+        .of(context)
+        .padding
+        .top;
 
-    return Scaffold(
-      // The background for the main content area.
-      backgroundColor: theme.pageBackground,
-      body: Column(
-        children: [
-          // This Container draws the color behind the system status bar icons (time, wifi, etc.)
-          Container(
-            height: statusBarHeight,
-            color: theme.primary, // This must match the color of your top bar in HomePage
-          ),
-          // This Expanded widget is CRUCIAL. It tells the child page how much space it can fill.
-          // This is what will fix the sliver stacking bug.
-          Expanded(
-            child: _pages[_currentIndex],
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: theme.primary,
-        currentIndex: _currentIndex,
-        selectedItemColor: theme.secondary,
-        unselectedItemColor: theme.inactive,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money, size: 36),
-            label: 'All Sales',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list, size: 36),
-            label: 'Lists',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 36),
-            label: 'Account',
-          ),
-        ],
+    // Wrap the entire Scaffold in a GestureDetector.
+    return GestureDetector(
+      onTap: () {
+        // This is the command that removes focus from any active TextField.
+        // It tells the currently focused widget to unfocus itself.
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        // The background for the main content area.
+        backgroundColor: theme.pageBackground,
+        body: Column(
+          children: [
+            // This Container draws the color behind the system status bar icons (time, wifi, etc.)
+            Container(
+              height: statusBarHeight,
+              color: theme
+                  .primary, // This must match the color of your top bar in HomePage
+            ),
+            // This Expanded widget is CRUCIAL. It tells the child page how much space it can fill.
+            // This is what will fix the sliver stacking bug.
+            Expanded(
+              child: _pages[_currentIndex],
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: theme.primary,
+          currentIndex: _currentIndex,
+          selectedItemColor: theme.secondary,
+          unselectedItemColor: theme.inactive,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.attach_money, size: 36),
+              label: 'All Sales',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list, size: 36),
+              label: 'Lists',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 36),
+              label: 'Account',
+            ),
+          ],
+        ),
       ),
     );
   }
