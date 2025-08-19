@@ -23,7 +23,7 @@ import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
-import 'package:sales_app_mvp/widgets/color_utilities.dart';
+
 
 
 const double kHeaderVerticalPadding = 8.0;

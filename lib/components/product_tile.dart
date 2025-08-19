@@ -120,10 +120,41 @@ class ProductTile extends ConsumerWidget {
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: ImageWithAspectRatio(
-              imageUrl: product.imageUrl,
-              maxHeight: double.infinity,
-              maxWidth: double.infinity,
+            child: Stack(
+              children: [
+                ImageWithAspectRatio(
+                  imageUrl: product.imageUrl,
+                  maxHeight: double.infinity,
+                  maxWidth: double.infinity,
+                ),
+                if (product.sonderkondition != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        String.fromCharCode(Icons.star.codePoint),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: Icons.star.fontFamily,
+                          package: Icons.star.fontPackage,
+                          color: Colors.yellow,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 4,
+                              color: Colors.black,
+                              offset: Offset(0, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -132,6 +163,7 @@ class ProductTile extends ConsumerWidget {
       ],
     );
   }
+
 
   Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
@@ -187,5 +219,4 @@ class ProductTile extends ConsumerWidget {
       ],
     );
   }
-
 }

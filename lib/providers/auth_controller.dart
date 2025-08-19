@@ -1,47 +1,52 @@
+// lib/providers/auth_controller.dart
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 final authControllerProvider =
-NotifierProvider<AuthController, AsyncValue<void>>(AuthController.new);
+StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
+  return AuthController();
+});
 
-class AuthController extends Notifier<AsyncValue<void>> {
+class AuthController extends StateNotifier<AsyncValue<void>> {
+  AuthController() : super(const AsyncData(null));
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  @override
-  AsyncValue<void> build() => const AsyncData(null);
-
-  Future<void> signInWithEmail(String email, String password) async {
+  Future<bool> signInWithEmail(String email, String password) async {
     state = const AsyncLoading();
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       state = const AsyncData(null);
+      return true;
     } on FirebaseAuthException catch (e, st) {
       state = AsyncError(e.message ?? 'An unknown error occurred', st);
-      rethrow;
+      return false;
     }
   }
 
-  Future<void> signUpWithEmail(String email, String password) async {
+  Future<bool> signUpWithEmail(String email, String password) async {
     state = const AsyncLoading();
     try {
       await _auth.createUserWithEmailAndPassword(email: email, password: password);
       state = const AsyncData(null);
+      return true;
     } on FirebaseAuthException catch (e, st) {
       state = AsyncError(e.message ?? 'An unknown error occurred', st);
-      rethrow;
+      return false;
     }
   }
 
-  Future<void> signInWithGoogle() async {
+  Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         // User canceled the sign-in
         state = const AsyncData(null);
-        return;
+        return false;
       }
 
       final googleAuth = await googleUser.authentication;
@@ -53,9 +58,10 @@ class AuthController extends Notifier<AsyncValue<void>> {
 
       await _auth.signInWithCredential(credential);
       state = const AsyncData(null);
+      return true;
     } catch (e, st) {
       state = AsyncError(e, st);
-      rethrow;
+      return false;
     }
   }
 
@@ -67,7 +73,6 @@ class AuthController extends Notifier<AsyncValue<void>> {
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
-      rethrow;
     }
   }
 }

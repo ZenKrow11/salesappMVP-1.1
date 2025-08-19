@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/providers/auth_controller.dart';
 
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
@@ -179,8 +180,10 @@ class AccountPage extends ConsumerWidget {
                         TextButton(
                           child: Text('Logout', style: TextStyle(color: theme.accent)),
                           onPressed: () async {
-                            Navigator.of(dialogContext).pop();
-                            await FirebaseAuth.instance.signOut();
+                            Navigator.of(dialogContext).pop(); // Close the dialog first
+                            // Use the AuthController to sign out from all services
+                            await ref.read(authControllerProvider.notifier).signOut();
+                            // Navigate back to the login screen after signing out
                             Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/login', (Route<dynamic> route) => false);
                           },

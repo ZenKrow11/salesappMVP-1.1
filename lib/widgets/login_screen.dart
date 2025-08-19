@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
+import 'package:sales_app_mvp/pages/main_app_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   static const routeName = '/login';
@@ -45,10 +47,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showErrorSnackBar("Please fill in both email and password.");
       return;
     }
-    await ref.read(authControllerProvider.notifier).signInWithEmail(
+    final success = await ref.read(authControllerProvider.notifier).signInWithEmail(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
+    if (success && mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
+    }
   }
 
   Future<void> _signUpWithEmail() async {
@@ -56,14 +61,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showErrorSnackBar("Please fill in both email and password.");
       return;
     }
-    await ref.read(authControllerProvider.notifier).signUpWithEmail(
+    final success = await ref.read(authControllerProvider.notifier).signUpWithEmail(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
+    if (success && mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
+    }
   }
 
   Future<void> _signInWithGoogle() async {
-    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    final success = await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    if (success && mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
+    }
   }
 
   @override
@@ -90,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           elevation: 0,
           centerTitle: true,
           title: Text(
-            'Get Started',
+            'Welcome to SalesSeekr',
             style: materialTheme.textTheme.headlineMedium?.copyWith(
               color: appTheme.secondary, // UPDATED
               fontWeight: FontWeight.bold,

@@ -223,11 +223,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                     children: [
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      CategoryChip(categoryName: widget.product.category),
-                      if (widget.product.subcategory.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        CategoryChip(categoryName: widget.product.subcategory)
-                      ],
+                      // CHANGE: Replaced Column of chips with a single Row
+                      _buildCategoryRow(),
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
@@ -236,8 +233,9 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                       _buildImageContainer(context, ref, theme),
                       const SizedBox(height: 12),
                       _buildPriceRow(),
-                      const Spacer(),
+                      // CHANGE: Moved availability info up, leaving flexible space at the bottom
                       _buildAvailabilityInfo(theme),
+                      const Spacer(),
                     ]),
               ),
             );
@@ -261,20 +259,42 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     ]);
   }
 
-  // --- FIXED METHODS ---
+  // --- WIDGET BUILDER METHODS ---
+
+  // CHANGE: Quantity text is now centered
   Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         StoreLogo(storeName: widget.product.store, height: 40),
-        const SizedBox(width: 16),
-        Text('${widget.currentIndex} / ${widget.totalItems}',
+        Expanded(
+          child: Text(
+            '${widget.currentIndex} / ${widget.totalItems}',
+            textAlign: TextAlign.center,
             style: TextStyle(
-                color: theme.inactive.withAlpha(180), // .withValues() is better but this works
+                color: theme.inactive.withAlpha(180),
                 fontSize: 16,
-                fontWeight: FontWeight.w500)),
-        const Spacer(),
+                fontWeight: FontWeight.w500),
+          ),
+        ),
         _buildSelectListButton(context, ref, theme),
+      ],
+    );
+  }
+
+  // NEW: Method to build category chips in a row
+  Widget _buildCategoryRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: CategoryChip(categoryName: widget.product.category),
+        ),
+        if (widget.product.subcategory.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: CategoryChip(categoryName: widget.product.subcategory),
+          ),
+        ],
       ],
     );
   }
@@ -366,28 +386,41 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
   Widget _buildPriceRow() {
     final theme = ref.watch(themeProvider);
     return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text('${widget.product.normalPrice.toStringAsFixed(2)} Fr.',
-              style: GoogleFonts.montserrat(
-                  fontSize: 20, // Adjusted for balance
-                  fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.lineThrough,
-                  color: theme.inactive.withAlpha(150))), // .withValues() is better but this works
-          Text('${widget.product.discountPercentage}%',
-              style: GoogleFonts.montserrat(
-                  fontSize: 25, // Adjusted for balance
-                  fontWeight: FontWeight.bold,
-                  color: theme.secondary)),
-          Text('${widget.product.currentPrice.toStringAsFixed(2)} Fr.',
-              style: GoogleFonts.montserrat(
-                  fontSize: 35,
-                  fontWeight: FontWeight.bold,
-                  color: theme.inactive)),
-        ]);
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // Align children by their text baseline instead of the bottom of their container
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      // Specify the alphabetic baseline for alignment
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          '${widget.product.normalPrice.toStringAsFixed(2)} Fr.',
+          style: GoogleFonts.montserrat(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+            decoration: TextDecoration.lineThrough,
+            color: theme.inactive.withAlpha(150),
+          ),
+        ),
+        Text(
+          '${widget.product.discountPercentage}%',
+          style: GoogleFonts.montserrat(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            color: theme.secondary,
+          ),
+        ),
+        Text(
+          '${widget.product.currentPrice.toStringAsFixed(2)} Fr.',
+          style: GoogleFonts.montserrat(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            color: theme.inactive,
+          ),
+        ),
+      ],
+    );
   }
-}
+  }
 
 class _NavigationButton extends StatelessWidget {
   final IconData icon;

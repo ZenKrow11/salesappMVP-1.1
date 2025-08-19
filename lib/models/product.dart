@@ -42,7 +42,7 @@ class Product extends HiveObject {
     required this.name,
     required this.currentPrice,
     required this.normalPrice,
-    required this.discountPercentage, // CHANGED: Now expects an int
+    required this.discountPercentage,
     required this.category,
     required this.subcategory,
     required this.url,
