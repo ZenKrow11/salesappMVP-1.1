@@ -1,8 +1,8 @@
-
 // lib/main.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// TYPO FIX: Changed 'package.' to 'package:'
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,6 +13,11 @@ import 'firebase_options.dart';
 import 'widgets/splash_screen.dart';
 import 'widgets/login_screen.dart';
 import 'pages/main_app_screen.dart';
+
+// Required imports for the emulator setup
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 //============================================================================
 //  MAIN FUNCTION - The App's Entry Point
@@ -26,11 +31,22 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // THIS IS THE KEY: Initialize Hive for Flutter.
-  // This must be done before runApp and before any Hive-dependent provider is read.
+  // START: Block to connect to Firebase Emulators in debug mode
+  if (kDebugMode) {
+    try {
+      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      await FirebaseAuth.instance.useAuthEmulator(host, 9099);
+      FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+    } catch (e) {
+      debugPrint('Error: Failed to connect to Firebase emulators. $e');
+    }
+  }
+  // END: Emulator connection block
+
+  // Initialize Hive for Flutter.
   await Hive.initFlutter();
 
-  // Now that all essential services are ready, run the app.
+  // Run the app.
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -39,14 +55,13 @@ Future<void> main() async {
 }
 
 //============================================================================
-//  ROOT WIDGET - UNCHANGED
+//  ROOT WIDGET - MyApp
 //============================================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Your MaterialApp setup is correct and does not need to change.
     return MaterialApp(
       title: 'Sales App',
       theme: ThemeData(
@@ -65,7 +80,7 @@ class MyApp extends StatelessWidget {
 }
 
 //============================================================================
-//  AUTH STATE PROVIDER & AUTH GATE - UNCHANGED
+//  AUTH STATE PROVIDER & AUTH GATE
 //============================================================================
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();

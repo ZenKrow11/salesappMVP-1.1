@@ -12,6 +12,7 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 enum _GestureType { none, swipingUp, swipingDown }
 
 class ProductDetails extends ConsumerStatefulWidget {
@@ -341,7 +342,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
   Widget _buildSonderkonditionInfo(AppThemeData theme) {
     if (widget.product.sonderkondition == null) return const SizedBox.shrink();
     return Row(children: [
-      const Icon(Icons.star_border, color: Colors.yellow, size: 18),
+      Icon(Icons.star,
+          color: theme.secondary, size: 26),
       const SizedBox(width: 8),
       Expanded(
           child: Text(widget.product.sonderkondition!,

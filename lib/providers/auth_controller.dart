@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
@@ -22,6 +23,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return true;
     } on FirebaseAuthException catch (e, st) {
+      debugPrint('SIGN IN ERROR: [${e.code}] ${e.message}');
       state = AsyncError(e.message ?? 'An unknown error occurred', st);
       return false;
     }
@@ -34,6 +36,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return true;
     } on FirebaseAuthException catch (e, st) {
+      debugPrint('SIGN UP ERROR: [${e.code}] ${e.message}');
       state = AsyncError(e.message ?? 'An unknown error occurred', st);
       return false;
     }

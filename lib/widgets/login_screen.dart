@@ -30,9 +30,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          "message",
-          style: TextStyle(color: Colors.white), // Standard white for error message is fine
+        // FIX: Use the 'message' variable and remove 'const'
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.redAccent.shade400,
         behavior: SnackBarBehavior.floating,
