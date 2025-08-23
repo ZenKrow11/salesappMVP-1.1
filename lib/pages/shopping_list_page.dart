@@ -1,3 +1,5 @@
+// lib/pages/shopping_list_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../components/shopping_list_bottom_sheet.dart';
@@ -24,58 +26,66 @@ class ShoppingListPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: theme.pageBackground,
+      // --- STEP 1: Set the Scaffold's background to the desired status bar color. ---
+      backgroundColor: theme.primary,
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: theme.background,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            backgroundColor: Colors.transparent,
             builder: (ctx) => const ShoppingListBottomSheet(initialTabIndex: 1),
           );
         },
         backgroundColor: theme.secondary,
         child: Icon(Icons.add, size: 32, color: theme.primary),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
-            child: Text(
-              'Saved Lists',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.secondary),
-            ),
-          ),
-          const SizedBox(height: 4),
-          _buildListCard(context, ref, merkliste, theme: theme, allowDelete: false),
-          const SizedBox(height: 16),
-          Consumer(
-            builder: (context, ref, child) {
-              final updatedLists = ref.watch(shoppingListsProvider);
-              final otherLists = updatedLists
-                  .where((list) => list.name != merklisteListName)
-                  .toList()
-                ..sort((a, b) => a.index.compareTo(b.index));
+      body: SafeArea(
+        // --- STEP 2: Use a Container to give the actual content its own background color. ---
+        child: Container(
+          color: theme.pageBackground, // This is the background for the list area.
+          child: ListView(
+            // The ListView no longer needs padding, as the SafeArea and Container handle the space.
+            children: [
+              const SizedBox(height: 20), // Add padding manually if needed
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
+                child: Text(
+                  'Saved Lists',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.secondary),
+                ),
+              ),
+              const SizedBox(height: 4),
+              _buildListCard(context, ref, merkliste, theme: theme, allowDelete: false),
+              const SizedBox(height: 16),
+              Consumer(
+                builder: (context, ref, child) {
+                  final updatedLists = ref.watch(shoppingListsProvider);
+                  final otherLists = updatedLists
+                      .where((list) => list.name != merklisteListName)
+                      .toList()
+                    ..sort((a, b) => a.index.compareTo(b.index));
 
-              return ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onReorder: (oldIndex, newIndex) {
-                  if (oldIndex < newIndex) newIndex -= 1;
-                  final reordered = [...otherLists];
-                  final item = reordered.removeAt(oldIndex);
-                  reordered.insert(newIndex, item);
-                  shoppingListNotifier.reorderCustomLists(reordered);
+                  return ReorderableListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onReorder: (oldIndex, newIndex) {
+                      if (oldIndex < newIndex) newIndex -= 1;
+                      final reordered = [...otherLists];
+                      final item = reordered.removeAt(oldIndex);
+                      reordered.insert(newIndex, item);
+                      shoppingListNotifier.reorderCustomLists(reordered);
+                    },
+                    children: otherLists.map((list) {
+                      return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
+                    }).toList(),
+                  );
                 },
-                children: otherLists.map((list) {
-                  return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
-                }).toList(),
-              );
-            },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -9,13 +9,13 @@ class SortButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider); // Get theme
+    final theme = ref.watch(themeProvider);
 
-    return TextButton.icon(
-      icon: Icon(Icons.sort, color: theme.secondary, size: 24.0), // UPDATED
+    return ElevatedButton.icon( // Changed from TextButton
+      icon: Icon(Icons.sort, color: theme.secondary, size: 22.0),
       label: Text(
         'Sort',
-        style: TextStyle(color: theme.inactive), // UPDATED
+        style: TextStyle(color: theme.inactive),
         overflow: TextOverflow.ellipsis,
       ),
       onPressed: () {
@@ -27,10 +27,12 @@ class SortButton extends ConsumerWidget {
           builder: (_) => const _SortOptionsBottomSheet(),
         );
       },
-      style: TextButton.styleFrom(
-        backgroundColor: theme.primary, // UPDATED
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      // --- UPDATED: Using a consistent style ---
+      style: ElevatedButton.styleFrom(
+        backgroundColor: theme.background.withOpacity(0.5),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
       ),
     );
   }

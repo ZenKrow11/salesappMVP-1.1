@@ -4,141 +4,54 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
+// --- IMPORTS are simplified to only what's needed for the product list ---
 import 'package:sales_app_mvp/components/product_tile.dart';
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
-
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
-import 'package:sales_app_mvp/models/products_provider.dart';
-import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
-import 'package:sales_app_mvp/widgets/item_count_widget.dart';
-import 'package:sales_app_mvp/widgets/search_bar_widget.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
-import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
-
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
-
 
 
 const double kHeaderVerticalPadding = 8.0;
 const double kHeaderHeight = 44.0;
 const double kStickyHeaderTotalHeight = kHeaderHeight + (kHeaderVerticalPadding * 2);
 
-class HomePage extends ConsumerStatefulWidget {
+// --- UPDATED: Changed from StatefulWidget to the simpler ConsumerWidget ---
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
-  @override
-  ConsumerState<HomePage> createState() => _HomePageState();
-}
 
-class _HomePageState extends ConsumerState<HomePage> {
   @override
-  Widget build(BuildContext context) {
-    final theme = ref.watch(themeProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final asyncGroups = ref.watch(homePageProductsProvider);
 
-    return Column(
-      children: [
-        Container(
-          color: theme.primary,
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [_buildSearchBarAndCount(), _buildActionButtons()],
-          ),
-        ),
-        Expanded(
-          child: asyncGroups.when(
-            // ADDED BACK: The required loading handler
-            loading: () => const Center(child: CircularProgressIndicator()),
-
-            // ADDED BACK: The required error handler
-            error: (error, stack) => Center(child: Text('Error: $error')),
-
-            // The data handler remains the same
-            data: (groups) {
-              if (groups.isEmpty) {
-                return const Center(child: Text('No products found matching your criteria.'));
-              }
-              return _ProductList(groups: groups);
-            },
-          ),
-        ),
-      ],
+    // --- REMOVED: All previous layout widgets (Column, Container, etc.) ---
+    // The entire body of the widget is now just the async data handler.
+    return asyncGroups.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+      data: (groups) {
+        if (groups.isEmpty) {
+          return const Center(
+            child: Text('No products found matching your criteria.'),
+          );
+        }
+        // If data is available, it directly returns the scrollable product list.
+        return _ProductList(groups: groups);
+      },
     );
   }
 
-
-  Widget _buildSearchBarAndCount() {
-    return SizedBox(
-      height: 50,
-      child: SearchBarWidget(
-        hasBorder: false,
-        trailing: Consumer(
-          builder: (context, ref, child) {
-            final count = ref.watch(homePageProductsProvider).whenData((groups) {
-              final filtered = groups.fold<int>(0, (sum, group) => sum + group.products.length);
-              final total = ref.read(initialProductsProvider).value?.length ?? 0;
-              return ProductCount(filtered: filtered, total: total);
-            }).value ?? ProductCount(filtered: 0, total: 0);
-            return ItemCountWidget(filtered: count.filtered, total: count.total);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    final theme = ref.watch(themeProvider);
-    final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList ?? 'Select List';
-    return Row(
-      children: [
-        Expanded(
-          child: TextButton.icon(
-            icon: Icon(Icons.add_shopping_cart, color: theme.secondary, size: 24.0),
-            label: Text(buttonText, style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true),
-            style: _actionButtonStyle(),
-          ),
-        ),
-        VerticalDivider(width: 1, thickness: 1, color: theme.background.withOpacity(0.5)),
-        Expanded(
-          child: TextButton.icon(
-            icon: Icon(Icons.filter_alt, color: theme.secondary, size: 24.0),
-            label: Text('Filter', style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
-            onPressed: () => _showModalSheet((_) => const FilterBottomSheet(), isScrollControlled: true),
-            style: _actionButtonStyle(),
-          ),
-        ),
-        VerticalDivider(width: 1, thickness: 1, color: theme.background.withOpacity(0.5)),
-        const Expanded(child: SortButton()),
-      ],
-    );
-  }
-
-  ButtonStyle _actionButtonStyle() {
-    return TextButton.styleFrom(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-    );
-  }
-
-  void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: isScrollControlled,
-      builder: builder,
-    );
-  }
+// --- REMOVED: The _buildSearchBarAndCount, _buildActionButtons,
+// _actionButtonStyle, and _showModalSheet methods have all been moved to main_app_screen.dart ---
 }
+
+
+// --- NO CHANGES NEEDED BELOW THIS LINE ---
+// The _ProductList, _GroupHeader, and _ShowMoreButton widgets are perfect as they are.
 
 class _ProductList extends ConsumerWidget {
   final List<ProductGroup> groups;
@@ -151,9 +64,7 @@ class _ProductList extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // The for-loop now directly adds the slivers to the CustomScrollView
         for (final group in groups) ...[
-          // REMOVED the MultiSliver wrapper from here
           SliverToBoxAdapter(
             child: _GroupHeader(
               style: group.style,
@@ -181,7 +92,6 @@ class _ProductList extends ConsumerWidget {
                 ),
               ),
             ),
-          // REMOVED the closing of MultiSliver
         ],
       ],
     );
@@ -208,15 +118,13 @@ class _ProductList extends ConsumerWidget {
               final flatSortedProducts = groups.expand((g) => g.products).toList();
               final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
 
-              // Use a variable to hold the widget instance before passing it to the route.
-              // This often helps the Dart analyzer resolve types correctly.
               final Widget swiperPage = ProductSwiperScreen(
                 products: flatSortedProducts,
                 initialIndex: initialIndex != -1 ? initialIndex : 0,
               );
 
               Navigator.of(context).push(SlideUpPageRoute(
-                page: swiperPage, // Now pass the variable
+                page: swiperPage,
               ));
             },
           );
@@ -251,8 +159,6 @@ class _GroupHeader extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              // --- THIS IS THE FIX ---
-              // Replaced Icon with SvgPicture.asset
               SvgPicture.asset(
                 style.iconAssetPath,
                 width: 26,
@@ -275,7 +181,7 @@ class _GroupHeader extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: textColor.withAlpha(220), // .withValues() is better but this works
+                    color: textColor.withAlpha(220),
                   ),
                 ),
             ],
@@ -302,20 +208,22 @@ class _ShowMoreButton extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final remainingCount = totalItemCount - showingItemCount;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: TextButton.icon(
-        icon: Icon(Icons.expand_more, color: theme.secondary),
-        label: Text(
-          'Show $remainingCount more',
-          style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold),
-        ),
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-            side: BorderSide(color: theme.secondary, width: 1.5),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16.0),
+        child: TextButton.icon(
+          icon: Icon(Icons.expand_more, color: theme.secondary),
+          label: Text(
+            'Show $remainingCount more',
+            style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold),
+          ),
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+              side: BorderSide(color: theme.secondary, width: 1.5),
+            ),
           ),
         ),
       ),

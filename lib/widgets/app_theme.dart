@@ -12,7 +12,6 @@ class AppThemeData {
   final Color alternateAccent; // A secondary accent color for special cases;
   final Color inactive;      // New: white color
 
-  // NEW: A color for the main page background, between primary and background.
   final Color pageBackground;
 
   const AppThemeData({
