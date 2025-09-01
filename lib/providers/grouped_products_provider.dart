@@ -13,10 +13,11 @@ import 'package:sales_app_mvp/models/category_style.dart';
 
 
 const List<String> categoryDisplayOrder = [
+  'Alkoholische Getränke',
+  'Alkoholfreie Getränke',
   'Brot & Backwaren',
   'Fisch & Fleisch',
   'Früchte & Gemüse',
-  'Getränke',
   'Milchprodukte & Eier',
   'Snacks & Süsswaren',
   'Spezifische Ernährung',
@@ -39,20 +40,26 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
   if (products.isEmpty) {
     return [];
   }
+
+  // --- FIX 1: Use the new robust grouping method from the service ---
   final groupedByDisplayName = groupBy(
     products,
-        (Product product) =>
-    CategoryService.getStyleForCategory(product.category).displayName,
+        (Product product) => CategoryService.getGroupingDisplayNameForProduct(product),
   );
+
   final categoryGroups = <ProductGroup>[];
   for (final displayName in categoryDisplayOrder) {
     if (groupedByDisplayName.containsKey(displayName)) {
       final productList = groupedByDisplayName[displayName]!.toList();
-      final style =
-      CategoryService.getStyleForCategory(productList.first.category);
+
+      // --- FIX 2: Use the new method to get the correct style for the group header ---
+      final style = CategoryService.getStyleForGroupingName(displayName);
+
       categoryGroups.add(ProductGroup(style: style, products: productList));
     }
   }
+
+  // The sorting logic remains unchanged and is correct
   for (final group in categoryGroups) {
     group.products.sort((a, b) {
       switch (filter.sortOption) {
@@ -65,7 +72,7 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
         case SortOption.priceLowToHigh:
           return a.currentPrice.compareTo(b.currentPrice);
         case SortOption.discountHighToLow:
-          return b.discountRate.compareTo(a.discountRate);
+          return b.discountRate.compareTo(b.discountRate);
         case SortOption.discountLowToHigh:
           return a.discountRate.compareTo(b.discountRate);
       }
@@ -93,7 +100,8 @@ List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput inpu
       if (filter.searchQuery.isNotEmpty) {
         final query = filter.searchQuery.toLowerCase();
         final nameMatch = product.name.toLowerCase().contains(query);
-        final keywordMatch = product.searchKeywords.any((k) => k.startsWith(query));
+        // --- FIX: Use the new field name 'nameTokens' ---
+        final keywordMatch = product.nameTokens.any((k) => k.startsWith(query));
         if (!nameMatch && !keywordMatch) return false;
       }
       return true;

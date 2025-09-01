@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class CategoryStyle {
   final String displayName;
   final Color color;
-  final String iconAssetPath; // For SVG asset paths
+  final String iconAssetPath;
 
   const CategoryStyle({
     required this.displayName,

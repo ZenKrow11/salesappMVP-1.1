@@ -7,7 +7,6 @@ import 'package:sales_app_mvp/pages/main_app_screen.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-// --- UPDATED: We only need to wait on the single source of truth provider ---
 import 'package:sales_app_mvp/models/products_provider.dart';
 
 @immutable
@@ -44,6 +43,7 @@ class StartupNotifier extends StateNotifier<StartupState> {
   // --- REFACTORED THIS METHOD SIGNIFICANTLY ---
   Future<void> _initialize() async {
     try {
+
       // Step 1: Prepare local storage.
       await _animateProgress(0.33, 'Preparing local storage...');
       await _ref.read(hiveInitializationProvider.future);
@@ -83,6 +83,18 @@ class SplashScreen extends ConsumerWidget {
     final startupState = ref.watch(startupProvider);
     final theme = ref.watch(themeProvider);
 
+    // --- MODIFICATION START ---
+    // Check if the current state message indicates an error.
+    final bool hasError = startupState.message.startsWith('Error:');
+
+    // Define colors based on whether there is an error or not.
+    final Color iconColor = hasError ? Colors.red : theme.secondary;
+    final Color textColor = hasError ? Colors.red : theme.inactive;
+    final Color progressColor = hasError ? Colors.red : theme.secondary;
+    final Color progressBackgroundColor = hasError ? Colors.red.withOpacity(0.3) : theme.primary;
+    // --- MODIFICATION END ---
+
+
     ref.listen(startupProvider, (previous, next) {
       // We only navigate if the progress is 1.0 AND the message is 'All set!'.
       // This prevents navigating away if there was an error.
@@ -105,12 +117,17 @@ class SplashScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_checkout, size: 80, color: theme.secondary),
+            // --- MODIFICATION: Use a conditional icon ---
+            Icon(
+              hasError ? Icons.error_outline : Icons.shopping_cart_checkout,
+              size: 80,
+              color: iconColor, // Use the determined color
+            ),
             const SizedBox(height: 24),
             Text(startupState.message,
                 style: TextStyle(
                     fontSize: 18,
-                    color: theme.inactive,
+                    color: textColor, // Use the determined color
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             Padding(
@@ -118,8 +135,9 @@ class SplashScreen extends ConsumerWidget {
               child: LinearProgressIndicator(
                 value: startupState.progress,
                 minHeight: 8.0,
-                backgroundColor: theme.primary,
-                valueColor: AlwaysStoppedAnimation<Color>(theme.secondary),
+                // --- MODIFICATION: Use the determined colors ---
+                backgroundColor: progressBackgroundColor,
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),

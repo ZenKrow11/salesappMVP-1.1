@@ -27,16 +27,17 @@ class ProductAdapter extends TypeAdapter<Product> {
       subcategory: fields[7] as String,
       url: fields[8] as String,
       imageUrl: fields[9] as String,
-      searchKeywords: (fields[10] as List).cast<String>(),
-      availableFrom: fields[11] as String,
+      nameTokens: (fields[10] as List).cast<String>(),
+      availableFrom: fields[11] as DateTime?,
       sonderkondition: fields[12] as String?,
+      dealEnd: fields[13] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -58,11 +59,13 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(9)
       ..write(obj.imageUrl)
       ..writeByte(10)
-      ..write(obj.searchKeywords)
+      ..write(obj.nameTokens)
       ..writeByte(11)
       ..write(obj.availableFrom)
       ..writeByte(12)
-      ..write(obj.sonderkondition);
+      ..write(obj.sonderkondition)
+      ..writeByte(13)
+      ..write(obj.dealEnd);
   }
 
   @override

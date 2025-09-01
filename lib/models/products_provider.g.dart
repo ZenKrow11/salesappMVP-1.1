@@ -6,7 +6,7 @@ part of 'products_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$initialProductsHash() => r'347392e0baca2a540a4cdb2ad0be3f6202bf6f2a';
+String _$initialProductsHash() => r'63496fad223e03e4b07c50c577cf17b22d03b566';
 
 /// This provider is responsible for the INITIAL fetch of products.
 /// It fetches data once and then stays in the `data` state.

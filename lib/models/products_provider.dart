@@ -134,7 +134,6 @@ class _FilterInput {
   _FilterInput({required this.products, required this.filter});
 }
 List<Product> _filterProductsInBackground(_FilterInput input) {
-  // ... (this function's implementation is exactly the same)
   final allProducts = input.products;
   final filter = input.filter;
   debugPrint("[ISOLATE] Filtering running in background... Input: ${allProducts.length} products.");
@@ -148,7 +147,8 @@ List<Product> _filterProductsInBackground(_FilterInput input) {
     if (filter.searchQuery.isNotEmpty) {
       final query = filter.searchQuery.toLowerCase();
       final nameMatch = product.name.toLowerCase().contains(query);
-      final keywordMatch = product.searchKeywords.any((k) => k.startsWith(query));
+      // --- FIX: Use the new field name 'nameTokens' ---
+      final keywordMatch = product.nameTokens.any((k) => k.startsWith(query));
       if (!nameMatch && !keywordMatch) return false;
     }
     return true;

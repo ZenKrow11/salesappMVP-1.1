@@ -32,7 +32,8 @@ List<String> _generateSuggestionsInBackground(_SearchInput input) {
       suggestions.add(product.name);
     }
     // Strategy 2: Check if any search keyword starts with the query.
-    for (final keyword in product.searchKeywords) {
+    // --- FIX: Use the new field name 'nameTokens' ---
+    for (final keyword in product.nameTokens) {
       if (keyword.toLowerCase().startsWith(lowerCaseQuery)) {
         suggestions.add(product.name);
         break; // Move to next product once a keyword match is found

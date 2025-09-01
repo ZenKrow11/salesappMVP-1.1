@@ -44,14 +44,8 @@ class HomePage extends ConsumerWidget {
       },
     );
   }
-
-// --- REMOVED: The _buildSearchBarAndCount, _buildActionButtons,
-// _actionButtonStyle, and _showModalSheet methods have all been moved to main_app_screen.dart ---
 }
 
-
-// --- NO CHANGES NEEDED BELOW THIS LINE ---
-// The _ProductList, _GroupHeader, and _ShowMoreButton widgets are perfect as they are.
 
 class _ProductList extends ConsumerWidget {
   final List<ProductGroup> groups;

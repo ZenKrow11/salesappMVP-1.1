@@ -1,5 +1,6 @@
-// product.dart
+// lib/models/product.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 
 part 'product.g.dart';
@@ -16,11 +17,8 @@ class Product extends HiveObject {
   final double currentPrice;
   @HiveField(4)
   final double normalPrice;
-
-  // --- CHANGED: Storing this as a number is better for any future use.
   @HiveField(5)
   final int discountPercentage;
-
   @HiveField(6)
   final String category;
   @HiveField(7)
@@ -29,12 +27,21 @@ class Product extends HiveObject {
   final String url;
   @HiveField(9)
   final String imageUrl;
+
+  // --- CHANGED: Renamed from searchKeywords to match Firestore field 'name_tokens'
   @HiveField(10)
-  final List<String> searchKeywords;
+  final List<String> nameTokens;
+
+  // --- CHANGED: availableFrom is now a proper, nullable DateTime object
   @HiveField(11)
-  final String availableFrom;
+  final DateTime? availableFrom;
+
   @HiveField(12)
   final String? sonderkondition;
+
+  // --- ADDED: The new dealEnd field, also as a nullable DateTime
+  @HiveField(13)
+  final DateTime? dealEnd;
 
   Product({
     required this.id,
@@ -47,27 +54,25 @@ class Product extends HiveObject {
     required this.subcategory,
     required this.url,
     required this.imageUrl,
-    required this.searchKeywords,
-    required this.availableFrom,
+    required this.nameTokens, // --- CHANGED
+    this.availableFrom,      // --- CHANGED
     this.sonderkondition,
+    this.dealEnd,            // --- ADDED
   });
 
-  // --- ADDED: A robust getter to calculate the real discount rate.
-  /// Calculates the discount rate as a decimal (e.g., 0.5 for 50%).
-  /// This is the most reliable way to sort by discount.
-  /// Returns 0.0 if there is no discount or if normalPrice is invalid.
-  double get discountRate {
-    // Prevent division by zero and handle cases with no discount.
-    if (normalPrice <= 0 || normalPrice <= currentPrice) {
-      return 0.0;
+  // --- HELPER FUNCTION ---
+  /// Safely converts a Firestore Timestamp or null into a DateTime object.
+  static DateTime? _timestampToDateTime(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
     }
-    // Formula: (amount_saved) / original_price
-    return (normalPrice - currentPrice) / normalPrice;
+    return null; // Return null if the data is missing or not a Timestamp
   }
 
-  factory Product.fromJson(String id, Map<String, dynamic> data) {
-    final keywordsData = data['searchKeywords'] as List<dynamic>?;
-    final keywords = keywordsData?.map((e) => e.toString()).toList() ?? [];
+  factory Product.fromFirestore(String id, Map<String, dynamic> data) {
+    // --- CHANGED: Reads from 'name_tokens' field now
+    final tokensData = data['name_tokens'] as List<dynamic>?;
+    final tokens = tokensData?.map((e) => e.toString()).toList() ?? [];
 
     String? sonderkonditionString = data['sonderkondition'] as String?;
     if (sonderkonditionString == 'Keine Sonderkondition') {
@@ -80,20 +85,27 @@ class Product extends HiveObject {
       name: (data['name'] as String? ?? '').trim(),
       currentPrice: (data['currentPrice'] as num?)?.toDouble() ?? 0.0,
       normalPrice: (data['normalPrice'] as num?)?.toDouble() ?? 0.0,
-      // --- CHANGED: Parse to int directly, without converting back to string.
       discountPercentage: (data['discountPercentage'] as num?)?.toInt() ?? 0,
       category: data['category'] as String? ?? '',
       subcategory: data['subcategory'] as String? ?? '',
       url: data['url'] as String? ?? '',
       imageUrl: data['imageUrl'] as String? ?? '',
-      searchKeywords: keywords,
-      availableFrom: data['available_from'] as String? ?? 'Jetzt verfügbar',
+      nameTokens: tokens, // --- CHANGED
+
+      // --- CHANGED: Use the helper to correctly parse Timestamps
+      availableFrom: _timestampToDateTime(data['availableFrom']),
+      dealEnd: _timestampToDateTime(data['dealEnd']), // --- ADDED
+
       sonderkondition: sonderkonditionString,
     );
   }
 
-  factory Product.fromFirestore(String id, Map<String, dynamic> data) {
-    return Product.fromJson(id, data);
+  // Your other methods like discountRate, toJson, toPlainObject are mostly fine,
+  // but let's update them for consistency.
+
+  double get discountRate {
+    if (normalPrice <= 0 || normalPrice <= currentPrice) return 0.0;
+    return (normalPrice - currentPrice) / normalPrice;
   }
 
   Map<String, dynamic> toJson() => {
@@ -107,16 +119,12 @@ class Product extends HiveObject {
     'subcategory': subcategory,
     'url': url,
     'imageUrl': imageUrl,
-    'searchKeywords': searchKeywords,
-    'available_from': availableFrom,
-    'sonderkondition': sonderkondition ?? 'Keine Sonderkondition',
+    'name_tokens': nameTokens,
+    'availableFrom': availableFrom,
+    'dealEnd': dealEnd,
+    'sonderkondition': sonderkondition,
   };
 
-  // ===================================================
-  // === PASTE THE NEW METHOD HERE                     ===
-  // ===================================================
-  /// Creates a "plain" copy of this Product without any Hive database connection.
-  /// This makes it safe to send to a background isolate.
   Product toPlainObject() {
     return Product(
       id: id,
@@ -129,10 +137,10 @@ class Product extends HiveObject {
       subcategory: subcategory,
       url: url,
       imageUrl: imageUrl,
-      // It's good practice to create a new list instance as well.
-      searchKeywords: List<String>.from(searchKeywords),
+      nameTokens: List<String>.from(nameTokens),
       availableFrom: availableFrom,
       sonderkondition: sonderkondition,
+      dealEnd: dealEnd,
     );
   }
 }

@@ -2,15 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/named_list.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/widgets/notification_helper.dart';
 
 class ProductTile extends ConsumerWidget {
   final Product product;
@@ -35,33 +38,108 @@ class ProductTile extends ConsumerWidget {
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
 
+    final allLists = ref.watch(shoppingListsProvider);
+    final isInShoppingList = allLists.any((list) => list.items.any((item) => item.id == product.id));
+
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: () {
-        // ... (your existing logic is perfect)
+        final activeListName = ref.read(activeShoppingListProvider);
+        final notifier = ref.read(shoppingListsProvider.notifier);
+        final theme = ref.read(themeProvider);
+
+        if (activeListName != null) {
+          final activeList = ref.read(shoppingListsProvider).firstWhere(
+                (list) => list.name == activeListName,
+            // --- FIX: Changed 'order: -1' to 'index: -1' to match your NamedList model ---
+            orElse: () => NamedList(name: '', items: [], index: -1),
+          );
+          final isItemInActiveList = activeList.items.any((item) => item.id == product.id);
+
+          if (isItemInActiveList) {
+            notifier.removeItemFromList(activeListName, product);
+            showTopNotification(
+              context,
+              message: 'Removed ${product.name} from "$activeListName"',
+              theme: theme,
+            );
+          } else {
+            notifier.addToList(activeListName, product);
+            showTopNotification(
+              context,
+              message: 'Added ${product.name} to "$activeListName"',
+              theme: theme,
+            );
+          }
+        } else {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: theme.background,
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            builder: (_) => const ShoppingListBottomSheet(),
+          );
+        }
       },
       onLongPress: () {
-        // ... (your existing logic is perfect)
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: theme.background,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (ctx) => const ShoppingListBottomSheet(),
+        );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: backgroundTint,
-          borderRadius: BorderRadius.circular(12.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8.0,
-              offset: const Offset(0, 4),
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: backgroundTint,
+              borderRadius: BorderRadius.circular(12.0),
+              border: isInShoppingList
+                  ? Border.all(color: theme.secondary, width: 2.5)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12.0),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _buildContent(context, ref),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _buildContent(context, ref),
+              ),
+            ),
           ),
-        ),
+          if (isInShoppingList)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                    color: theme.secondary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1))
+                    ]),
+                child: Icon(
+                  Icons.check,
+                  color: theme.primary,
+                  size: 16,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -79,20 +157,15 @@ class ProductTile extends ConsumerWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // --- LAYER 1: The Clean White Background ---
                 Container(
                   color: Colors.white,
                 ),
-
-                // --- LAYER 2: The Product Image ---
                 ImageWithAspectRatio(
                   imageUrl: product.imageUrl,
                   maxHeight: double.infinity,
                   maxWidth: double.infinity,
                   fit: BoxFit.contain,
                 ),
-
-                // --- LAYER 3: The Star Icon ---
                 if (product.sonderkondition != null)
                   Positioned(
                     top: 0,
@@ -132,9 +205,8 @@ class ProductTile extends ConsumerWidget {
 
   Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    // --- WRAP THE ROW IN A SIZEDBOX TO ENSURE CONSISTENT HEIGHT ---
     return SizedBox(
-      height: 38.0, // This forces space for two lines of text
+      height: 38.0,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

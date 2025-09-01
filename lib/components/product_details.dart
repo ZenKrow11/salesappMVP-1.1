@@ -3,14 +3,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/models/named_list.dart'; // IMPORTED for fallback
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sales_app_mvp/widgets/notification_helper.dart';
 
 
 enum _GestureType { none, swipingUp, swipingDown }
@@ -161,16 +164,38 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
+  // --- REFACTORED: Double tap now toggles item in list ---
   void _handleDoubleTapSave(BuildContext context, WidgetRef ref) {
-    final activeList = ref.read(activeShoppingListProvider);
+    final activeListName = ref.read(activeShoppingListProvider);
+    final notifier = ref.read(shoppingListsProvider.notifier);
     final theme = ref.read(themeProvider);
-    if (activeList != null) {
-      ref
-          .read(shoppingListsProvider.notifier)
-          .addToList(activeList, widget.product);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Added to "$activeList"')));
+
+    if (activeListName != null) {
+      final activeList = ref.read(shoppingListsProvider).firstWhere(
+            (list) => list.name == activeListName,
+        orElse: () => NamedList(name: '', items: [], index: -1), // Safe fallback
+      );
+      final isItemInActiveList = activeList.items.any((item) => item.id == widget.product.id);
+
+      if (isItemInActiveList) {
+        // Item exists, so remove it
+        notifier.removeItemFromList(activeListName, widget.product);
+        showTopNotification(
+          context,
+          message: 'Removed from "$activeListName"',
+          theme: theme,
+        );
+      } else {
+        // Item does not exist, so add it
+        notifier.addToList(activeListName, widget.product);
+        showTopNotification(
+          context,
+          message: 'Added to "$activeListName"',
+          theme: theme,
+        );
+      }
     } else {
+      // No active list, prompt user to select one
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -184,6 +209,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);
+    final theme = ref.read(themeProvider);
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $url';
@@ -191,14 +217,21 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     } catch (e) {
       debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Could not open product link")));
+        showTopNotification(
+          context,
+          message: "Could not open product link",
+          theme: theme,
+        );
       }
     }
   }
 
   Widget _buildCardContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    // Get the status of the item to pass to the image builder
+    final allLists = ref.watch(shoppingListsProvider);
+    final isInShoppingList = allLists.any((list) => list.items.any((item) => item.id == widget.product.id));
+
     final cardUi = Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
@@ -224,17 +257,16 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                     children: [
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      // CHANGE: Replaced Column of chips with a single Row
                       _buildCategoryRow(),
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
                       _buildSonderkonditionInfo(theme),
                       const SizedBox(height: 8),
-                      _buildImageContainer(context, ref, theme),
+                      // Pass the status down to the image container
+                      _buildImageContainer(context, theme, isInShoppingList),
                       const SizedBox(height: 12),
                       _buildPriceRow(),
-                      // CHANGE: Moved availability info up, leaving flexible space at the bottom
                       _buildAvailabilityInfo(theme),
                       const Spacer(),
                     ]),
@@ -262,7 +294,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   // --- WIDGET BUILDER METHODS ---
 
-  // CHANGE: Quantity text is now centered
   Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -283,7 +314,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
-  // NEW: Method to build category chips in a row
   Widget _buildCategoryRow() {
     return Row(
       children: [
@@ -354,33 +384,90 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     ]);
   }
 
+  // --- REFACTORED: Image container now has border, background, and overlay ---
   Widget _buildImageContainer(
-      BuildContext context, WidgetRef ref, AppThemeData theme) {
+      BuildContext context, AppThemeData theme, bool isInShoppingList) {
     final double imageMaxHeight = MediaQuery.of(context).size.height * 0.3;
     return Container(
       constraints: BoxConstraints(maxHeight: imageMaxHeight),
       width: double.infinity,
       decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12)),
-      child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: ImageWithAspectRatio(
-              imageUrl: widget.product.imageUrl,
-              maxWidth: double.infinity,
-              maxHeight: imageMaxHeight)),
+          // Add the conditional border here
+          border: isInShoppingList
+              ? Border.all(color: theme.secondary, width: 2.5)
+              : null),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10), // Adjust for border width
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Layer 1: White background
+            Container(color: Colors.white),
+            // Layer 2: The product image
+            ImageWithAspectRatio(
+                imageUrl: widget.product.imageUrl,
+                maxWidth: double.infinity,
+                maxHeight: imageMaxHeight),
+            // Layer 3: Conditional checkmark overlay
+            if (isInShoppingList)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                      color: theme.secondary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1))
+                      ]),
+                  child: Icon(
+                    Icons.check,
+                    color: theme.primary,
+                    size: 20,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildAvailabilityInfo(AppThemeData theme) {
+    String formatDate(DateTime? date) {
+      if (date == null) return '';
+      return DateFormat('dd.MM.yyyy').format(date);
+    }
+
+    final fromDate = formatDate(widget.product.availableFrom);
+    final toDate = formatDate(widget.product.dealEnd);
+
+    String availabilityText;
+
+    if (fromDate.isNotEmpty && toDate.isNotEmpty) {
+      availabilityText = 'Gültig vom $fromDate bis $toDate';
+    } else if (fromDate.isNotEmpty) {
+      availabilityText = 'Gültig ab $fromDate';
+    } else {
+      availabilityText = 'Gültigkeit unbekannt';
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
       child: Row(children: [
         Icon(Icons.calendar_today, color: theme.secondary, size: 20),
         const SizedBox(width: 8),
         Expanded(
-            child: Text(widget.product.availableFrom,
-                style: TextStyle(color: theme.inactive, fontSize: 18))),
+            child: Text(
+                availabilityText,
+                style: TextStyle(color: theme.inactive, fontSize: 18)
+            )
+        ),
       ]),
     );
   }
@@ -389,9 +476,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     final theme = ref.watch(themeProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      // Align children by their text baseline instead of the bottom of their container
       crossAxisAlignment: CrossAxisAlignment.baseline,
-      // Specify the alphabetic baseline for alignment
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
@@ -422,7 +507,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       ],
     );
   }
-  }
+}
 
 class _NavigationButton extends StatelessWidget {
   final IconData icon;
