@@ -42,6 +42,7 @@ dependencies:
   # Code Generation (Annotations)
   freezed_annotation: ^2.4.1 # Stable version
   auto_size_text: ^3.0.0
+  grouped_list: ^6.0.0
 
 dev_dependencies:
   flutter_test:
