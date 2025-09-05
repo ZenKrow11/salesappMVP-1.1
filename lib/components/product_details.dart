@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/models/named_list.dart'; // IMPORTED for fallback
+// REMOVED: No longer need NamedList
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -14,7 +14,6 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sales_app_mvp/widgets/notification_helper.dart';
-
 
 enum _GestureType { none, swipingUp, swipingDown }
 
@@ -72,6 +71,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     super.dispose();
   }
 
+  // --- GESTURE HANDLING (Unchanged) ---
   void _onVerticalDragStart(DragStartDetails details) {
     _gestureType = _GestureType.none;
   }
@@ -117,6 +117,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     }
     _gestureType = _GestureType.none;
   }
+  // --- END GESTURE HANDLING ---
 
   @override
   Widget build(BuildContext context) {
@@ -166,49 +167,29 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   // --- MODIFICATION START ---
   void _handleDoubleTapSave(BuildContext context, WidgetRef ref) {
-    final activeListName = ref.read(activeShoppingListProvider);
     final notifier = ref.read(shoppingListsProvider.notifier);
     final theme = ref.read(themeProvider);
 
-    // The target list is either the active one or defaults to "Merkliste"
-    final targetListName = activeListName ?? merklisteListName;
+    // 1. Get the list of products directly from the new provider.
+    final shoppingListProducts = ref.read(shoppingListWithDetailsProvider).value ?? [];
 
-    // Check if the target list actually exists in our state
-    final allLists = ref.read(shoppingListsProvider);
-    final targetList = allLists.firstWhere(
-          (list) => list.name == targetListName,
-      orElse: () => NamedList(name: '', items: [], index: -1), // Fallback
-    );
-
-    // If the target list (Merkliste or other) doesn't exist yet, show the sheet.
-    if (targetList.name.isEmpty) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: theme.background,
-        shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (_) => const ShoppingListBottomSheet(),
-      );
-      return; // Stop execution
-    }
-
-    final isItemInList = targetList.items.any((item) => item.id == widget.product.id);
+    // 2. Check if the item is in the list.
+    final isItemInList = shoppingListProducts.any((item) => item.id == widget.product.id);
 
     if (isItemInList) {
-      // Item exists, so remove it
-      notifier.removeItemFromList(targetListName, widget.product);
+      // 3. Call the simplified remove method.
+      notifier.removeItemFromList(widget.product);
       showTopNotification(
         context,
-        message: 'Removed from "$targetListName"',
+        message: 'Removed from "Merkliste"',
         theme: theme,
       );
     } else {
-      // Item does not exist, so add it
-      notifier.addToList(targetListName, widget.product);
+      // 4. Call the simplified add method.
+      notifier.addToList(widget.product);
       showTopNotification(
         context,
-        message: 'Added to "$targetListName"',
+        message: 'Added to "Merkliste"',
         theme: theme,
       );
     }
@@ -236,9 +217,13 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   Widget _buildCardContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    // Get the status of the item to pass to the image builder
-    final allLists = ref.watch(shoppingListsProvider);
-    final isInShoppingList = allLists.any((list) => list.items.any((item) => item.id == widget.product.id));
+
+    // --- MODIFICATION START ---
+    // Get the status of the item using the new provider pattern.
+    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
+    final shoppingListProducts = asyncShoppingList.value ?? [];
+    final isInShoppingList = shoppingListProducts.any((item) => item.id == widget.product.id);
+    // --- MODIFICATION END ---
 
     final cardUi = Center(
       child: Container(
@@ -300,8 +285,9 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     ]);
   }
 
-  // --- WIDGET BUILDER METHODS ---
+  // --- WIDGET BUILDER METHODS (mostly unchanged) ---
 
+  // (No changes needed in the rest of the file)
   Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -392,7 +378,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     ]);
   }
 
-  // --- REFACTORED: Image container now has border, background, and overlay ---
   Widget _buildImageContainer(
       BuildContext context, AppThemeData theme, bool isInShoppingList) {
     final double imageMaxHeight = MediaQuery.of(context).size.height * 0.3;
@@ -401,23 +386,19 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       width: double.infinity,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          // Add the conditional border here
           border: isInShoppingList
               ? Border.all(color: theme.secondary, width: 2.5)
               : null),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(10), // Adjust for border width
+        borderRadius: BorderRadius.circular(10),
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Layer 1: White background
             Container(color: Colors.white),
-            // Layer 2: The product image
             ImageWithAspectRatio(
                 imageUrl: widget.product.imageUrl,
                 maxWidth: double.infinity,
                 maxHeight: imageMaxHeight),
-            // Layer 3: Conditional checkmark overlay
             if (isInShoppingList)
               Positioned(
                 top: 8,

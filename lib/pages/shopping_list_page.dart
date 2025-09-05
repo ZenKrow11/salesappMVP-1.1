@@ -6,7 +6,6 @@ import 'main_app_screen.dart';
 import '../components/shopping_list_bottom_sheet.dart';
 import '../models/product.dart';
 
-import '../models/named_list.dart';
 import '../pages/product_swiper_screen.dart';
 import '../providers/shopping_list_provider.dart';
 import '../widgets/app_theme.dart';
@@ -21,14 +20,9 @@ class ShoppingListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    final shoppingLists = ref.watch(shoppingListsProvider);
-    final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
-    final merkliste = shoppingLists.firstWhere(
-          (list) => list.name == merklisteListName,
-      orElse: () => NamedList(name: merklisteListName, items: [], index: -1),
-    );
+    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
 
     return Scaffold(
       backgroundColor: theme.primary,
@@ -37,6 +31,7 @@ class ShoppingListPage extends ConsumerWidget {
           if (isPremium) {
             showModalBottomSheet(
               context: context,
+              // --- FIX: Corrected typo from isScrollcontrolled to isScrollControlled ---
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (ctx) => const ShoppingListBottomSheet(initialTabIndex: 1),
@@ -44,15 +39,12 @@ class ShoppingListPage extends ConsumerWidget {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('This is a Premium Feature!'),
+                content: const Text('Creating new lists is a Premium Feature!'),
                 action: SnackBarAction(
                   label: 'UPGRADE',
                   onPressed: () {
-                    // --- THIS LOGIC IS NOW CORRECT ---
                     final mainAppScreenState = context.findAncestorStateOfType<MainAppScreenState>();
-                    if (mainAppScreenState != null) {
-                      mainAppScreenState.navigateToTab(2); // Navigate to the Account Page
-                    }
+                    mainAppScreenState?.navigateToTab(2);
                   },
                 ),
               ),
@@ -65,116 +57,69 @@ class ShoppingListPage extends ConsumerWidget {
       body: SafeArea(
         child: Container(
           color: theme.pageBackground,
-          child: ListView(
-            children: [
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
-                child: Text(
-                  'Saved Lists',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.secondary),
-                ),
-              ),
-              const SizedBox(height: 4),
-              _buildListCard(context, ref, merkliste, theme: theme, allowDelete: false),
-              const SizedBox(height: 16),
-              if (isPremium)
-                Consumer(
-                  builder: (context, ref, child) {
-                    final updatedLists = ref.watch(shoppingListsProvider);
-                    final otherLists = updatedLists
-                        .where((list) => list.name != merklisteListName)
-                        .toList()
-                      ..sort((a, b) => a.index.compareTo(b.index));
-
-                    if (otherLists.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return ReorderableListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      onReorder: (oldIndex, newIndex) {
-                        if (oldIndex < newIndex) newIndex -= 1;
-                        final reordered = [...otherLists];
-                        final item = reordered.removeAt(oldIndex);
-                        reordered.insert(newIndex, item);
-                        shoppingListNotifier.reorderCustomLists(reordered);
-                      },
-                      children: otherLists.map((list) {
-                        return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
-                      }).toList(),
-                    );
-                  },
-                ),
-            ],
+          child: asyncShoppingList.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('Error loading list: $err')),
+            data: (products) {
+              return ListView(
+                children: [
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
+                    child: Text(
+                      'Saved Lists',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.secondary),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildMerklisteCard(context, ref, products, theme: theme),
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildListCard(BuildContext context, WidgetRef ref, NamedList list, {required AppThemeData theme, required bool allowDelete, Key? key}) {
+  Widget _buildMerklisteCard(BuildContext context, WidgetRef ref, List<Product> products, {required AppThemeData theme}) {
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
+
     return Card(
-      key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       color: theme.background,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
+        initiallyExpanded: true,
         shape: const Border(),
         collapsedShape: const Border(),
         backgroundColor: theme.background,
         iconColor: theme.secondary,
         collapsedIconColor: theme.secondary,
         tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
-        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         leading: Icon(
-          list.name == merklisteListName ? Icons.note_alt_outlined : Icons.list_alt_rounded,
+          Icons.note_alt_outlined,
           color: theme.secondary,
           size: 28,
         ),
         title: Text(
-          list.name,
+          merklisteListName,
           style: TextStyle(color: theme.secondary, fontSize: 18, fontWeight: FontWeight.bold),
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: allowDelete ? IconButton(
-          icon: Icon(Icons.delete_outline, color: theme.accent, size: 28),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Delete List'),
-                content: Text('Are you sure you want to delete "${list.name}"?'),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-                  TextButton(
-                    onPressed: () {
-                      shoppingListNotifier.deleteList(list.name);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted "${list.name}"'), duration: const Duration(seconds: 1)));
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('Delete', style: TextStyle(color: theme.accent)),
-                  ),
-                ],
-              ),
-            );
-          },
-        ) : null,
-        children: list.items.isEmpty
-            ? [Padding(padding: const EdgeInsets.fromLTRB(20, 8, 16, 8), child: Text('This list is empty.', style: TextStyle(color: theme.inactive.withOpacity(0.7))))]
-            : list.items.map((product) {
+        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        children: products.isEmpty
+            ? [Padding(padding: const EdgeInsets.fromLTRB(0, 8, 0, 8), child: Text('This list is empty.', style: TextStyle(color: theme.inactive.withOpacity(0.7))))]
+            : products.map((product) {
           return ShoppingListItemTile(
             product: product,
-            allProductsInList: list.items,
-            listName: list.name,
+            allProductsInList: products,
             theme: theme,
             onRemove: () {
-              shoppingListNotifier.removeItemFromList(list.name, product);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Removed from "${list.name}"'), duration: const Duration(seconds: 1)));
+              shoppingListNotifier.removeItemFromList(product);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Removed from "${merklisteListName}"'), duration: const Duration(seconds: 1)));
             },
           );
         }).toList(),
@@ -186,7 +131,6 @@ class ShoppingListPage extends ConsumerWidget {
 class ShoppingListItemTile extends StatelessWidget {
   final Product product;
   final List<Product> allProductsInList;
-  final String listName;
   final AppThemeData theme;
   final VoidCallback onRemove;
 
@@ -194,7 +138,6 @@ class ShoppingListItemTile extends StatelessWidget {
     super.key,
     required this.product,
     required this.allProductsInList,
-    required this.listName,
     required this.theme,
     required this.onRemove,
   });

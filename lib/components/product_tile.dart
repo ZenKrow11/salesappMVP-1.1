@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/models/named_list.dart';
+// REMOVED: No longer need NamedList
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -36,61 +36,44 @@ class ProductTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoryStyle = CategoryService.getStyleForCategory(product.category);
-    final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(
-        0.15);
+    final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
 
-    final allLists = ref.watch(shoppingListsProvider);
-    final isInShoppingList = allLists.any((list) =>
-        list.items.any((item) => item.id == product.id));
+    // --- MODIFICATION START ---
+    // 1. Watch the new StreamProvider that gives us the full list of products.
+    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
+    // 2. Get the actual list of products, defaulting to an empty list if loading/error.
+    final shoppingListProducts = asyncShoppingList.value ?? [];
+    // 3. The logic is now much simpler: check if our product's ID is in the list.
+    final isInShoppingList = shoppingListProducts.any((item) => item.id == product.id);
+    // --- MODIFICATION END ---
 
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: () {
-        final activeListName = ref.read(activeShoppingListProvider);
+        // --- MODIFICATION START ---
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
 
-        final targetListName = activeListName ?? merklisteListName;
-
-        final allLists = ref.read(shoppingListsProvider);
-        final targetList = allLists.firstWhere(
-              (list) => list.name == targetListName,
-          orElse: () => NamedList(name: '', items: [], index: -1),
-        );
-
-        if (targetList.name.isEmpty) {
-          showModalBottomSheet(
-            context: context,
-            // --- THIS IS THE FIX ---
-            isScrollControlled: true,
-            backgroundColor: theme.background,
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            builder: (_) => const ShoppingListBottomSheet(),
-          );
-          return;
-        }
-
-        final isItemInList = targetList.items.any((item) => item.id == product.id);
-
-        if (isItemInList) {
-          notifier.removeItemFromList(targetListName, product);
+        if (isInShoppingList) {
+          // Action is simpler: no list name needed.
+          notifier.removeItemFromList(product);
           showTopNotification(
             context,
-            message: 'Removed ${product.name} from "$targetListName"',
+            message: 'Removed from "Merkliste"',
             theme: theme,
           );
         } else {
-          notifier.addToList(targetListName, product);
+          // Action is simpler: no list name needed.
+          notifier.addToList(product);
           showTopNotification(
             context,
-            message: 'Added ${product.name} to "$targetListName"',
+            message: 'Added to "Merkliste"',
             theme: theme,
           );
         }
+        // --- MODIFICATION END ---
       },
-
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -153,6 +136,7 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
+  // The rest of the file (_buildContent, etc.) does not need any changes.
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     return Column(
@@ -248,7 +232,6 @@ class ProductTile extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        // 1. The discount percentage widget, which you correctly noted was missing.
         Text(
           '${product.discountPercentage}%',
           style: GoogleFonts.montserrat(
@@ -258,20 +241,17 @@ class ProductTile extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Adds a nice space between the two elements
-
-        // 2. The adaptive price widget, which will take up the rest of the space.
         Expanded(
           child: AutoSizeText(
             '${product.currentPrice.toStringAsFixed(2)} Fr.',
             style: GoogleFonts.montserrat(
-              fontSize: 24, // This is the maximum font size
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: theme.inactive,
             ),
-            minFontSize: 16, // It will not shrink smaller than this
+            minFontSize: 16,
             maxLines: 1,
-            textAlign: TextAlign.right, // Aligns the text to the right
+            textAlign: TextAlign.right,
           ),
         ),
       ],
