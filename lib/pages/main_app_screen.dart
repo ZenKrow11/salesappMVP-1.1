@@ -3,11 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// --- FIX: Added these imports to resolve provider errors ---
-import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
-import 'package:sales_app_mvp/models/products_provider.dart';
+import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-// --- END FIX ---
+import 'package:sales_app_mvp/models/products_provider.dart';
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 
 import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/search_bottom_sheet.dart';
@@ -19,25 +18,41 @@ import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-import '../providers/grouped_products_provider.dart';
-
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
   const MainAppScreen({super.key});
 
   @override
-  ConsumerState<MainAppScreen> createState() => _MainAppScreenState();
+  MainAppScreenState createState() => MainAppScreenState();
 }
 
-class _MainAppScreenState extends ConsumerState<MainAppScreen> {
-  int _currentIndex = 0;
+class MainAppScreenState extends ConsumerState<MainAppScreen> {
+  int currentIndex = 0;
 
   final List<Widget> _pages = [
     const HomePage(),
     const ShoppingListPage(),
     const AccountPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(appDataProvider).status == InitializationStatus.loading) {
+        ref.read(appDataProvider.notifier).initialize();
+      }
+    });
+  }
+
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() {
+        currentIndex = index;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +64,14 @@ class _MainAppScreenState extends ConsumerState<MainAppScreen> {
       },
       child: Scaffold(
         backgroundColor: theme.pageBackground,
-        appBar: _currentIndex == 0 ? _buildHomePageAppBar(theme) : null,
-        body: _pages[_currentIndex],
+        appBar: currentIndex == 0 ? _buildHomePageAppBar(theme) : null,
+        body: _pages[currentIndex],
         bottomNavigationBar: BottomNavigationBar(
           backgroundColor: theme.primary,
-          currentIndex: _currentIndex,
+          currentIndex: currentIndex,
           selectedItemColor: theme.secondary,
           unselectedItemColor: theme.inactive,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: navigateToTab,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.attach_money, size: 36),
@@ -97,25 +112,43 @@ class _MainAppScreenState extends ConsumerState<MainAppScreen> {
     return Consumer(
       builder: (context, ref, child) {
         final theme = ref.watch(themeProvider);
-        final activeList = ref.watch(activeShoppingListProvider);
-        final buttonText = activeList ?? 'Select List';
+        // --- MODIFICATION START ---
 
-        final count = ref.watch(homePageProductsProvider).whenData((groups) {
-          final filtered = groups.fold<int>(0, (sum, group) => sum + group.products.length);
-          final total = ref.read(initialProductsProvider).value?.length ?? 0;
-          return ProductCount(filtered: filtered, total: total);
-        }).value ?? ProductCount(filtered: 0, total: 0);
+        // 1. Watch the active list provider.
+        final activeList = ref.watch(activeShoppingListProvider);
+
+        // 2. Watch the app's initialization status.
+        final appData = ref.watch(appDataProvider);
+        final bool isDataLoaded = appData.status == InitializationStatus.loaded;
+
+        // 3. Define the button text with the correct default logic.
+        // If an active list is set, use it. Otherwise, default to 'Merkliste'.
+        final buttonText = activeList ?? 'Merkliste';
+
+        // --- MODIFICATION END ---
+
+        final totalCount = appData.grandTotal;
+        final filteredCount = ref.watch(homePageProductsProvider).whenData((groups) {
+          return groups.fold<int>(0, (sum, group) => sum + group.products.length);
+        }).value ?? 0;
+        final count = ProductCount(filtered: filteredCount, total: totalCount);
 
         return Row(
           children: [
-            InkWell(
-              onTap: () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true),
-              child: Row(
-                children: [
-                  Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
-                  const SizedBox(width: 8),
-                  Text(buttonText, style: TextStyle(color: theme.inactive, fontSize: 16), overflow: TextOverflow.ellipsis),
-                ],
+            Opacity(
+              opacity: isDataLoaded ? 1.0 : 0.5,
+              child: InkWell(
+                onTap: isDataLoaded
+                    ? () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true)
+                    : null,
+                child: Row(
+                  children: [
+                    Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
+                    const SizedBox(width: 8),
+                    // Use the new buttonText variable here
+                    Text(buttonText, style: TextStyle(color: theme.inactive, fontSize: 16), overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
             ),
             const Spacer(),

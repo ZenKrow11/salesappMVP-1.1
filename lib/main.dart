@@ -30,12 +30,15 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  /*
 
+/*
   // START: Block to connect to Firebase Emulators in debug mode
   if (kDebugMode) {
     try {
-      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      //local emulator
+      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      //physical phone
+      final host = "192.168.1.116";
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
     } catch (e) {
@@ -44,7 +47,7 @@ Future<void> main() async {
   }
   // END: Emulator connection block
 
-   */
+*/
 
   // Initialize Hive for Flutter.
   await Hive.initFlutter();

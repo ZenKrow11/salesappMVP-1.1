@@ -14,6 +14,7 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/notification_helper.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class ProductTile extends ConsumerWidget {
   final Product product;
@@ -35,11 +36,13 @@ class ProductTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoryStyle = CategoryService.getStyleForCategory(product.category);
-    final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
+    final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(
+        0.15);
     final theme = ref.watch(themeProvider);
 
     final allLists = ref.watch(shoppingListsProvider);
-    final isInShoppingList = allLists.any((list) => list.items.any((item) => item.id == product.id));
+    final isInShoppingList = allLists.any((list) =>
+        list.items.any((item) => item.id == product.id));
 
     return GestureDetector(
       onTap: onTap,
@@ -48,40 +51,46 @@ class ProductTile extends ConsumerWidget {
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
 
-        if (activeListName != null) {
-          final activeList = ref.read(shoppingListsProvider).firstWhere(
-                (list) => list.name == activeListName,
-            // --- FIX: Changed 'order: -1' to 'index: -1' to match your NamedList model ---
-            orElse: () => NamedList(name: '', items: [], index: -1),
-          );
-          final isItemInActiveList = activeList.items.any((item) => item.id == product.id);
+        final targetListName = activeListName ?? merklisteListName;
 
-          if (isItemInActiveList) {
-            notifier.removeItemFromList(activeListName, product);
-            showTopNotification(
-              context,
-              message: 'Removed ${product.name} from "$activeListName"',
-              theme: theme,
-            );
-          } else {
-            notifier.addToList(activeListName, product);
-            showTopNotification(
-              context,
-              message: 'Added ${product.name} to "$activeListName"',
-              theme: theme,
-            );
-          }
-        } else {
+        final allLists = ref.read(shoppingListsProvider);
+        final targetList = allLists.firstWhere(
+              (list) => list.name == targetListName,
+          orElse: () => NamedList(name: '', items: [], index: -1),
+        );
+
+        if (targetList.name.isEmpty) {
           showModalBottomSheet(
             context: context,
+            // --- THIS IS THE FIX ---
             isScrollControlled: true,
             backgroundColor: theme.background,
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
             builder: (_) => const ShoppingListBottomSheet(),
           );
+          return;
+        }
+
+        final isItemInList = targetList.items.any((item) => item.id == product.id);
+
+        if (isItemInList) {
+          notifier.removeItemFromList(targetListName, product);
+          showTopNotification(
+            context,
+            message: 'Removed ${product.name} from "$targetListName"',
+            theme: theme,
+          );
+        } else {
+          notifier.addToList(targetListName, product);
+          showTopNotification(
+            context,
+            message: 'Added ${product.name} to "$targetListName"',
+            theme: theme,
+          );
         }
       },
+
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -239,6 +248,7 @@ class ProductTile extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
+        // 1. The discount percentage widget, which you correctly noted was missing.
         Text(
           '${product.discountPercentage}%',
           style: GoogleFonts.montserrat(
@@ -247,13 +257,21 @@ class ProductTile extends ConsumerWidget {
             color: theme.secondary,
           ),
         ),
-        const Spacer(),
-        Text(
-          '${product.currentPrice.toStringAsFixed(2)} Fr.',
-          style: GoogleFonts.montserrat(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: theme.inactive,
+        const SizedBox(width: 8),
+        // Adds a nice space between the two elements
+
+        // 2. The adaptive price widget, which will take up the rest of the space.
+        Expanded(
+          child: AutoSizeText(
+            '${product.currentPrice.toStringAsFixed(2)} Fr.',
+            style: GoogleFonts.montserrat(
+              fontSize: 24, // This is the maximum font size
+              fontWeight: FontWeight.bold,
+              color: theme.inactive,
+            ),
+            minFontSize: 16, // It will not shrink smaller than this
+            maxLines: 1,
+            textAlign: TextAlign.right, // Aligns the text to the right
           ),
         ),
       ],

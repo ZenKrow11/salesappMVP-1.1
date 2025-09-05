@@ -1,9 +1,14 @@
+// lib/components/shopping_list_bottom_sheet.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import '../models/named_list.dart';
 import '../providers/shopping_list_provider.dart';
-import '../widgets/app_theme.dart'; // UPDATED Import
+import '../widgets/app_theme.dart';
+import '../providers/user_profile_provider.dart';
+import '../pages/main_app_screen.dart';
+import '../providers/app_data_provider.dart';
 
 class ShoppingListBottomSheet extends ConsumerStatefulWidget {
   final Product? product;
@@ -27,7 +32,7 @@ class _ShoppingListBottomSheetState
     extends ConsumerState<ShoppingListBottomSheet>
     with SingleTickerProviderStateMixin {
   final TextEditingController _newListController = TextEditingController();
-  late TabController _tabController;
+  TabController? _tabController;
 
   bool get isSelectActiveMode => widget.product == null;
 
@@ -39,12 +44,17 @@ class _ShoppingListBottomSheetState
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
+
+    // Ensure shopping lists are initialized when the bottom sheet opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shoppingListsProvider.notifier).ensureInitialized();
+    });
   }
 
   @override
   void dispose() {
     _newListController.dispose();
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -106,14 +116,11 @@ class _ShoppingListBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    final shoppingLists = ref.watch(shoppingListsProvider);
-    final activeList = ref.watch(activeShoppingListProvider);
-    // Get theme from Riverpod provider
     final theme = ref.watch(themeProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.background, // UPDATED
+        color: theme.background,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -134,16 +141,7 @@ class _ShoppingListBottomSheetState
             const SizedBox(height: 12),
             _buildTabBar(),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 250,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildSelectList(shoppingLists, activeList),
-                  _buildNewListTab(),
-                ],
-              ),
-            ),
+            _buildTabContent(),
             const SizedBox(height: 20),
           ],
         ),
@@ -151,8 +149,46 @@ class _ShoppingListBottomSheetState
     );
   }
 
+  Widget _buildTabContent() {
+    // Watch both the app status AND the shopping lists
+    final appStatus = ref.watch(appDataProvider.select((data) => data.status));
+    final shoppingLists = ref.watch(shoppingListsProvider);
+    final activeList = ref.watch(activeShoppingListProvider);
+
+    // Show loading if app isn't loaded OR if shopping lists are empty when they shouldn't be
+    bool isLoading = appStatus != InitializationStatus.loaded;
+
+    // Additional check: if app is loaded but no lists exist (including Merkliste), we're still initializing
+    if (!isLoading && shoppingLists.isEmpty) {
+      isLoading = true;
+    }
+
+    // Additional check: if app is loaded but Merkliste doesn't exist, we're still initializing
+    if (!isLoading && !shoppingLists.any((list) => list.name == merklisteListName)) {
+      isLoading = true;
+    }
+
+    if (isLoading) {
+      return const SizedBox(
+        height: 250,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return SizedBox(
+      height: 250,
+      child: TabBarView(
+        controller: _tabController!,
+        children: [
+          _buildSelectList(shoppingLists, activeList),
+          _buildNewListTab(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader() {
-    final theme = ref.watch(themeProvider); // Get theme
+    final theme = ref.watch(themeProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -161,10 +197,10 @@ class _ShoppingListBottomSheetState
           style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: theme.secondary), // UPDATED
+              color: theme.secondary),
         ),
         IconButton(
-          icon: Icon(Icons.close, color: theme.accent), // UPDATED
+          icon: Icon(Icons.close, color: theme.accent),
           onPressed: () => Navigator.pop(context),
         )
       ],
@@ -172,35 +208,56 @@ class _ShoppingListBottomSheetState
   }
 
   Widget _buildTabBar() {
-    final theme = ref.watch(themeProvider); // Get theme
+    final theme = ref.watch(themeProvider);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+
     return TabBar(
-      controller: _tabController,
-      labelColor: theme.secondary, // UPDATED
-      unselectedLabelColor: theme.inactive, // UPDATED
-      indicatorColor: theme.secondary, // UPDATED
+      controller: _tabController!,
+      labelColor: theme.secondary,
+      unselectedLabelColor: theme.inactive,
+      indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
-      tabs: const [
-        Tab(text: 'Select List'),
-        Tab(text: 'New List'),
+      tabs: [
+        const Tab(text: 'Select List'),
+        Tab(
+          child: Text(
+            'New List',
+            style: TextStyle(
+              color: isPremium ? theme.secondary : theme.inactive.withOpacity(0.5),
+            ),
+          ),
+        ),
       ],
+      onTap: null,
     );
   }
 
   Widget _buildSelectList(List<NamedList> lists, String? activeList) {
-    final theme = ref.watch(themeProvider); // Get theme
+    final theme = ref.watch(themeProvider);
+
+    // This should not happen anymore due to our loading checks above
     if (lists.isEmpty) {
       return Center(
         child: Text(
-          'No shopping lists yet.\nCreate one in the "New List" tab.',
+          'No shopping lists available.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: theme.inactive.withOpacity(0.8)), // UPDATED
+          style: TextStyle(color: theme.inactive.withOpacity(0.8)),
         ),
       );
     }
+
+    // Sort lists to ensure Merkliste appears first
+    final sortedLists = [...lists];
+    sortedLists.sort((a, b) {
+      if (a.name == merklisteListName) return -1;
+      if (b.name == merklisteListName) return 1;
+      return a.index.compareTo(b.index);
+    });
+
     return ListView.builder(
-      itemCount: lists.length,
+      itemCount: sortedLists.length,
       itemBuilder: (context, index) {
-        final list = lists[index];
+        final list = sortedLists[index];
         final listName = list.name;
         final bool isCurrentlyActive =
             isSelectActiveMode && listName == activeList;
@@ -210,7 +267,7 @@ class _ShoppingListBottomSheetState
           child: Card(
             elevation: isCurrentlyActive ? 2 : 0,
             color: isCurrentlyActive
-                ? theme.secondary.withOpacity(0.9) // UPDATED
+                ? theme.secondary.withOpacity(0.9)
                 : Colors.transparent,
             shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -221,7 +278,7 @@ class _ShoppingListBottomSheetState
                   fontWeight:
                   isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
                   color:
-                  isCurrentlyActive ? theme.primary : theme.inactive, // UPDATED
+                  isCurrentlyActive ? theme.primary : theme.inactive,
                 ),
               ),
               onTap: () {
@@ -242,58 +299,87 @@ class _ShoppingListBottomSheetState
   }
 
   Widget _buildNewListTab() {
-    final theme = ref.watch(themeProvider); // Get theme
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-      child: Column(
-        children: [
-          TextField(
-            controller: _newListController,
-            autofocus: _tabController.index == 1,
-            // UPDATED: Changed text color to be light for readability on a dark background
-            style: TextStyle(color: theme.inactive),
-            onSubmitted: (listName) {
-              if (isSelectActiveMode) {
-                _createAndSetActive(listName);
-              } else {
-                _addAndDismiss(listName);
-              }
-            },
-            decoration: InputDecoration(
-              labelText: 'Enter new list name',
-              labelStyle: TextStyle(color: theme.inactive), // UPDATED
-              enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.inactive.withOpacity(0.5)), // UPDATED
-                  borderRadius: BorderRadius.circular(8.0)),
-              focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.secondary), // UPDATED
-                  borderRadius: BorderRadius.circular(8.0)),
+    final theme = ref.watch(themeProvider);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+
+    if (isPremium) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _newListController,
+              autofocus: _tabController?.index == 1,
+              style: TextStyle(color: theme.inactive),
+              onSubmitted: (listName) {
+                if (isSelectActiveMode) {
+                  _createAndSetActive(listName);
+                } else {
+                  _addAndDismiss(listName);
+                }
+              },
+              decoration: InputDecoration(
+                labelText: 'Enter new list name',
+                labelStyle: TextStyle(color: theme.inactive),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(8.0)),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.secondary),
+                    borderRadius: BorderRadius.circular(8.0)),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.secondary, // UPDATED
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.secondary,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                final listName = _newListController.text;
+                if (isSelectActiveMode) {
+                  _createAndSetActive(listName);
+                } else {
+                  _addAndDismiss(listName);
+                }
+              },
+              child: Text(
+                isSelectActiveMode ? 'CREATE AND SELECT' : 'CREATE AND ADD',
+                style: TextStyle(
+                    color: theme.primary, fontWeight: FontWeight.bold),
+              ),
             ),
-            onPressed: () {
-              final listName = _newListController.text;
-              if (isSelectActiveMode) {
-                _createAndSetActive(listName);
-              } else {
-                _addAndDismiss(listName);
-              }
-            },
-            child: Text(
-              isSelectActiveMode ? 'CREATE AND SELECT' : 'CREATE AND ADD',
-              style: TextStyle(
-                  color: theme.primary, fontWeight: FontWeight.bold), // UPDATED
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 48, color: theme.inactive.withOpacity(0.7)),
+            const SizedBox(height: 16),
+            Text(
+              'Create unlimited custom lists with Premium.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: theme.inactive),
             ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: theme.secondary),
+              onPressed: () {
+                Navigator.of(context).pop();
+                final mainAppScreenState = context.findAncestorStateOfType<MainAppScreenState>();
+                mainAppScreenState?.navigateToTab(2);
+              },
+              child: Text('Upgrade Now', style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

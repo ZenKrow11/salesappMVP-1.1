@@ -164,38 +164,24 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
-  // --- REFACTORED: Double tap now toggles item in list ---
+  // --- MODIFICATION START ---
   void _handleDoubleTapSave(BuildContext context, WidgetRef ref) {
     final activeListName = ref.read(activeShoppingListProvider);
     final notifier = ref.read(shoppingListsProvider.notifier);
     final theme = ref.read(themeProvider);
 
-    if (activeListName != null) {
-      final activeList = ref.read(shoppingListsProvider).firstWhere(
-            (list) => list.name == activeListName,
-        orElse: () => NamedList(name: '', items: [], index: -1), // Safe fallback
-      );
-      final isItemInActiveList = activeList.items.any((item) => item.id == widget.product.id);
+    // The target list is either the active one or defaults to "Merkliste"
+    final targetListName = activeListName ?? merklisteListName;
 
-      if (isItemInActiveList) {
-        // Item exists, so remove it
-        notifier.removeItemFromList(activeListName, widget.product);
-        showTopNotification(
-          context,
-          message: 'Removed from "$activeListName"',
-          theme: theme,
-        );
-      } else {
-        // Item does not exist, so add it
-        notifier.addToList(activeListName, widget.product);
-        showTopNotification(
-          context,
-          message: 'Added to "$activeListName"',
-          theme: theme,
-        );
-      }
-    } else {
-      // No active list, prompt user to select one
+    // Check if the target list actually exists in our state
+    final allLists = ref.read(shoppingListsProvider);
+    final targetList = allLists.firstWhere(
+          (list) => list.name == targetListName,
+      orElse: () => NamedList(name: '', items: [], index: -1), // Fallback
+    );
+
+    // If the target list (Merkliste or other) doesn't exist yet, show the sheet.
+    if (targetList.name.isEmpty) {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -204,8 +190,30 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
             borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => const ShoppingListBottomSheet(),
       );
+      return; // Stop execution
+    }
+
+    final isItemInList = targetList.items.any((item) => item.id == widget.product.id);
+
+    if (isItemInList) {
+      // Item exists, so remove it
+      notifier.removeItemFromList(targetListName, widget.product);
+      showTopNotification(
+        context,
+        message: 'Removed from "$targetListName"',
+        theme: theme,
+      );
+    } else {
+      // Item does not exist, so add it
+      notifier.addToList(targetListName, widget.product);
+      showTopNotification(
+        context,
+        message: 'Added to "$targetListName"',
+        theme: theme,
+      );
     }
   }
+  // --- MODIFICATION END ---
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);

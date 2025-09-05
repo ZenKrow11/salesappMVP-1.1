@@ -2,14 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'main_app_screen.dart';
 import '../components/shopping_list_bottom_sheet.dart';
 import '../models/product.dart';
+
 import '../models/named_list.dart';
 import '../pages/product_swiper_screen.dart';
 import '../providers/shopping_list_provider.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/image_aspect_ratio.dart';
+
 import '../widgets/slide_up_page_route.dart';
+import '../providers/user_profile_provider.dart';
 
 class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
@@ -19,6 +23,7 @@ class ShoppingListPage extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final shoppingLists = ref.watch(shoppingListsProvider);
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
     final merkliste = shoppingLists.firstWhere(
           (list) => list.name == merklisteListName,
@@ -26,29 +31,43 @@ class ShoppingListPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      // --- STEP 1: Set the Scaffold's background to the desired status bar color. ---
       backgroundColor: theme.primary,
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (ctx) => const ShoppingListBottomSheet(initialTabIndex: 1),
-          );
+          if (isPremium) {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => const ShoppingListBottomSheet(initialTabIndex: 1),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('This is a Premium Feature!'),
+                action: SnackBarAction(
+                  label: 'UPGRADE',
+                  onPressed: () {
+                    // --- THIS LOGIC IS NOW CORRECT ---
+                    final mainAppScreenState = context.findAncestorStateOfType<MainAppScreenState>();
+                    if (mainAppScreenState != null) {
+                      mainAppScreenState.navigateToTab(2); // Navigate to the Account Page
+                    }
+                  },
+                ),
+              ),
+            );
+          }
         },
-        backgroundColor: theme.secondary,
-        child: Icon(Icons.add, size: 32, color: theme.primary),
+        backgroundColor: isPremium ? theme.secondary : theme.inactive.withOpacity(0.5),
+        child: Icon(Icons.add, size: 32, color: isPremium ? theme.primary : theme.primary.withOpacity(0.7)),
       ),
       body: SafeArea(
-        // --- STEP 2: Use a Container to give the actual content its own background color. ---
         child: Container(
-          color: theme.pageBackground, // This is the background for the list area.
+          color: theme.pageBackground,
           child: ListView(
-            // The ListView no longer needs padding, as the SafeArea and Container handle the space.
             children: [
-              const SizedBox(height: 20), // Add padding manually if needed
+              const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 8.0),
                 child: Text(
@@ -59,30 +78,35 @@ class ShoppingListPage extends ConsumerWidget {
               const SizedBox(height: 4),
               _buildListCard(context, ref, merkliste, theme: theme, allowDelete: false),
               const SizedBox(height: 16),
-              Consumer(
-                builder: (context, ref, child) {
-                  final updatedLists = ref.watch(shoppingListsProvider);
-                  final otherLists = updatedLists
-                      .where((list) => list.name != merklisteListName)
-                      .toList()
-                    ..sort((a, b) => a.index.compareTo(b.index));
+              if (isPremium)
+                Consumer(
+                  builder: (context, ref, child) {
+                    final updatedLists = ref.watch(shoppingListsProvider);
+                    final otherLists = updatedLists
+                        .where((list) => list.name != merklisteListName)
+                        .toList()
+                      ..sort((a, b) => a.index.compareTo(b.index));
 
-                  return ReorderableListView(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onReorder: (oldIndex, newIndex) {
-                      if (oldIndex < newIndex) newIndex -= 1;
-                      final reordered = [...otherLists];
-                      final item = reordered.removeAt(oldIndex);
-                      reordered.insert(newIndex, item);
-                      shoppingListNotifier.reorderCustomLists(reordered);
-                    },
-                    children: otherLists.map((list) {
-                      return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
-                    }).toList(),
-                  );
-                },
-              ),
+                    if (otherLists.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return ReorderableListView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onReorder: (oldIndex, newIndex) {
+                        if (oldIndex < newIndex) newIndex -= 1;
+                        final reordered = [...otherLists];
+                        final item = reordered.removeAt(oldIndex);
+                        reordered.insert(newIndex, item);
+                        shoppingListNotifier.reorderCustomLists(reordered);
+                      },
+                      children: otherLists.map((list) {
+                        return _buildListCard(context, ref, list, theme: theme, allowDelete: true, key: ValueKey(list.name));
+                      }).toList(),
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -106,7 +130,6 @@ class ShoppingListPage extends ConsumerWidget {
         iconColor: theme.secondary,
         collapsedIconColor: theme.secondary,
         tilePadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
-        // UPDATED: Adjusted childrenPadding to provide balanced horizontal spacing.
         childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         leading: Icon(
           list.name == merklisteListName ? Icons.note_alt_outlined : Icons.list_alt_rounded,
@@ -144,7 +167,6 @@ class ShoppingListPage extends ConsumerWidget {
         children: list.items.isEmpty
             ? [Padding(padding: const EdgeInsets.fromLTRB(20, 8, 16, 8), child: Text('This list is empty.', style: TextStyle(color: theme.inactive.withOpacity(0.7))))]
             : list.items.map((product) {
-          // REMOVED: The unnecessary Padding widget that caused the large left gap.
           return ShoppingListItemTile(
             product: product,
             allProductsInList: list.items,
@@ -200,7 +222,6 @@ class ShoppingListItemTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left: Product Image
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
               child: ImageWithAspectRatio(
@@ -211,7 +232,6 @@ class ShoppingListItemTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            // Middle: Title & Store
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +251,6 @@ class ShoppingListItemTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Right: Price and Discount
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -254,7 +273,6 @@ class ShoppingListItemTile extends StatelessWidget {
                   ),
               ],
             ),
-            // Far Right: Remove Button
             IconButton(
               icon: Icon(Icons.close, color: theme.accent, size: 24),
               onPressed: onRemove,

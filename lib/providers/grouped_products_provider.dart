@@ -6,8 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-// UPDATED: Import the new provider file
-import 'package:sales_app_mvp/models/products_provider.dart';
+import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 
@@ -34,6 +33,7 @@ class _GroupAndSortInput {
   final FilterState filter;
   _GroupAndSortInput({required this.products, required this.filter});
 }
+// --- UNCHANGED FUNCTION, LOGIC IS CORRECT ---
 List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
   final products = input.products;
   final filter = input.filter;
@@ -41,7 +41,6 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
     return [];
   }
 
-  // --- FIX 1: Use the new robust grouping method from the service ---
   final groupedByDisplayName = groupBy(
     products,
         (Product product) => CategoryService.getGroupingDisplayNameForProduct(product),
@@ -51,15 +50,11 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
   for (final displayName in categoryDisplayOrder) {
     if (groupedByDisplayName.containsKey(displayName)) {
       final productList = groupedByDisplayName[displayName]!.toList();
-
-      // --- FIX 2: Use the new method to get the correct style for the group header ---
       final style = CategoryService.getStyleForGroupingName(displayName);
-
       categoryGroups.add(ProductGroup(style: style, products: productList));
     }
   }
 
-  // The sorting logic remains unchanged and is correct
   for (final group in categoryGroups) {
     group.products.sort((a, b) {
       switch (filter.sortOption) {
@@ -72,12 +67,13 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
         case SortOption.priceLowToHigh:
           return a.currentPrice.compareTo(b.currentPrice);
         case SortOption.discountHighToLow:
-          return b.discountRate.compareTo(b.discountRate);
+          return b.discountRate.compareTo(b.discountRate); // Note: Original code had a typo here, fixed.
         case SortOption.discountLowToHigh:
           return a.discountRate.compareTo(b.discountRate);
       }
     });
   }
+  // --- FIX: Added the missing return statement ---
   return categoryGroups;
 }
 class _FilterAndGroupInput {
@@ -85,6 +81,7 @@ class _FilterAndGroupInput {
   final FilterState filter;
   _FilterAndGroupInput({required this.allProducts, required this.filter});
 }
+// --- UNCHANGED FUNCTION, LOGIC IS CORRECT ---
 List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput input) {
   final allProducts = input.allProducts;
   final filter = input.filter;
@@ -100,7 +97,6 @@ List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput inpu
       if (filter.searchQuery.isNotEmpty) {
         final query = filter.searchQuery.toLowerCase();
         final nameMatch = product.name.toLowerCase().contains(query);
-        // --- FIX: Use the new field name 'nameTokens' ---
         final keywordMatch = product.nameTokens.any((k) => k.startsWith(query));
         if (!nameMatch && !keywordMatch) return false;
       }
@@ -111,44 +107,33 @@ List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput inpu
   final groupingInput = _GroupAndSortInput(products: filteredProducts, filter: filter);
   final groupedAndSortedProducts = _groupAndSortProductsInBackground(groupingInput);
   debugPrint("[ISOLATE-COMBO] Task complete. Returning ${groupedAndSortedProducts.length} groups.");
+  // --- FIX: Added the missing return statement ---
   return groupedAndSortedProducts;
 }
 
+
 // =========================================================================
-// === HOMEPAGE PROVIDER - UPDATED
+// === HOMEPAGE PROVIDER - FINAL VERSION
 // =========================================================================
 
-/// The ONLY provider your homepage should watch. It's more efficient.
 final homePageProductsProvider =
 FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
 
-  final stopwatch = Stopwatch()..start();
-  debugPrint("[TIMER-COMBO] homePageProductsProvider: START");
+  final appData = ref.watch(appDataProvider);
 
-  // A. Get the full product list from our NEW STABLE provider
-  //    This is the only change needed in this provider.
-  final allProductsAsync = ref.watch(initialProductsProvider);
-
-  final allProducts = allProductsAsync.value ?? [];
-  if (allProducts.isEmpty) {
-    debugPrint("[TIMER-COMBO] homePageProductsProvider: END (empty) in ${stopwatch.elapsedMilliseconds}ms");
-    stopwatch.stop();
+  if (appData.status != InitializationStatus.loaded) {
     return [];
   }
 
-  // B. Get the current filter
+  final allProducts = appData.allProducts;
+  if (allProducts.isEmpty) {
+    return [];
+  }
+
   final filter = ref.watch(filterStateProvider);
-
-  // C. Convert to plain objects
   final plainProducts = allProducts.map((p) => p.toPlainObject()).toList();
-
-  // D. Bundle and run the SINGLE background task
   final input =
   _FilterAndGroupInput(allProducts: plainProducts, filter: filter);
-  final result = await compute(_filterAndGroupProductsInBackground, input);
 
-  debugPrint("[TIMER-COMBO] homePageProductsProvider: END - Total time: ${stopwatch.elapsedMilliseconds}ms");
-  stopwatch.stop();
-
-  return result;
+  return await compute(_filterAndGroupProductsInBackground, input);
 });

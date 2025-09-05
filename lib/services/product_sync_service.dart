@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 
+// The provider definition remains the same.
 final productSyncProvider = Provider<ProductSyncService>((ref) {
   return ProductSyncService(ref);
 });
@@ -18,54 +19,58 @@ class ProductSyncService {
   Box<Product> get _productBox => _ref.read(productsBoxProvider);
   Box<dynamic> get _metadataBox => _ref.read(metadataBoxProvider);
 
-  // CHANGED: Fetches the 'lastUpdated' timestamp from the server
-  Future<DateTime?> getRemoteTimestamp() async {
+  /// --- NEW: Fetches the entire metadata document from Firestore ---
+  /// This document acts as the "control panel" for the app.
+  Future<Map<String, dynamic>?> getRemoteMetadata() async {
     try {
       final docSnapshot =
       await _firestore.collection('metadata').doc('product_info').get();
-      // Ensure the document and the field exist before trying to read it
-      if (!docSnapshot.exists || docSnapshot.data()?['lastUpdated'] == null) {
-        return null;
+      if (docSnapshot.exists) {
+        return docSnapshot.data();
       }
-      // Convert the Firestore Timestamp object to a Dart DateTime object
-      return (docSnapshot.get('lastUpdated') as Timestamp).toDate();
+      return null;
     } catch (e) {
-      print('Error fetching remote timestamp: $e');
-      return null; // Return null on any error
+      print('Error fetching remote metadata: $e');
+      return null;
     }
   }
 
-  // CHANGED: Gets the last synced timestamp from local storage
-  DateTime? getLocalTimestamp() {
-    // The key is changed to reflect we are storing a timestamp
-    return _metadataBox.get('lastSyncTimestamp');
+  /// --- Gets the locally stored metadata ---
+  Map<String, dynamic> getLocalMetadata() {
+    // Use .toMap() to convert the Hive Map to a standard Dart Map
+    // Default to an empty map if null
+    return Map<String, dynamic>.from(_metadataBox.get('localMetadata') ?? {});
   }
 
-  // CHANGED: Decides if a sync is needed by comparing timestamps
-  Future<bool> needsSync() async {
-    final remoteTimestamp = await getRemoteTimestamp();
-    final localTimestamp = getLocalTimestamp();
 
-    if (remoteTimestamp == null) {
-      // If there's no timestamp on the server, we can't sync.
+  /// --- The Core Logic: Decides if a sync is needed ---
+  Future<bool> needsSync() async {
+    final remoteMetadata = await getRemoteMetadata();
+    final localMetadata = getLocalMetadata();
+
+    // Can't sync if there's no remote data.
+    if (remoteMetadata?['lastUpdated'] == null) {
       return false;
     }
-    if (localTimestamp == null) {
-      // If we have never synced before, we must sync.
+    // Must sync if we have no local data.
+    if (localMetadata['lastUpdated'] == null) {
       return true;
     }
 
-    // The core logic: if the server's data is newer than our local data, we sync.
+    final remoteTimestamp = (remoteMetadata!['lastUpdated'] as Timestamp).toDate();
+    final localTimestamp = localMetadata['lastUpdated'];
+
+    // Sync if the server data is newer.
     return remoteTimestamp.isAfter(localTimestamp);
   }
 
-  // The main sync function, now updates the local timestamp on success
-  Future<void> syncFromFirestore() async {
-    // Get the timestamp before fetching products to ensure consistency
-    final remoteTimestamp = await getRemoteTimestamp();
-    if (remoteTimestamp == null) {
-      print("Aborting sync: Could not retrieve a valid remote timestamp.");
-      return;
+  /// --- The main sync function ---
+  /// Fetches all products and the latest metadata from Firestore,
+  /// saves them to Hive, and returns the new metadata.
+  Future<Map<String, dynamic>> syncFromFirestore() async {
+    final remoteMetadata = await getRemoteMetadata();
+    if (remoteMetadata == null || remoteMetadata['lastUpdated'] == null) {
+      throw Exception("Aborting sync: Could not retrieve valid remote metadata.");
     }
 
     final productsSnapshot = await _firestore.collection('products').get();
@@ -73,13 +78,18 @@ class ProductSyncService {
         .map((doc) => Product.fromFirestore(doc.id, doc.data()))
         .toList();
 
-    // Perform the database operations
+    // Perform the database write operations
     await _productBox.clear();
     final Map<String, Product> productMap = {for (var p in products) p.id: p};
     await _productBox.putAll(productMap);
 
-    // CHANGED: On success, save the new server timestamp locally.
-    // This marks our local data as being up-to-date with this server version.
-    await _metadataBox.put('lastSyncTimestamp', remoteTimestamp);
+    // On success, save the new metadata document locally.
+    // We convert the Firestore Timestamp to a standard DateTime for Hive.
+    final newLocalMetadata = Map<String, dynamic>.from(remoteMetadata);
+    newLocalMetadata['lastUpdated'] = (remoteMetadata['lastUpdated'] as Timestamp).toDate();
+
+    await _metadataBox.put('localMetadata', newLocalMetadata);
+
+    return newLocalMetadata;
   }
 }

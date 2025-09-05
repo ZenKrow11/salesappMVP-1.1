@@ -27,10 +27,8 @@ class AccountPage extends ConsumerWidget {
 
               // --- MIDDLE SECTION: Scrollable Cards ---
               Expanded(
-                // --- UPDATED: Added Center to vertically align the ListView ---
                 child: Center(
                   child: ListView(
-                    // --- UPDATED: shrinkWrap is essential for Center to work ---
                     shrinkWrap: true,
                     padding: EdgeInsets.zero,
                     children: [
@@ -61,6 +59,16 @@ class AccountPage extends ConsumerWidget {
                         children: [
                           _buildSubListItem('Help & FAQ', context, theme: theme),
                           _buildSubListItem('Report an Issue', context, theme: theme),
+                        ],
+                      ),
+                      // --- NEW SECTION ADDED HERE ---
+                      _buildAccountCard(
+                        icon: Icons.star_border_purple500_sharp, // A premium-looking icon
+                        title: 'Premium Upgrade',
+                        theme: theme,
+                        children: [
+                          _buildSubListItem('Get Premium', context, theme: theme),
+                          _buildSubListItem('Restore Purchases', context, theme: theme),
                         ],
                       ),
                     ],
@@ -105,8 +113,13 @@ class AccountPage extends ConsumerWidget {
                                 onPressed: () async {
                                   Navigator.of(dialogContext).pop();
                                   await ref.read(authControllerProvider.notifier).signOut();
-                                  Navigator.of(context).pushNamedAndRemoveUntil(
-                                      '/login', (Route<dynamic> route) => false);
+                                  // This pop ensures we are back on the main app screen context before navigating
+                                  // Note: The original pushNamedAndRemoveUntil might have issues if dialogContext is used.
+                                  // It's safer to use the main context.
+                                  if (context.mounted) {
+                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                        '/auth-gate', (Route<dynamic> route) => false);
+                                  }
                                 },
                               ),
                             ],
@@ -128,10 +141,8 @@ class AccountPage extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
       child: Row(
-        // --- UPDATED: Vertically centers the text next to the icon ---
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Profile Picture
           CircleAvatar(
             radius: 35,
             backgroundColor: theme.background,
@@ -142,7 +153,6 @@ class AccountPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // User Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +182,6 @@ class AccountPage extends ConsumerWidget {
     );
   }
 
-  // Helper method to create an expandable Card with consistent styling
   Widget _buildAccountCard({
     required IconData icon,
     required String title,
@@ -206,7 +215,6 @@ class AccountPage extends ConsumerWidget {
     );
   }
 
-  // Helper method for the content inside expandable tiles
   Widget _buildSubListItem(
       String title,
       BuildContext context, {
