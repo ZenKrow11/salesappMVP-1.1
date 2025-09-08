@@ -1,129 +1,142 @@
 // lib/providers/shopping_list_provider.dart
 
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/models/named_list.dart';
+import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/product.dart';
-// NEW: Import the new Firestore service
+import 'package:sales_app_mvp/models/shopping_list_info.dart';
+import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
-// REMOVED: No longer need hive_storage_service.dart
-import 'package:sales_app_mvp/providers/storage_providers.dart'; // Still need for productsBox
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:sales_app_mvp/providers/app_data_provider.dart'; // Ensure this is imported
-
-
-// This constant remains useful.
 const String merklisteListName = 'Merkliste';
 
-//============================================================================
-//  NEW: The "Bridge" Provider
-//============================================================================
-// This provider is the core of our new real-time system.
-// It watches for the list of product IDs from Firestore, then fetches the full
-// product details from your local Hive cache. The UI will listen to this.
-final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
-  // 1. Get the list of product IDs from Firestore in real-time.
+final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
+  final authState = ref.watch(authStateChangesProvider);
+  if (authState.value == null) return Stream.value([]);
   final firestoreService = ref.watch(firestoreServiceProvider);
-  final idStream = firestoreService.getShoppingListItemsStream(listId: merklisteListName);
+  return firestoreService.getAllShoppingListsStream();
+});
 
-  // 2. Get access to your local product database (Hive box).
+final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
+  final user = ref.watch(authStateChangesProvider).value;
+  final activeListId = ref.watch(activeShoppingListProvider);
+
+  if (user == null || activeListId == null) {
+    return Stream.value([]);
+  }
+
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  final itemsStream = firestoreService.getShoppingListItemsStream(listId: activeListId);
   final productsBox = ref.watch(productsBoxProvider);
 
-  // 3. Transform the stream of IDs into a stream of full Product objects.
-  return idStream.map((productIds) {
-    return productIds
-        .map((id) => productsBox.get(id)) // Look up each product by its ID
-        .where((product) => product != null) // Filter out any nulls
+  return itemsStream.map((itemMaps) {
+    return itemMaps.map((itemData) {
+      if (itemData['isCustom'] == true) {
+        return Product.fromFirestore(itemData['id'], itemData);
+      } else {
+        return productsBox.get(itemData['id']);
+      }
+    })
+        .where((product) => product != null)
         .cast<Product>()
         .toList();
   });
 });
 
-
-//============================================================================
-//  REFACTORED: ShoppingListNotifier
-//============================================================================
-// The notifier's role changes. It no longer holds the state itself.
-// It's now responsible for ACTIONS (adding/removing items) and managing
-// initialization logic. The actual list data comes from the StreamProvider above.
 class ShoppingListNotifier extends StateNotifier<void> {
   final FirestoreService _firestoreService;
   final Ref _ref;
   bool _isInitialized = false;
 
-  // Note: The state is now `void` because the data is handled by the StreamProvider.
   ShoppingListNotifier(this._firestoreService, this._ref) : super(null);
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-
-    // Pass the constant 'merklisteListName' as the parameter. This will now compile correctly.
     await _firestoreService.ensureDefaultListExists(listId: merklisteListName);
-
-    await _ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
-
+    if (_ref.read(activeShoppingListProvider) == null) {
+      await _ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
+    }
     _isInitialized = true;
   }
 
-  // MODIFIED: This action is now much simpler.
-  // It just calls the Firestore service. The UI will update automatically
-  // because it's listening to the `shoppingListWithDetailsProvider` stream.
+  Future<void> createNewList(String listName) async {
+    await _firestoreService.createNewList(listName: listName);
+    await _ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
+  }
+
   Future<void> addToList(Product product) async {
-    // We don't need a listName parameter for the free tier.
+    final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
     await _firestoreService.addItemToList(
-      listId: merklisteListName,
+      listId: activeListId,
       productId: product.id,
     );
   }
 
-  // MODIFIED: Also simplified.
   Future<void> removeItemFromList(Product product) async {
+    final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
     await _firestoreService.removeItemFromList(
-      listId: merklisteListName,
+      listId: activeListId,
       productId: product.id,
     );
   }
 
-// NOTE: Methods like addEmptyList, deleteList, and reorderCustomLists
-// are for the premium tier. We will implement their Firestore versions
-// once this core free-tier logic is working perfectly.
+  Future<void> addCustomItemToList(Product customProduct) async {
+    final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
+    await _firestoreService.addItemToList(
+      listId: activeListId,
+      productId: customProduct.id,
+      productData: customProduct.toJson(),
+    );
+  }
 }
 
-//============================================================================
-//  REFACTORED & FINAL: The Main Provider
-//============================================================================
 final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, void>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final notifier = ShoppingListNotifier(firestoreService, ref);
 
-  // NEW: This is the critical initialization logic, restored and adapted.
-  // It listens for the main app data to be loaded before initializing the shopping list.
-  ref.listen<AppDataState>(appDataProvider, (previous, next) {
-    // When the app data status changes to 'loaded', we initialize our notifier.
-    if (next.status == InitializationStatus.loaded) {
+  // This is the key. When a user logs in, we guarantee initialization runs.
+  ref.listen<AsyncValue<User?>>(authStateChangesProvider, (previous, next) {
+    final user = next.value;
+    if (user != null) {
+      // The initialize method will now handle setting the default active list.
       notifier.initialize();
     }
   });
 
-  // Also handle the case where the app data is ALREADY loaded when this provider is first created.
-  final currentAppData = ref.read(appDataProvider);
-  if (currentAppData.status == InitializationStatus.loaded) {
-    notifier.initialize();
-  }
-
   return notifier;
 });
 
-
-//============================================================================
-//  UNCHANGED: ActiveListNotifier
-//============================================================================
-// This provider is perfect as-is. It manages UI state (which list is active)
-// and doesn't need to change.
 class ActiveListNotifier extends StateNotifier<String?> {
   static const _activeListKey = 'active_shopping_list_key';
-  ActiveListNotifier() : super(null);
+
+  // MODIFIED: We add a Ref to the constructor to access other providers
+  final Ref _ref;
+
+  ActiveListNotifier(this._ref) : super(null) {
+    _loadInitial(); // Load the saved active list on startup
+  }
+
+  // NEW METHOD: Loads the last active list from storage
+  Future<void> _loadInitial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedList = prefs.getString(_activeListKey);
+    if (savedList != null) {
+      state = savedList;
+    } else {
+      // THIS IS THE CRITICAL FALLBACK
+      // If no list was saved, we check if the default "Merkliste" exists.
+      // This solves the race condition.
+      final allLists = await _ref.read(allShoppingListsProvider.future);
+      if (allLists.any((list) => list.id == merklisteListName)) {
+        setActiveList(merklisteListName);
+      }
+    }
+  }
 
   Future<void> setActiveList(String? listName) async {
     final prefs = await SharedPreferences.getInstance();
@@ -138,4 +151,6 @@ class ActiveListNotifier extends StateNotifier<String?> {
   }
 }
 
-final activeShoppingListProvider = StateNotifierProvider<ActiveListNotifier, String?>((ref) => ActiveListNotifier());
+// MODIFIED: We pass the 'ref' to the notifier
+final activeShoppingListProvider =
+StateNotifierProvider<ActiveListNotifier, String?>((ref) => ActiveListNotifier(ref));

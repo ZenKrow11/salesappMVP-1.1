@@ -27,21 +27,16 @@ class Product extends HiveObject {
   final String url;
   @HiveField(9)
   final String imageUrl;
-
-  // --- CHANGED: Renamed from searchKeywords to match Firestore field 'name_tokens'
   @HiveField(10)
   final List<String> nameTokens;
-
-  // --- CHANGED: availableFrom is now a proper, nullable DateTime object
   @HiveField(11)
   final DateTime? availableFrom;
-
   @HiveField(12)
   final String? sonderkondition;
-
-  // --- ADDED: The new dealEnd field, also as a nullable DateTime
   @HiveField(13)
   final DateTime? dealEnd;
+  @HiveField(14)
+  final bool isCustom;
 
   Product({
     required this.id,
@@ -54,26 +49,23 @@ class Product extends HiveObject {
     required this.subcategory,
     required this.url,
     required this.imageUrl,
-    required this.nameTokens, // --- CHANGED
-    this.availableFrom,      // --- CHANGED
+    required this.nameTokens,
+    this.availableFrom,
     this.sonderkondition,
-    this.dealEnd,            // --- ADDED
+    this.dealEnd,
+    this.isCustom = false,
   });
 
-  // --- HELPER FUNCTION ---
-  /// Safely converts a Firestore Timestamp or null into a DateTime object.
   static DateTime? _timestampToDateTime(dynamic timestamp) {
     if (timestamp is Timestamp) {
       return timestamp.toDate();
     }
-    return null; // Return null if the data is missing or not a Timestamp
+    return null;
   }
 
   factory Product.fromFirestore(String id, Map<String, dynamic> data) {
-    // --- CHANGED: Reads from 'name_tokens' field now
     final tokensData = data['name_tokens'] as List<dynamic>?;
     final tokens = tokensData?.map((e) => e.toString()).toList() ?? [];
-
     String? sonderkonditionString = data['sonderkondition'] as String?;
     if (sonderkonditionString == 'Keine Sonderkondition') {
       sonderkonditionString = null;
@@ -90,24 +82,20 @@ class Product extends HiveObject {
       subcategory: data['subcategory'] as String? ?? '',
       url: data['url'] as String? ?? '',
       imageUrl: data['imageUrl'] as String? ?? '',
-      nameTokens: tokens, // --- CHANGED
-
-      // --- CHANGED: Use the helper to correctly parse Timestamps
+      nameTokens: tokens,
       availableFrom: _timestampToDateTime(data['availableFrom']),
-      dealEnd: _timestampToDateTime(data['dealEnd']), // --- ADDED
-
+      dealEnd: _timestampToDateTime(data['dealEnd']),
       sonderkondition: sonderkonditionString,
+      isCustom: data['isCustom'] as bool? ?? false,
     );
   }
-
-  // Your other methods like discountRate, toJson, toPlainObject are mostly fine,
-  // but let's update them for consistency.
 
   double get discountRate {
     if (normalPrice <= 0 || normalPrice <= currentPrice) return 0.0;
     return (normalPrice - currentPrice) / normalPrice;
   }
 
+  // --- CORRECTED: The isCustom flag is now included ---
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
@@ -123,6 +111,7 @@ class Product extends HiveObject {
     'availableFrom': availableFrom,
     'dealEnd': dealEnd,
     'sonderkondition': sonderkondition,
+    'isCustom': isCustom, // This line is CRITICAL
   };
 
   Product toPlainObject() {
@@ -141,6 +130,7 @@ class Product extends HiveObject {
       availableFrom: availableFrom,
       sonderkondition: sonderkondition,
       dealEnd: dealEnd,
+      isCustom: isCustom,
     );
   }
 }

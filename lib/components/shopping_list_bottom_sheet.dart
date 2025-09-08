@@ -68,10 +68,21 @@ class _ShoppingListBottomSheetState
     Navigator.of(context).pop();
   }
 
-  // This logic is for premium users and can remain, but it needs to be adapted
-  // in the future to use the Firestore service. For now, it's unused by the free tier UI.
+  // REWRITE THIS METHOD
   void _createAndSetActive(String listName) {
-    // ... (This would need a full rewrite for premium tier)
+    if (listName.trim().isEmpty) {
+      // Don't create a list with an empty name
+      return;
+    }
+    final trimmedName = listName.trim();
+    // Call the new notifier method
+    ref.read(shoppingListsProvider.notifier).createNewList(trimmedName);
+
+    Navigator.of(context).pop(); // Close the bottom sheet
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Created and selected list "$trimmedName"')),
+    );
   }
 
   @override
@@ -170,47 +181,102 @@ class _ShoppingListBottomSheetState
     );
   }
 
-  // --- MODIFICATION: This is now a very simple widget for the free tier ---
+  // REWRITE THIS METHOD
   Widget _buildSelectList() {
     final theme = ref.watch(themeProvider);
-    final activeList = ref.watch(activeShoppingListProvider);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+    final activeListId = ref.watch(activeShoppingListProvider);
 
-    // For a free user, there's only one list: "Merkliste".
-    const listName = merklisteListName;
-    final bool isCurrentlyActive = isSelectActiveMode && listName == activeList;
+    // --- PATH FOR FREE USERS ---
+    // If the user is not premium, we don't need to fetch lists.
+    // We just show them their one and only "Merkliste".
+    if (!isPremium) {
+      const listName = merklisteListName;
+      final bool isCurrentlyActive = listName == activeListId;
 
-    return ListView(
-      children: [
-        Opacity(
-          opacity: isCurrentlyActive ? 1.0 : 0.7,
-          child: Card(
-            elevation: isCurrentlyActive ? 2 : 0,
-            color: isCurrentlyActive
-                ? theme.secondary.withOpacity(0.9)
-                : Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            child: ListTile(
-              title: Text(
-                listName,
-                style: TextStyle(
-                  fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
-                  color: isCurrentlyActive ? theme.primary : theme.inactive,
+      return ListView(
+        children: [
+          Opacity(
+            opacity: isCurrentlyActive ? 1.0 : 0.7,
+            child: Card(
+              elevation: isCurrentlyActive ? 2 : 0,
+              color: isCurrentlyActive
+                  ? theme.secondary.withOpacity(0.9)
+                  : Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              child: ListTile(
+                title: Text(
+                  listName,
+                  style: TextStyle(
+                    fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
+                    color: isCurrentlyActive ? theme.primary : theme.inactive,
+                  ),
                 ),
+                onTap: () {
+                  if (isSelectActiveMode) {
+                    ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
+                    Navigator.pop(context);
+                  } else {
+                    _addAndDismiss();
+                  }
+                },
               ),
-              onTap: () {
-                if (isSelectActiveMode) {
-                  // If we are just selecting the active list
-                  ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
-                  Navigator.pop(context);
-                } else {
-                  // If we are adding a product to a list
-                  _addAndDismiss();
-                }
-              },
             ),
           ),
-        ),
-      ],
+        ],
+      );
+    }
+
+    // --- PATH FOR PREMIUM USERS ---
+    // Premium users will see a dynamic list of all their created lists.
+    final allListsAsync = ref.watch(allShoppingListsProvider);
+
+    return allListsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (lists) {
+        // This check handles the brief moment before "Merkliste" is created.
+        if (lists.isEmpty) {
+          return const Center(child: Text('Your default list is being prepared...'));
+        }
+        return ListView.builder(
+          itemCount: lists.length,
+          itemBuilder: (context, index) {
+            final list = lists[index];
+            final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
+
+            return Opacity(
+              opacity: isCurrentlyActive ? 1.0 : 0.7,
+              child: Card(
+                elevation: isCurrentlyActive ? 2 : 0,
+                color: isCurrentlyActive
+                    ? theme.secondary.withOpacity(0.9)
+                    : Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                child: ListTile(
+                  title: Text(
+                    list.name,
+                    style: TextStyle(
+                      fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
+                      color: isCurrentlyActive ? theme.primary : theme.inactive,
+                    ),
+                  ),
+                  onTap: () {
+                    if (isSelectActiveMode) {
+                      ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
+                      Navigator.pop(context);
+                    } else {
+                      // This part would need a premium-specific implementation
+                      // to choose which list to add a product to.
+                      _addAndDismiss(); // For now, it defaults to the active list.
+                    }
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

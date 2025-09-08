@@ -12,8 +12,8 @@ import 'package:sales_app_mvp/models/category_style.dart';
 
 
 const List<String> categoryDisplayOrder = [
-  'Alkoholische Getränke',
   'Alkoholfreie Getränke',
+  'Alkoholische Getränke',
   'Brot & Backwaren',
   'Fisch & Fleisch',
   'Früchte & Gemüse',
