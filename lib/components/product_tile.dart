@@ -39,40 +39,39 @@ class ProductTile extends ConsumerWidget {
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
 
-    // --- MODIFICATION START ---
-    // 1. Watch the new StreamProvider that gives us the full list of products.
-    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
-    // 2. Get the actual list of products, defaulting to an empty list if loading/error.
-    final shoppingListProducts = asyncShoppingList.value ?? [];
-    // 3. The logic is now much simpler: check if our product's ID is in the list.
-    final isInShoppingList = shoppingListProducts.any((item) => item.id == product.id);
-    // --- MODIFICATION END ---
+    // --- THIS IS THE CRITICAL UI CHANGE ---
+    // 1. Watch the new global provider to get the Set of all listed IDs.
+    final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
+
+    // 2. The logic is now a simple, fast lookup in the Set.
+    final isInShoppingList = listedProductIds.contains(product.id);
+    // --- END OF CHANGE ---
 
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: () {
-        // --- MODIFICATION START ---
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
 
         if (isInShoppingList) {
-          // Action is simpler: no list name needed.
+          // IMPORTANT: We now need a way to know which list to remove from.
+          // For now, we'll assume removing from the active list. This is a UX decision
+          // that can be refined later (e.g., by showing a dialog).
           notifier.removeItemFromList(product);
           showTopNotification(
             context,
-            message: 'Removed from "Merkliste"',
+            message: 'Removed from list', // Generic message
             theme: theme,
           );
         } else {
-          // Action is simpler: no list name needed.
+          // Add to the currently active list.
           notifier.addToList(product);
           showTopNotification(
             context,
-            message: 'Added to "Merkliste"',
+            message: 'Added to active list', // Generic message
             theme: theme,
           );
         }
-        // --- MODIFICATION END ---
       },
       onLongPress: () {
         showModalBottomSheet(
@@ -81,7 +80,8 @@ class ProductTile extends ConsumerWidget {
           backgroundColor: theme.background,
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (ctx) => const ShoppingListBottomSheet(),
+          // Pass the product to the bottom sheet to add it to a specific list
+          builder: (ctx) => ShoppingListBottomSheet(product: product),
         );
       },
       child: Stack(

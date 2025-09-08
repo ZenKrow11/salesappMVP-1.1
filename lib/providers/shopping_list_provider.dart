@@ -10,15 +10,46 @@ import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// --- NEW: This provider streams the Set of all globally listed product IDs. ---
+final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) {
+    return Stream.value({}); // Return an empty set if no user is logged in
+  }
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return firestoreService.getListedProductIdsStream();
+});
+
+
 const String merklisteListName = 'Merkliste';
 
+/// A single provider that manages all user-dependent startup logic.
+/// The UI should wait for this to complete before building pages.
+final initializationProvider = FutureProvider<void>((ref) async {
+  // 1. Wait until Firebase Auth confirms if a user is logged in or not.
+  final user = await ref.watch(authStateChangesProvider.future);
+
+  // 2. If no user is logged in, there is nothing further to initialize.
+  if (user == null) {
+    return;
+  }
+
+  // 3. If a user is logged in, trigger and wait for the shopping list initialization to complete.
+  // This guarantees that the default list exists and an active list is set before the UI loads.
+  await ref.read(shoppingListsProvider.notifier).initialize();
+});
+
+/// Streams all shopping lists for the current authenticated user.
 final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
   final authState = ref.watch(authStateChangesProvider);
-  if (authState.value == null) return Stream.value([]);
+  if (authState.value == null) {
+    return Stream.value([]);
+  }
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getAllShoppingListsStream();
 });
 
+/// Streams the product details for the currently active shopping list.
 final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   final activeListId = ref.watch(activeShoppingListProvider);
@@ -33,9 +64,12 @@ final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
 
   return itemsStream.map((itemMaps) {
     return itemMaps.map((itemData) {
+      // If the item data has the 'isCustom' flag, it's a private custom item.
       if (itemData['isCustom'] == true) {
+        // Create the Product object directly from the Firestore data.
         return Product.fromFirestore(itemData['id'], itemData);
       } else {
+        // Otherwise, it's a public sale item. Look it up in the local Hive cache.
         return productsBox.get(itemData['id']);
       }
     })
@@ -45,6 +79,7 @@ final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
   });
 });
 
+/// Notifier responsible for actions related to shopping lists.
 class ShoppingListNotifier extends StateNotifier<void> {
   final FirestoreService _firestoreService;
   final Ref _ref;
@@ -52,12 +87,21 @@ class ShoppingListNotifier extends StateNotifier<void> {
 
   ShoppingListNotifier(this._firestoreService, this._ref) : super(null);
 
+  /// Ensures the default list exists and an active list is set.
+  /// This is the main initialization logic called by the `initializationProvider`.
   Future<void> initialize() async {
     if (_isInitialized) return;
+
     await _firestoreService.ensureDefaultListExists(listId: merklisteListName);
-    if (_ref.read(activeShoppingListProvider) == null) {
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedList = prefs.getString(ActiveListNotifier._activeListKey);
+
+    // If no active list was saved from a previous session, set "Merkliste" as the default.
+    if (savedList == null) {
       await _ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
     }
+
     _isInitialized = true;
   }
 
@@ -95,49 +139,27 @@ class ShoppingListNotifier extends StateNotifier<void> {
   }
 }
 
+/// The main provider for the ShoppingListNotifier.
 final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, void>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
-  final notifier = ShoppingListNotifier(firestoreService, ref);
-
-  // This is the key. When a user logs in, we guarantee initialization runs.
-  ref.listen<AsyncValue<User?>>(authStateChangesProvider, (previous, next) {
-    final user = next.value;
-    if (user != null) {
-      // The initialize method will now handle setting the default active list.
-      notifier.initialize();
-    }
-  });
-
-  return notifier;
+  return ShoppingListNotifier(firestoreService, ref);
 });
 
+/// Notifier that manages the state of the currently active shopping list.
 class ActiveListNotifier extends StateNotifier<String?> {
   static const _activeListKey = 'active_shopping_list_key';
 
-  // MODIFIED: We add a Ref to the constructor to access other providers
-  final Ref _ref;
-
-  ActiveListNotifier(this._ref) : super(null) {
-    _loadInitial(); // Load the saved active list on startup
+  ActiveListNotifier() : super(null) {
+    _loadInitial();
   }
 
-  // NEW METHOD: Loads the last active list from storage
+  /// Loads the last active list name from local storage on startup.
   Future<void> _loadInitial() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedList = prefs.getString(_activeListKey);
-    if (savedList != null) {
-      state = savedList;
-    } else {
-      // THIS IS THE CRITICAL FALLBACK
-      // If no list was saved, we check if the default "Merkliste" exists.
-      // This solves the race condition.
-      final allLists = await _ref.read(allShoppingListsProvider.future);
-      if (allLists.any((list) => list.id == merklisteListName)) {
-        setActiveList(merklisteListName);
-      }
-    }
+    state = prefs.getString(_activeListKey);
   }
 
+  /// Sets the new active list and persists it to local storage.
   Future<void> setActiveList(String? listName) async {
     final prefs = await SharedPreferences.getInstance();
     if (listName == null) {
@@ -151,6 +173,5 @@ class ActiveListNotifier extends StateNotifier<String?> {
   }
 }
 
-// MODIFIED: We pass the 'ref' to the notifier
-final activeShoppingListProvider =
-StateNotifierProvider<ActiveListNotifier, String?>((ref) => ActiveListNotifier(ref));
+/// The provider for the ActiveListNotifier.
+final activeShoppingListProvider = StateNotifierProvider<ActiveListNotifier, String?>((ref) => ActiveListNotifier());

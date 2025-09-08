@@ -21,29 +21,44 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
 
+  // lib/pages/shopping_list_page.dart
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // CRITICAL FIX: Watch the new initializationProvider.
+    final init = ref.watch(initializationProvider);
     final theme = ref.watch(themeProvider);
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: theme.pageBackground,
-      endDrawer: _buildDrawer(context, ref),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context, ref, scaffoldKey),
-            Expanded(
-              child: _buildBodyContent(context, ref),
-            ),
-            _buildSummaryBar(ref),
-          ],
+    // While initializing, show a full-page loading indicator.
+    return init.when(
+      loading: () => Scaffold(
+        backgroundColor: theme.pageBackground,
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, stack) => Scaffold(
+        backgroundColor: theme.pageBackground,
+        body: Center(child: Text('Fatal Error: $err')),
+      ),
+      // Once initialization is complete, build the actual page UI.
+      data: (_) => Scaffold(
+        key: scaffoldKey,
+        backgroundColor: theme.pageBackground,
+        endDrawer: _buildDrawer(context, ref),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context, ref, scaffoldKey),
+              Expanded(
+                child: _buildBodyContent(context, ref),
+              ),
+              _buildSummaryBar(ref),
+            ],
+          ),
         ),
       ),
     );
   }
-
   Widget _buildBodyContent(BuildContext context, WidgetRef ref) {
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
     final theme = ref.watch(themeProvider);
