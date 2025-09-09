@@ -1,6 +1,5 @@
 // lib/providers/auth_controller.dart
 
-// NEW: Import Cloud Firestore to interact with the database.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,23 +16,77 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  // NEW: Add a reference to the Firestore instance.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // NEW: Helper method to create a user profile document in Firestore.
-  // This will be called right after a new user is created.
   Future<void> _createUserProfileDocument(User user) async {
-    // Reference to the new user's document using their unique UID.
     final userRef = _firestore.collection('users').doc(user.uid);
-
-    // Set the initial data for the new user.
-    // This is where you set 'isPremium' to false by default.
     await userRef.set({
       'email': user.email,
       'isPremium': false,
-      // You can add other initial fields here, like a creation timestamp.
+      'displayName': user.displayName ?? user.email?.split('@').first,
     });
   }
+
+  // ========== NEW METHODS ADDED HERE ==========
+
+  /// Re-authenticates the user and then changes their password.
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) throw Exception('No user is currently signed in.');
+
+      final cred = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(cred);
+      await user.updatePassword(newPassword);
+
+      state = const AsyncData(null);
+      return true;
+    } on FirebaseAuthException catch (e, st) {
+      debugPrint('CHANGE PASSWORD ERROR: [${e.code}] ${e.message}');
+      state = AsyncError(e.message ?? 'An unknown error occurred', st);
+      return false;
+    }
+  }
+
+  /// Re-authenticates and then permanently deletes the user's account and data.
+  Future<bool> deleteAccount({required String currentPassword}) async {
+    state = const AsyncLoading();
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) throw Exception('No user is currently signed in.');
+
+      final cred = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(cred);
+
+      // Important: Delete Firestore data BEFORE deleting the auth user.
+      // Note: This simple delete won't remove subcollections. A Cloud Function
+      // is the production-ready solution for cascading deletes.
+      await _firestore.collection('users').doc(user.uid).delete();
+
+      await user.delete();
+
+      state = const AsyncData(null);
+      return true;
+    } on FirebaseAuthException catch (e, st) {
+      debugPrint('DELETE ACCOUNT ERROR: [${e.code}] ${e.message}');
+      state = AsyncError(e.message ?? 'An unknown error occurred', st);
+      return false;
+    }
+  }
+
+  // ==========================================
 
   Future<bool> signInWithEmail(String email, String password) async {
     state = const AsyncLoading();
@@ -51,11 +104,9 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<bool> signUpWithEmail(String email, String password) async {
     state = const AsyncLoading();
     try {
-      // 1. Create the user with Firebase Auth.
       final userCredential =
       await _auth.createUserWithEmailAndPassword(email: email, password: password);
 
-      // 2. NEW: After successful auth creation, create their Firestore document.
       if (userCredential.user != null) {
         await _createUserProfileDocument(userCredential.user!);
       }
@@ -74,7 +125,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // User canceled the sign-in
         state = const AsyncData(null);
         return false;
       }
@@ -86,10 +136,8 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         idToken: googleAuth.idToken,
       );
 
-      // 1. Sign in to Firebase with the Google credentials.
       final userCredential = await _auth.signInWithCredential(credential);
 
-      // 2. NEW: Check if this is a new user. If so, create their Firestore document.
       if (userCredential.additionalUserInfo?.isNewUser == true &&
           userCredential.user != null) {
         await _createUserProfileDocument(userCredential.user!);
