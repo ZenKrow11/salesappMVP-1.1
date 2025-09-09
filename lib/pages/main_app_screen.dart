@@ -57,38 +57,54 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
+    // ========== THIS IS THE FIX ==========
+    // We now watch the initializationProvider at the top level of the main screen.
+    final init = ref.watch(initializationProvider);
 
-    return GestureDetector(
-      onTap: () {
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
-      child: Scaffold(
+    // This ensures no UI is built until the user's auth state is confirmed
+    // and the default shopping list is guaranteed to exist.
+    return init.when(
+      loading: () => Scaffold(
         backgroundColor: theme.pageBackground,
-        appBar: currentIndex == 0 ? _buildHomePageAppBar(theme) : null,
-        body: _pages[currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: theme.primary,
-          currentIndex: currentIndex,
-          selectedItemColor: theme.secondary,
-          unselectedItemColor: theme.inactive,
-          onTap: navigateToTab,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money, size: 36),
-              label: 'All Sales',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list, size: 36),
-              label: 'Lists',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 36),
-              label: 'Account',
-            ),
-          ],
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, stack) => Scaffold(
+        backgroundColor: theme.pageBackground,
+        body: Center(child: Text('Fatal Error: $err')),
+      ),
+      data: (_) => GestureDetector(
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Scaffold(
+          backgroundColor: theme.pageBackground,
+          appBar: currentIndex == 0 ? _buildHomePageAppBar(theme) : null,
+          body: _pages[currentIndex],
+          bottomNavigationBar: BottomNavigationBar(
+            backgroundColor: theme.primary,
+            currentIndex: currentIndex,
+            selectedItemColor: theme.secondary,
+            unselectedItemColor: theme.inactive,
+            onTap: navigateToTab,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.attach_money, size: 36),
+                label: 'All Sales',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.list, size: 36),
+                label: 'Lists',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person, size: 36),
+                label: 'Account',
+              ),
+            ],
+          ),
         ),
       ),
     );
+    // ====================================
   }
 
   PreferredSizeWidget _buildHomePageAppBar(AppThemeData theme) {
@@ -114,16 +130,15 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         final theme = ref.watch(themeProvider);
         // --- MODIFICATION START ---
 
-        // 1. Watch the active list provider.
+        // 1. Watch the active list provider. It's now a non-nullable String.
         final activeList = ref.watch(activeShoppingListProvider);
 
         // 2. Watch the app's initialization status.
         final appData = ref.watch(appDataProvider);
         final bool isDataLoaded = appData.status == InitializationStatus.loaded;
 
-        // 3. Define the button text with the correct default logic.
-        // If an active list is set, use it. Otherwise, default to 'Merkliste'.
-        final buttonText = activeList ?? 'Merkliste';
+        // 3. The button text is simply the state of the provider. No fallback needed.
+        final buttonText = activeList;
 
         // --- MODIFICATION END ---
 

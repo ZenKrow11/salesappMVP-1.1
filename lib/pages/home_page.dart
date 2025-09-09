@@ -10,6 +10,7 @@ import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
@@ -28,8 +29,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncGroups = ref.watch(homePageProductsProvider);
 
-    // --- REMOVED: All previous layout widgets (Column, Container, etc.) ---
-    // The entire body of the widget is now just the async data handler.
+
     return asyncGroups.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),

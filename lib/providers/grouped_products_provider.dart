@@ -107,7 +107,7 @@ List<ProductGroup> _filterAndGroupProductsInBackground(_FilterAndGroupInput inpu
   final groupingInput = _GroupAndSortInput(products: filteredProducts, filter: filter);
   final groupedAndSortedProducts = _groupAndSortProductsInBackground(groupingInput);
   debugPrint("[ISOLATE-COMBO] Task complete. Returning ${groupedAndSortedProducts.length} groups.");
-  // --- FIX: Added the missing return statement ---
+
   return groupedAndSortedProducts;
 }
 

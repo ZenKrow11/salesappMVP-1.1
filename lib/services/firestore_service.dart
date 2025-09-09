@@ -64,6 +64,56 @@ class FirestoreService {
     });
   }
 
+  // ========== THIS IS THE CORRECTED METHOD THAT FIXES THE CRASH ==========
+  Future<void> deleteList({required String listId}) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+
+    final listDocRef = _shoppingListsRef(uid).doc(listId);
+    final listItemsColRef = listDocRef.collection('items');
+
+    // Step 1: Read the list of items outside the transaction.
+    final listItemsSnapshot = await listItemsColRef.get();
+    final itemIds = listItemsSnapshot.docs.map((doc) => doc.id).toList();
+
+    // Step 2: Run the transaction to update the global index and delete the list document.
+    await _firestore.runTransaction((transaction) async {
+      // --- PHASE 1: ALL READS ---
+      // First, perform all the reads for every item's global index document.
+      final indexRefs = itemIds.map((id) => _listedProductIdsRef(uid).doc(id)).toList();
+      final indexSnapshots = await Future.wait(indexRefs.map((ref) => transaction.get(ref)));
+
+      // --- PHASE 2: ALL WRITES ---
+      // Now that all reads are complete, perform the logic and schedule all writes.
+      for (var i = 0; i < indexSnapshots.length; i++) {
+        final indexSnapshot = indexSnapshots[i];
+        final indexDocRef = indexRefs[i];
+
+        if (indexSnapshot.exists) {
+          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+          if (currentCount <= 1) {
+            transaction.delete(indexDocRef); // Schedule a delete
+          } else {
+            transaction.update(indexDocRef, {'count': FieldValue.increment(-1)}); // Schedule an update
+          }
+        }
+      }
+      // Finally, schedule the deletion of the list document itself.
+      transaction.delete(listDocRef);
+    });
+
+    // Step 3 (Your excellent addition): After the transaction is successful,
+    // clean up the subcollection items using a batched write. This is efficient and correct.
+    if (listItemsSnapshot.docs.isNotEmpty) {
+      final batch = _firestore.batch();
+      for (final doc in listItemsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+  // ====================================================================
+
   Stream<Set<String>> getListedProductIdsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value({});

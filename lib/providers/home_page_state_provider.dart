@@ -14,9 +14,9 @@ final currentCategoryIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
 // =========================================================================
 
 // The number of items to show in a collapsed category.
-const int kCollapsedItemLimit = 30;
+const int kCollapsedItemLimit = 20;
 // The number of items to add with each press of "Show More".
-const int kPaginationIncrement = 30;
+const int kPaginationIncrement = 20;
 
 /// This provider holds a map of {CategoryName: NumberOfItemsToShow}.
 /// This is the new state management for the collapsible/paginated categories.

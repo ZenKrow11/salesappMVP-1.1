@@ -37,14 +37,8 @@ class ProductTile extends ConsumerWidget {
     final categoryStyle = CategoryService.getStyleForCategory(product.category);
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
-
-    // --- THIS IS THE CRITICAL UI CHANGE ---
-    // 1. Watch the new global provider to get the Set of all listed IDs.
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
-
-    // 2. The logic is now a simple, fast lookup in the Set.
     final isInShoppingList = listedProductIds.contains(product.id);
-    // --- END OF CHANGE ---
 
     return GestureDetector(
       onTap: onTap,
@@ -53,25 +47,22 @@ class ProductTile extends ConsumerWidget {
         final theme = ref.read(themeProvider);
 
         if (isInShoppingList) {
-          // IMPORTANT: We now need a way to know which list to remove from.
-          // For now, we'll assume removing from the active list. This is a UX decision
-          // that can be refined later (e.g., by showing a dialog).
           notifier.removeItemFromList(product);
           showTopNotification(
             context,
-            message: 'Removed from list', // Generic message
+            message: 'Removed from list',
             theme: theme,
           );
         } else {
-          // Add to the currently active list.
           notifier.addToList(product);
           showTopNotification(
             context,
-            message: 'Added to active list', // Generic message
+            message: 'Added to active list',
             theme: theme,
           );
         }
       },
+      // ========== THIS IS THE FIX ==========
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -79,10 +70,29 @@ class ProductTile extends ConsumerWidget {
           backgroundColor: theme.background,
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          // Pass the product to the bottom sheet to add it to a specific list
-          builder: (ctx) => ShoppingListBottomSheet(product: product),
+          // We now provide the required onConfirm callback.
+          builder: (ctx) => ShoppingListBottomSheet(
+            product: product,
+            onConfirm: (selectedListId) {
+              // Use the new notifier method to add to the chosen list
+              ref
+                  .read(shoppingListsProvider.notifier)
+                  .addToSpecificList(product, selectedListId);
+
+              // Close the bottom sheet after selection
+              Navigator.of(ctx).pop();
+
+              // Show a confirmation message
+              showTopNotification(
+                context, // Use the main build context for the notification
+                message: 'Added to "$selectedListId"',
+                theme: theme,
+              );
+            },
+          ),
         );
       },
+      // ===================================
       child: Stack(
         children: [
           Container(
@@ -135,7 +145,7 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  // The rest of the file (_buildContent, etc.) does not need any changes.
+  // --- No changes below this line ---
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     return Column(
