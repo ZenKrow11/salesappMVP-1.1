@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:grouped_list/grouped_list.dart';
-import 'package:sales_app_mvp/components/add_custom_item_dialog.dart';
+// --- REFACTOR: OLD IMPORT REMOVED ---
+// import 'package:sales_app_mvp/components/add_custom_item_dialog.dart';
 import 'package:sales_app_mvp/components/bottom_summary_bar.dart';
+// --- REFACTOR: NEW IMPORTS ADDED ---
+import 'package:sales_app_mvp/components/custom_item_storage_view.dart';
+import 'package:sales_app_mvp/pages/create_custom_item_page.dart';
+// --- (end of new imports) ---
 import 'package:sales_app_mvp/components/management_list_item_tile.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -18,12 +23,20 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-class ShoppingListPage extends ConsumerWidget {
+// --- REFACTOR: Converted to ConsumerStatefulWidget to manage view state ---
+class ShoppingListPage extends ConsumerStatefulWidget {
   const ShoppingListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // No change to this method
+  ConsumerState<ShoppingListPage> createState() => _ShoppingListPageState();
+}
+
+class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
+  // --- REFACTOR: Added state variable to toggle between views ---
+  bool _isShowingCustomStorage = false;
+
+  @override
+  Widget build(BuildContext context) {
     final init = ref.watch(initializationProvider);
     final theme = ref.watch(themeProvider);
     final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -48,7 +61,8 @@ class ShoppingListPage extends ConsumerWidget {
               Expanded(
                 child: _buildBodyContent(context, ref),
               ),
-              _buildSummaryBar(ref),
+              // Show summary bar only when viewing a shopping list
+              if (!_isShowingCustomStorage) _buildSummaryBar(ref),
             ],
           ),
         ),
@@ -57,7 +71,6 @@ class ShoppingListPage extends ConsumerWidget {
   }
 
   Widget _buildDrawer(BuildContext context, WidgetRef ref) {
-    // No change to this method
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
     final activeListId = ref.watch(activeShoppingListProvider);
@@ -89,24 +102,30 @@ class ShoppingListPage extends ConsumerWidget {
               ),
             ),
           ),
+          // --- REFACTOR: Added a button to go back to the shopping list view ---
+          if (_isShowingCustomStorage)
+            ListTile(
+              title: Text('Back to Shopping List', style: TextStyle(color: theme.inactive)),
+              onTap: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _isShowingCustomStorage = false;
+                });
+              },
+            ),
           ListTile(
-            title: Text('Start Shopping Mode',
-                style: TextStyle(color: theme.inactive)),
+            title: Text('Start Shopping Mode', style: TextStyle(color: theme.inactive)),
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ShoppingModeScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ShoppingModeScreen()),
               );
             },
           ),
           ListTile(
             title: Text('Add New List',
                 style: TextStyle(
-                  color: isPremium
-                      ? theme.inactive
-                      : theme.inactive.withOpacity(0.5),
+                  color: isPremium ? theme.inactive : theme.inactive.withOpacity(0.5),
                 )),
             onTap: () {
               Navigator.of(context).pop();
@@ -114,20 +133,16 @@ class ShoppingListPage extends ConsumerWidget {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
-                  builder: (context) =>
-                  const ShoppingListBottomSheet(initialTabIndex: 1),
+                  builder: (context) => const ShoppingListBottomSheet(initialTabIndex: 1),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text(
-                        'Creating multiple lists is a Premium Feature!'),
+                    content: const Text('Creating multiple lists is a Premium Feature!'),
                     action: SnackBarAction(
                       label: 'UPGRADE',
                       onPressed: () {
-                        context
-                            .findAncestorStateOfType<MainAppScreenState>()
-                            ?.navigateToTab(2);
+                        context.findAncestorStateOfType<MainAppScreenState>()?.navigateToTab(2);
                       },
                     ),
                   ),
@@ -135,44 +150,44 @@ class ShoppingListPage extends ConsumerWidget {
               }
             },
           ),
+          // --- REFACTOR: Drawer options updated for new custom item flow ---
+          const Divider(),
           ListTile(
-            title: Text('Add Custom Item',
-                style: TextStyle(color: theme.inactive)),
+            title: Text('My Custom Items', style: TextStyle(color: theme.inactive)),
             onTap: () {
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (context) => const AddCustomItemDialog(),
-              );
+              Navigator.of(context).pop(); // Close drawer
+              setState(() {
+                _isShowingCustomStorage = true;
+              });
+            },
+          ),
+          ListTile(
+            title: Text('Create New Custom Item', style: TextStyle(color: theme.inactive)),
+            onTap: () {
+              Navigator.of(context).pop(); // Close drawer
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const CreateCustomItemPage(),
+              ));
             },
           ),
           const Divider(),
           ListTile(
-            leading: Icon(Icons.build_outlined,
-                color: theme.inactive.withOpacity(0.5)),
-            title: Text('Manage Custom Items',
-                style: TextStyle(color: theme.inactive.withOpacity(0.5))),
-            subtitle: Text('Future feature',
-                style: TextStyle(color: theme.inactive.withOpacity(0.5))),
-            enabled: false,
-            onTap: null,
-          ),
-          ListTile(
             leading: Icon(
               Icons.delete_outline,
-              color: isDefaultList
+              color: isDefaultList || _isShowingCustomStorage
                   ? theme.inactive.withOpacity(0.5)
                   : Theme.of(context).colorScheme.error,
             ),
             title: Text(
               'Delete Current List',
               style: TextStyle(
-                color: isDefaultList
+                color: isDefaultList || _isShowingCustomStorage
                     ? theme.inactive.withOpacity(0.5)
                     : Theme.of(context).colorScheme.error,
               ),
             ),
-            onTap: isDefaultList
+            // Disable delete button when not viewing a deletable list
+            onTap: isDefaultList || _isShowingCustomStorage
                 ? null
                 : () {
               Navigator.pop(context);
@@ -184,9 +199,7 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  // ========== THE FIX IS IN THE METHOD BELOW ==========
-  void _showDeleteConfirmationDialog(
-      BuildContext context, WidgetRef ref, String listId) {
+  void _showDeleteConfirmationDialog(BuildContext context, WidgetRef ref, String listId) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -207,16 +220,11 @@ class ShoppingListPage extends ConsumerWidget {
               ),
               child: const Text('Delete'),
               onPressed: () async {
-                Navigator.of(dialogContext).pop(); // Close the dialog
+                Navigator.of(dialogContext).pop();
                 try {
                   await ref.read(firestoreServiceProvider).deleteList(listId: listId);
-
-                  // After deleting, always switch back to the default list.
                   await ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
-
                   if (context.mounted) {
-                    // **THE FIX**: The incorrect Navigator.pop() call has been removed.
-                    // We just show the confirmation message. The UI will update automatically.
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('List deleted successfully.'),
@@ -241,11 +249,87 @@ class ShoppingListPage extends ConsumerWidget {
       },
     );
   }
-  // =========================================================
 
+  // --- REFACTOR: Header now conditionally changes based on the view ---
+  Widget _buildHeader(BuildContext context, WidgetRef ref, GlobalKey<ScaffoldState> scaffoldKey) {
+    final theme = ref.watch(themeProvider);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _isShowingCustomStorage
+                ? Text( // Header for Custom Items view
+              'My Custom Items',
+              style: TextStyle(
+                color: theme.inactive,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+                : isPremium // Original Header for Shopping List view
+                ? _buildPremiumHeaderDropdown(ref, theme)
+                : _buildFreeUserHeader(context, theme),
+          ),
+          IconButton(
+            icon: Icon(Icons.settings, color: theme.inactive, size: 26),
+            onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- REFACTOR: Body now conditionally shows Custom Storage or Shopping List ---
+  Widget _buildBodyContent(BuildContext context, WidgetRef ref) {
+    // If true, show the new custom item storage view
+    if (_isShowingCustomStorage) {
+      return const CustomItemStorageView();
+    }
+
+    // Otherwise, show the existing shopping list view
+    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
+    final theme = ref.watch(themeProvider);
+
+    return asyncShoppingList.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Error loading list: $err',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: theme.inactive),
+          ),
+        ),
+      ),
+      data: (products) {
+        if (products.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Text(
+                'This list is empty.\nDouble-tap an item on the sales page to add it.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.inactive.withOpacity(0.7),
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          );
+        } else {
+          return _buildGroupedListView(context, ref, products, theme);
+        }
+      },
+    );
+  }
+
+  // --- NO CHANGES to the methods below this line ---
 
   Widget _buildPremiumHeaderDropdown(WidgetRef ref, AppThemeData theme) {
-    // No change to this method
     final allListsAsync = ref.watch(allShoppingListsProvider);
     final activeListId = ref.watch(activeShoppingListProvider);
 
@@ -257,21 +341,14 @@ class ShoppingListPage extends ConsumerWidget {
       error: (e, s) => Text('Error', style: TextStyle(color: Colors.red, fontSize: 24)),
       data: (lists) {
         if (lists.isEmpty) {
-          return Text(
-            'Loading List...',
-            style: TextStyle(color: theme.inactive, fontSize: 24, fontWeight: FontWeight.bold),
-          );
+          return Text('Loading List...',
+              style: TextStyle(color: theme.inactive, fontSize: 24, fontWeight: FontWeight.bold));
         }
-
         final activeListExists = lists.any((list) => list.id == activeListId);
-
         if (!activeListExists) {
-          return Text(
-            activeListId,
-            style: TextStyle(color: theme.inactive, fontSize: 24, fontWeight: FontWeight.bold),
-          );
+          return Text(activeListId,
+              style: TextStyle(color: theme.inactive, fontSize: 24, fontWeight: FontWeight.bold));
         }
-
         return DropdownButton<String>(
           value: activeListId,
           onChanged: (newListId) {
@@ -294,15 +371,11 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildGroupedListView(BuildContext context, WidgetRef ref,
-      List<Product> products, AppThemeData theme) {
-    // No change to this method
+  Widget _buildGroupedListView(BuildContext context, WidgetRef ref, List<Product> products, AppThemeData theme) {
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
-
     return GroupedListView<Product, String>(
       elements: products,
-      groupBy: (product) =>
-          CategoryService.getGroupingDisplayNameForProduct(product),
+      groupBy: (product) => CategoryService.getGroupingDisplayNameForProduct(product),
       useStickyGroupSeparators: true,
       stickyHeaderBackgroundColor: theme.pageBackground,
       groupSeparatorBuilder: (String groupName) {
@@ -322,17 +395,12 @@ class ShoppingListPage extends ConsumerWidget {
                   style.iconAssetPath,
                   height: 20,
                   width: 20,
-                  colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   groupName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -359,76 +427,11 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  // --- No changes below this line ---
-
-  Widget _buildBodyContent(BuildContext context, WidgetRef ref) {
-    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
-    final theme = ref.watch(themeProvider);
-
-    return asyncShoppingList.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            'Error loading list: $err',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: theme.inactive),
-          ),
-        ),
-      ),
-      data: (products) {
-        if (products.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Text(
-                'This list is empty.\nSelect or create another list from the menu.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: theme.inactive.withOpacity(0.7),
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          );
-        } else {
-          return _buildGroupedListView(context, ref, products, theme);
-        }
-      },
-    );
-  }
-
-
-  Widget _buildHeader(BuildContext context, WidgetRef ref,
-      GlobalKey<ScaffoldState> scaffoldKey) {
-    final theme = ref.watch(themeProvider);
-    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: isPremium
-                ? _buildPremiumHeaderDropdown(ref, theme)
-                : _buildFreeUserHeader(context, theme),
-          ),
-          IconButton(
-            icon: Icon(Icons.settings, color: theme.inactive, size: 26),
-            onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFreeUserHeader(BuildContext context, AppThemeData theme) {
     return InkWell(
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Managing multiple lists is a Premium Feature!')),
+          const SnackBar(content: Text('Managing multiple lists is a Premium Feature!')),
         );
       },
       child: Row(
@@ -442,29 +445,14 @@ class ShoppingListPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.arrow_drop_down,
-              color: theme.inactive.withOpacity(0.5), size: 28),
+          Icon(Icons.arrow_drop_down, color: theme.inactive.withOpacity(0.5), size: 28),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(AppThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Text(
-          'Your list is empty.\nDouble-tap an item on the main page to add it!',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 16),
-        ),
       ),
     );
   }
 
   Widget _buildSummaryBar(WidgetRef ref) {
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
-
     return asyncShoppingList.when(
       data: (products) => BottomSummaryBar(products: products),
       loading: () => const SizedBox.shrink(),

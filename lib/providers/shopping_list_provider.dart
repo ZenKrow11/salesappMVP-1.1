@@ -104,15 +104,17 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
-  // ========== THIS IS THE NEW METHOD THAT FIXES THE CRASH ==========
+  // ========== THIS IS THE CORRECTED METHOD ==========
   /// Adds a product to a specific shopping list, identified by its ID.
   Future<void> addToSpecificList(Product product, String listId) async {
     await _firestoreService.addItemToList(
       listId: listId,
       productId: product.id,
+      // THE FIX: For custom items, we must pass their full data.
+      productData: product.isCustom ? product.toJson() : null,
     );
   }
-  // ================================================================
+  // ====================================================
 
   /// This method works implicitly on the active list.
   Future<void> removeItemFromList(Product product) async {
@@ -165,3 +167,8 @@ class ActiveListNotifier extends StateNotifier<String> {
 }
 
 final activeShoppingListProvider = StateNotifierProvider<ActiveListNotifier, String>((ref) => ActiveListNotifier());
+
+final customItemsProvider = StreamProvider<List<Product>>((ref) {
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return firestoreService.getCustomItemsStream();
+});

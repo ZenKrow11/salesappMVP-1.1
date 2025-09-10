@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
 
+import '../models/product.dart';
+
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService(
     FirebaseAuth.instance,
@@ -30,13 +32,14 @@ class FirestoreService {
   }
   // ===========================================
 
-  // ... (rest of the file is unchanged) ...
-
   CollectionReference _shoppingListsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('shoppingLists');
 
   CollectionReference _listedProductIdsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('listedProductIds');
+
+  CollectionReference _customItemsRef(String uid) =>
+      _firestore.collection('users').doc(uid).collection('customItems');
 
   Future<void> addItemToList({
     required String listId,
@@ -162,5 +165,38 @@ class FirestoreService {
         'createdAt': FieldValue.serverTimestamp(),
       });
     }
+  }
+
+  Future<void> addCustomItemToStorage(Product customItem) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+    // The toJson() method on your Product model is required here.
+    await _customItemsRef(uid).doc(customItem.id).set(customItem.toJson());
+  }
+
+  /// READ: Get a stream of all custom items for the current user.
+  Stream<List<Product>> getCustomItemsStream() {
+    final uid = _uid;
+    if (uid == null) return Stream.value([]);
+    return _customItemsRef(uid).snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => Product.fromFirestore(
+          doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  /// UPDATE: Modify an existing custom item in storage.
+  Future<void> updateCustomItemInStorage(Product customItem) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+    await _customItemsRef(uid).doc(customItem.id).update(customItem.toJson());
+  }
+
+  /// DELETE: Remove a custom item from storage.
+  Future<void> deleteCustomItemFromStorage(String customItemId) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+    await _customItemsRef(uid).doc(customItemId).delete();
   }
 }

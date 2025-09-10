@@ -50,6 +50,13 @@ class CategoryService {
     return map;
   }
 
+  // --- ADD THIS METHOD ---
+  /// Returns the complete list of all main categories and their definitions.
+  static List<MainCategory> getAllCategories() {
+    return allCategories;
+  }
+  // --- END OF ADDITION ---
+
   // --- PUBLIC METHODS (TO BE USED BY THE APP) ---
 
   /// Gets the style for any specific category or subcategory name.
