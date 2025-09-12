@@ -5,6 +5,20 @@ import 'package:sales_app_mvp/models/category_style.dart';
 
 const String _iconBasePath = 'assets/images/category_icons/';
 
+// No changes needed here
+const List<String> categoryDisplayOrder = [
+  'Alkoholfreie Getränke',
+  'Alkoholische Getränke',
+  'Brot & Backwaren',
+  'Fisch & Fleisch',
+  'Früchte & Gemüse',
+  'Milchprodukte & Eier',
+  'Snacks & Süsswaren',
+  'Spezifische Ernährung',
+  'Vorräte',
+  'Sonstiges',
+];
+
 // --- DATA STRUCTURES ---
 class SubCategory {
   final String name;

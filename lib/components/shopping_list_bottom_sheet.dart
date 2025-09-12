@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
-// REMOVED: No longer need NamedList
+import '../models/shopping_list_info.dart';
 import '../providers/shopping_list_provider.dart';
+import '../services/firestore_service.dart';
 import '../widgets/app_theme.dart';
 import '../providers/user_profile_provider.dart';
 import '../pages/main_app_screen.dart';
-// REMOVED: No longer need app_data_provider for loading state
 
 class ShoppingListBottomSheet extends ConsumerStatefulWidget {
   final Product? product;
@@ -44,7 +44,6 @@ class _ShoppingListBottomSheetState
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
-    // REMOVED: Initialization is now handled automatically by the provider itself.
   }
 
   @override
@@ -54,34 +53,51 @@ class _ShoppingListBottomSheetState
     super.dispose();
   }
 
-  // --- MODIFICATION: Simplified add/dismiss logic for free tier ---
   void _addAndDismiss() {
     if (widget.product == null) return;
-
-    final notifier = ref.read(shoppingListsProvider.notifier);
-    notifier.addToList(widget.product!);
-    widget.onConfirm!(merklisteListName); // Confirm with the hardcoded list name
-
+    ref.read(shoppingListsProvider.notifier).addToList(widget.product!);
+    widget.onConfirm!(merklisteListName);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Added to "Merkliste"')),
     );
     Navigator.of(context).pop();
   }
 
-  // REWRITE THIS METHOD
   void _createAndSetActive(String listName) {
-    if (listName.trim().isEmpty) {
-      // Don't create a list with an empty name
-      return;
-    }
+    if (listName.trim().isEmpty) return;
     final trimmedName = listName.trim();
-    // Call the new notifier method
     ref.read(shoppingListsProvider.notifier).createNewList(trimmedName);
-
-    Navigator.of(context).pop(); // Close the bottom sheet
-
+    Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Created and selected list "$trimmedName"')),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, String listId, String listName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Delete "$listName"?'),
+          content: const Text('This action is permanent and cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Delete'),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ref.read(firestoreServiceProvider).deleteList(listId: listId);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -89,7 +105,15 @@ class _ShoppingListBottomSheetState
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
 
+    // --- THIS IS THE FIX ---
+    // The main container for the bottom sheet. We wrap its content in a Column
+    // that uses Expanded to correctly size the TabBarView.
+    // The `mainAxisSize.min` on the Column combined with Flexible on the TabBarView
+    // is a robust way to handle this.
     return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: theme.background,
         borderRadius: const BorderRadius.only(
@@ -98,43 +122,39 @@ class _ShoppingListBottomSheetState
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Let the content determine the height
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(),
             const SizedBox(height: 12),
             _buildTabBar(),
             const SizedBox(height: 16),
-            _buildTabContent(),
-            const SizedBox(height: 20),
+            // We use Flexible here to allow the TabBarView to take up space,
+            // but it will also shrink if the content is small. This is
+            // more robust than Expanded for variable content size.
+            Flexible(
+              child: _buildTabContent(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // --- MODIFICATION: Tab content no longer needs complex loading logic ---
+  // No changes to _buildTabContent needed now, the fix is in the parent.
   Widget _buildTabContent() {
-    // The UI is simple enough now that we don't need to watch any providers here.
-    // The sub-widgets will handle their own state.
-    return SizedBox(
-      height: 250,
-      child: TabBarView(
-        controller: _tabController!,
-        children: [
-          _buildSelectList(),
-          _buildNewListTab(),
-        ],
-      ),
+    return TabBarView(
+      controller: _tabController!,
+      children: [
+        _buildSelectList(),
+        _buildNewListTab(),
+      ],
     );
   }
+
+  // ... (THE REST OF THE FILE REMAINS EXACTLY THE SAME) ...
 
   Widget _buildHeader() {
     final theme = ref.watch(themeProvider);
@@ -142,7 +162,7 @@ class _ShoppingListBottomSheetState
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          isSelectActiveMode ? 'Select or Create List' : 'Add to List',
+          'Manage My Lists',
           style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -167,46 +187,68 @@ class _ShoppingListBottomSheetState
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
       tabs: [
-        const Tab(text: 'Select List'),
+        const Tab(text: 'My Lists'),
         Tab(
           child: Text(
-            'New List',
+            'Create New',
             style: TextStyle(
-              color: isPremium ? theme.secondary : theme.inactive.withOpacity(0.5),
+              color: isPremium ? null : theme.inactive.withOpacity(0.5),
             ),
           ),
         ),
       ],
-      onTap: null, // Let the tab controller handle it
     );
   }
 
-  // REWRITE THIS METHOD
   Widget _buildSelectList() {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
     final activeListId = ref.watch(activeShoppingListProvider);
 
-    // --- PATH FOR FREE USERS ---
-    // If the user is not premium, we don't need to fetch lists.
-    // We just show them their one and only "Merkliste".
     if (!isPremium) {
-      const listName = merklisteListName;
-      final bool isCurrentlyActive = listName == activeListId;
+      return ListTile(
+        title: Text(merklisteListName, style: TextStyle(color: theme.inactive)),
+        onTap: () {
+          if (isSelectActiveMode) {
+            ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
+            Navigator.pop(context);
+          } else {
+            _addAndDismiss();
+          }
+        },
+        tileColor: theme.secondary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      );
+    }
 
-      return ListView(
-        children: [
-          Opacity(
-            opacity: isCurrentlyActive ? 1.0 : 0.7,
-            child: Card(
+    final allListsAsync = ref.watch(allShoppingListsProvider);
+
+    return allListsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (lists) {
+        if (lists.isEmpty) {
+          return const Center(child: Text('Your default list is being prepared...'));
+        }
+        // Use a ListView which is intrinsically scrollable.
+        return ListView.builder(
+          shrinkWrap: true, // Important inside a Flexible Column
+          itemCount: lists.length,
+          itemBuilder: (context, index) {
+            final list = lists[index];
+            final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
+            final isDefaultList = list.name == merklisteListName;
+
+            return Card(
               elevation: isCurrentlyActive ? 2 : 0,
               color: isCurrentlyActive
                   ? theme.secondary.withOpacity(0.9)
-                  : Colors.transparent,
+                  : theme.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              margin: const EdgeInsets.symmetric(vertical: 4), // Add some spacing
               child: ListTile(
                 title: Text(
-                  listName,
+                  list.name,
                   style: TextStyle(
                     fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
                     color: isCurrentlyActive ? theme.primary : theme.inactive,
@@ -214,62 +256,22 @@ class _ShoppingListBottomSheetState
                 ),
                 onTap: () {
                   if (isSelectActiveMode) {
-                    ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
+                    ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
                     Navigator.pop(context);
                   } else {
-                    _addAndDismiss();
+                    ref.read(shoppingListsProvider.notifier).addToSpecificList(widget.product!, list.id);
+                    widget.onConfirm!(list.name);
                   }
                 },
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    // --- PATH FOR PREMIUM USERS ---
-    // Premium users will see a dynamic list of all their created lists.
-    final allListsAsync = ref.watch(allShoppingListsProvider);
-
-    return allListsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
-      data: (lists) {
-        // This check handles the brief moment before "Merkliste" is created.
-        if (lists.isEmpty) {
-          return const Center(child: Text('Your default list is being prepared...'));
-        }
-        return ListView.builder(
-          itemCount: lists.length,
-          itemBuilder: (context, index) {
-            final list = lists[index];
-            final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
-
-            return Opacity(
-              opacity: isCurrentlyActive ? 1.0 : 0.7,
-              child: Card(
-                elevation: isCurrentlyActive ? 2 : 0,
-                color: isCurrentlyActive
-                    ? theme.secondary.withOpacity(0.9)
-                    : Colors.transparent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                child: ListTile(
-                  title: Text(
-                    list.name,
-                    style: TextStyle(
-                      fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.normal,
-                      color: isCurrentlyActive ? theme.primary : theme.inactive,
-                    ),
+                trailing: isDefaultList
+                    ? null
+                    : IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: isCurrentlyActive ? theme.primary : theme.accent,
                   ),
-                  onTap: () {
-                    if (isSelectActiveMode) {
-                      ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
-                      Navigator.pop(context);
-                    } else {
-                      // This part would need a premium-specific implementation
-                      // to choose which list to add a product to.
-                      _addAndDismiss(); // For now, it defaults to the active list.
-                    }
+                  onPressed: () {
+                    _showDeleteConfirmationDialog(context, list.id, list.name);
                   },
                 ),
               ),
@@ -280,62 +282,38 @@ class _ShoppingListBottomSheetState
     );
   }
 
-  // This premium-focused tab is unchanged.
   Widget _buildNewListTab() {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
     if (isPremium) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _newListController,
-              autofocus: _tabController?.index == 1,
-              style: TextStyle(color: theme.inactive),
-              onSubmitted: (listName) {
-                if (isSelectActiveMode) {
-                  _createAndSetActive(listName);
-                } else {
-                  // This branch would need refactoring for premium
-                }
-              },
-              decoration: InputDecoration(
-                labelText: 'Enter new list name',
-                labelStyle: TextStyle(color: theme.inactive),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.inactive.withOpacity(0.5)),
-                    borderRadius: BorderRadius.circular(8.0)),
-                focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.secondary),
-                    borderRadius: BorderRadius.circular(8.0)),
-              ),
+      return Column(
+        children: [
+          TextField(
+            controller: _newListController,
+            autofocus: _tabController?.index == 1,
+            style: TextStyle(color: theme.inactive),
+            onSubmitted: _createAndSetActive,
+            decoration: InputDecoration(
+              labelText: 'Enter new list name',
+              labelStyle: TextStyle(color: theme.inactive),
+              // ... borders
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.secondary,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final listName = _newListController.text;
-                if (isSelectActiveMode) {
-                  _createAndSetActive(listName);
-                } else {
-                  // This branch would need refactoring for premium
-                }
-              },
-              child: Text(
-                isSelectActiveMode ? 'CREATE AND SELECT' : 'CREATE AND ADD',
-                style: TextStyle(
-                    color: theme.primary, fontWeight: FontWeight.bold),
-              ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.secondary,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-          ],
-        ),
+            onPressed: () => _createAndSetActive(_newListController.text),
+            child: Text(
+              'CREATE AND SELECT',
+              style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       );
     } else {
       return Padding(
@@ -355,8 +333,7 @@ class _ShoppingListBottomSheetState
               style: ElevatedButton.styleFrom(backgroundColor: theme.secondary),
               onPressed: () {
                 Navigator.of(context).pop();
-                final mainAppScreenState = context.findAncestorStateOfType<MainAppScreenState>();
-                mainAppScreenState?.navigateToTab(2);
+                context.findAncestorStateOfType<MainAppScreenState>()?.navigateToTab(2);
               },
               child: Text('Upgrade Now', style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
             ),

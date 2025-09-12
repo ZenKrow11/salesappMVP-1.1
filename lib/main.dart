@@ -53,9 +53,7 @@ Future<void> main() async {
   // END: Emulator connection block
 
 
-
   // firebase emulators:start --only firestore,auth
-
 
   // Initialize Hive for Flutter.
   await Hive.initFlutter();
