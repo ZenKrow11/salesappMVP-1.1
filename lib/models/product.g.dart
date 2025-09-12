@@ -32,13 +32,14 @@ class ProductAdapter extends TypeAdapter<Product> {
       sonderkondition: fields[12] as String?,
       dealEnd: fields[13] as DateTime?,
       isCustom: fields[14] as bool,
+      isOnSale: fields[15] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(13)
       ..write(obj.dealEnd)
       ..writeByte(14)
-      ..write(obj.isCustom);
+      ..write(obj.isCustom)
+      ..writeByte(15)
+      ..write(obj.isOnSale);
   }
 
   @override

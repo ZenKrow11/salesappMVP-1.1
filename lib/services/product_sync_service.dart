@@ -6,20 +6,23 @@ import 'package:hive/hive.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 
-// The provider definition remains the same.
+/// Provider for ProductSyncService
 final productSyncProvider = Provider<ProductSyncService>((ref) {
   return ProductSyncService(ref);
 });
 
 class ProductSyncService {
   final Ref _ref;
+
   ProductSyncService(this._ref);
 
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+
   Box<Product> get _productBox => _ref.read(productsBoxProvider);
+
   Box<dynamic> get _metadataBox => _ref.read(metadataBoxProvider);
 
-  /// --- NEW: Fetches the entire metadata document from Firestore ---
+  /// --- Fetches the entire metadata document from Firestore ---
   /// This document acts as the "control panel" for the app.
   Future<Map<String, dynamic>?> getRemoteMetadata() async {
     try {
@@ -37,44 +40,53 @@ class ProductSyncService {
 
   /// --- Gets the locally stored metadata ---
   Map<String, dynamic> getLocalMetadata() {
-    // Use .toMap() to convert the Hive Map to a standard Dart Map
-    // Default to an empty map if null
     return Map<String, dynamic>.from(_metadataBox.get('localMetadata') ?? {});
   }
 
-
-  /// --- The Core Logic: Decides if a sync is needed ---
+  /// --- Decides if a sync is needed ---
   Future<bool> needsSync() async {
     final remoteMetadata = await getRemoteMetadata();
     final localMetadata = getLocalMetadata();
 
-    // Can't sync if there's no remote data.
     if (remoteMetadata?['lastUpdated'] == null) {
-      return false;
+      return false; // Can't sync without server data
     }
-    // Must sync if we have no local data.
     if (localMetadata['lastUpdated'] == null) {
-      return true;
+      return true; // Must sync if no local data
     }
 
-    final remoteTimestamp = (remoteMetadata!['lastUpdated'] as Timestamp).toDate();
+    final remoteTimestamp =
+    (remoteMetadata!['lastUpdated'] as Timestamp).toDate();
     final localTimestamp = localMetadata['lastUpdated'];
 
-    // Sync if the server data is newer.
     return remoteTimestamp.isAfter(localTimestamp);
   }
 
-  /// --- The main sync function ---
+  /// --- Main sync function ---
   /// Fetches all products and the latest metadata from Firestore,
   /// saves them to Hive, and returns the new metadata.
   Future<Map<String, dynamic>> syncFromFirestore() async {
     final remoteMetadata = await getRemoteMetadata();
     if (remoteMetadata == null || remoteMetadata['lastUpdated'] == null) {
-      throw Exception("Aborting sync: Could not retrieve valid remote metadata.");
+      throw Exception(
+          "Aborting sync: Could not retrieve valid remote metadata.");
     }
 
-    final productsSnapshot = await _firestore.collection('products').get();
-    final products = productsSnapshot.docs
+    // Query products explicitly marked as on sale
+    final productsSnapshot = await _firestore
+        .collection('products')
+        .where('isOnSale', isEqualTo: true)
+        .get();
+
+    // Fallback: also fetch products missing the "isOnSale" field (legacy docs)
+    final fallbackSnapshot = await _firestore
+        .collection('products')
+        .where('isOnSale', isNull: true)
+        .get();
+
+    final allDocs = [...productsSnapshot.docs, ...fallbackSnapshot.docs];
+
+    final products = allDocs
         .map((doc) => Product.fromFirestore(doc.id, doc.data()))
         .toList();
 
@@ -83,10 +95,10 @@ class ProductSyncService {
     final Map<String, Product> productMap = {for (var p in products) p.id: p};
     await _productBox.putAll(productMap);
 
-    // On success, save the new metadata document locally.
-    // We convert the Firestore Timestamp to a standard DateTime for Hive.
+    // On success, save the new metadata locally
     final newLocalMetadata = Map<String, dynamic>.from(remoteMetadata);
-    newLocalMetadata['lastUpdated'] = (remoteMetadata['lastUpdated'] as Timestamp).toDate();
+    newLocalMetadata['lastUpdated'] =
+        (remoteMetadata['lastUpdated'] as Timestamp).toDate();
 
     await _metadataBox.put('localMetadata', newLocalMetadata);
 

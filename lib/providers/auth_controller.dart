@@ -161,4 +161,25 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       state = AsyncError(e, st);
     }
   }
+
+  Future<bool> sendPasswordResetEmail(String email) async {
+    // Prevent action if another operation is already in progress.
+    if (state.isLoading) return false;
+    state = const AsyncValue.loading();
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      // Set state back to idle after a successful operation.
+      state = const AsyncValue.data(null);
+      return true;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      // Set state to error and pass the specific error message.
+      state = AsyncValue.error(e.message ?? 'Failed to send reset email.', stackTrace);
+      return false;
+    } catch (e, stackTrace) {
+      // Handle any other unexpected errors.
+      state = AsyncValue.error('An unexpected error occurred.', stackTrace);
+      return false;
+    }
+  }
 }

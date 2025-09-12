@@ -12,6 +12,7 @@ import 'firebase_options.dart';
 import 'widgets/splash_screen.dart';
 import 'widgets/login_screen.dart';
 import 'pages/main_app_screen.dart';
+import 'package:sales_app_mvp/widgets/loading_gate.dart';
 
 // Required imports for the emulator setup
 import 'package:flutter/foundation.dart';
@@ -31,14 +32,18 @@ Future<void> main() async {
   );
 
 
-/*
+
   // START: Block to connect to Firebase Emulators in debug mode
+
   if (kDebugMode) {
     try {
+
       //local emulator
       //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
-      //physical phone
-      final host = "192.168.1.116";
+
+      // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
+      final host = '192.168.1.116';
+
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
     } catch (e) {
@@ -47,7 +52,10 @@ Future<void> main() async {
   }
   // END: Emulator connection block
 
-*/
+
+
+  // firebase emulators:start --only firestore,auth
+
 
   // Initialize Hive for Flutter.
   await Hive.initFlutter();
@@ -74,12 +82,19 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      initialRoute: SplashScreen.routeName,
+
+      // --- FIX: SET AuthGate AS THE HOME WIDGET ---
+      // This makes it the entry point of your app's UI.
+      // You cannot use both `home` and `initialRoute`.
+      home: const AuthGate(),
+
+      // --- FIX: SIMPLIFY THE ROUTES MAP ---
+      // The initial routing is now handled by AuthGate.
+      // You only need routes for pages you might navigate to manually by name later.
       routes: {
-        SplashScreen.routeName: (context) => const SplashScreen(),
+        // We removed SplashScreen and AuthGate from here.
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),
-        AuthGate.routeName: (context) => const AuthGate(),
       },
     );
   }
@@ -94,7 +109,7 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
-  static const routeName = '/auth-gate';
+  // --- FIX: NO routeName IS NEEDED HERE ---
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -103,16 +118,19 @@ class AuthGate extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          return const MainAppScreen();
+          // USER IS SIGNED IN
+          // Go to the LoadingGate to ensure data is ready.
+          return const LoadingGate();
         } else {
+          // USER IS SIGNED OUT
+          // Go to the login screen.
           return const LoginScreen();
         }
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      // Keep showing a splash/loading UI while checking auth state.
+      loading: () => const SplashScreen(),
       error: (err, stack) => Scaffold(
-        body: Center(child: Text("Auth Error: $err")),
+        body: Center(child: Text("Authentication Error: $err")),
       ),
     );
   }

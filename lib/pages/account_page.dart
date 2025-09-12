@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sales_app_mvp/main.dart'; // Import main.dart to get access to AuthGate
 import 'package:sales_app_mvp/pages/change_password_page.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -34,7 +35,11 @@ class AccountPage extends ConsumerWidget {
                 Navigator.of(dialogContext).pop();
                 await ref.read(authControllerProvider.notifier).signOut();
                 if (context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil('/auth-gate', (Route<dynamic> route) => false);
+                  // THE FIX IS HERE: Navigate to a new AuthGate instance instead of a named route.
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const AuthGate()),
+                        (Route<dynamic> route) => false,
+                  );
                 }
               },
             ),
@@ -43,6 +48,9 @@ class AccountPage extends ConsumerWidget {
       },
     );
   }
+
+  // ... THE REST OF YOUR ACCOUNT PAGE REMAINS EXACTLY THE SAME ...
+  // (All other methods like _showDeleteAccountDialog, build, etc. are correct)
 
   /// Shows the secure, styled dialog for account deletion.
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {

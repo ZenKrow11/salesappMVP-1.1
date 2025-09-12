@@ -37,6 +37,8 @@ class Product extends HiveObject {
   final DateTime? dealEnd;
   @HiveField(14)
   final bool isCustom;
+  @HiveField(15)
+  final bool isOnSale;
 
   Product({
     required this.id,
@@ -54,6 +56,7 @@ class Product extends HiveObject {
     this.sonderkondition,
     this.dealEnd,
     this.isCustom = false,
+    this.isOnSale = true,
   });
 
   static DateTime? _timestampToDateTime(dynamic timestamp) {
@@ -63,30 +66,37 @@ class Product extends HiveObject {
     return null;
   }
 
+  // In lib/models/product.dart
+
   factory Product.fromFirestore(String id, Map<String, dynamic> data) {
     final tokensData = data['name_tokens'] as List<dynamic>?;
     final tokens = tokensData?.map((e) => e.toString()).toList() ?? [];
-    String? sonderkonditionString = data['sonderkondition'] as String?;
-    if (sonderkonditionString == 'Keine Sonderkondition') {
+
+    String? sonderkonditionString = data['sonderkondition']?.toString();
+    if (sonderkonditionString == 'Keine Sonderkondition' || sonderkonditionString == 'nan') {
       sonderkonditionString = null;
     }
 
+    final categoryString = data['category']?.toString() ?? '';
+    final subcategoryString = data['subcategory']?.toString() ?? '';
+
     return Product(
       id: id,
-      store: (data['store'] as String? ?? '').trim(),
-      name: (data['name'] as String? ?? '').trim(),
+      store: (data['store']?.toString() ?? '').trim(),
+      name: (data['name']?.toString() ?? '').trim(),
       currentPrice: (data['currentPrice'] as num?)?.toDouble() ?? 0.0,
       normalPrice: (data['normalPrice'] as num?)?.toDouble() ?? 0.0,
       discountPercentage: (data['discountPercentage'] as num?)?.toInt() ?? 0,
-      category: data['category'] as String? ?? '',
-      subcategory: data['subcategory'] as String? ?? '',
-      url: data['url'] as String? ?? '',
-      imageUrl: data['imageUrl'] as String? ?? '',
+      category: categoryString,
+      subcategory: subcategoryString,
+      url: data['url']?.toString() ?? '',
+      imageUrl: data['imageUrl']?.toString() ?? '',
       nameTokens: tokens,
       availableFrom: _timestampToDateTime(data['availableFrom']),
       dealEnd: _timestampToDateTime(data['dealEnd']),
       sonderkondition: sonderkonditionString,
       isCustom: data['isCustom'] as bool? ?? false,
+      isOnSale: data['isOnSale'] as bool? ?? true,
     );
   }
 
@@ -95,7 +105,6 @@ class Product extends HiveObject {
     return (normalPrice - currentPrice) / normalPrice;
   }
 
-  // --- CORRECTED: The isCustom flag is now included ---
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
@@ -111,7 +120,8 @@ class Product extends HiveObject {
     'availableFrom': availableFrom,
     'dealEnd': dealEnd,
     'sonderkondition': sonderkondition,
-    'isCustom': isCustom, // This line is CRITICAL
+    'isCustom': isCustom,
+    'isOnSale': isOnSale,
   };
 
   Product toPlainObject() {
@@ -131,6 +141,7 @@ class Product extends HiveObject {
       sonderkondition: sonderkondition,
       dealEnd: dealEnd,
       isCustom: isCustom,
+      isOnSale: isOnSale,
     );
   }
 }

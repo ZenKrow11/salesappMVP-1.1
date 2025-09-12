@@ -1,20 +1,43 @@
+// lib/widgets/login_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:sales_app_mvp/providers/auth_controller.dart';
-import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
-import 'package:sales_app_mvp/pages/main_app_screen.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+// --- The main widget is now just a wrapper for the DefaultTabController ---
+class LoginScreen extends ConsumerWidget {
   static const routeName = '/login';
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // We create the DefaultTabController here...
+    return const DefaultTabController(
+      length: 2,
+      // ...and its child is the new _LoginView widget, which will handle all the UI.
+      child: _LoginView(),
+    );
+  }
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginView extends ConsumerStatefulWidget {
+  const _LoginView();
+
+  @override
+  ConsumerState<_LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends ConsumerState<_LoginView> {
+  // --- CHANGE 1: Create a separate GlobalKey for each form ---
+  // A single key cannot be used on two widgets (Login Form and Sign Up Form)
+  // that exist in the widget tree at the same time.
+  final _loginFormKey = GlobalKey<FormState>();
+  final _signUpFormKey = GlobalKey<FormState>();
+
+  // These controllers can still be shared since the UI is visually separated by tabs.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _keepLoggedIn = true;
@@ -26,15 +49,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _submitForm() async {
+    final isLogin = DefaultTabController.of(context).index == 0;
+
+    // --- CHANGE 2: Select the correct form key based on the active tab ---
+    final currentFormKey = isLogin ? _loginFormKey : _signUpFormKey;
+
+    // Validate using the key for the currently visible form.
+    if (!currentFormKey.currentState!.validate()) {
+      return;
+    }
+
+    final authNotifier = ref.read(authControllerProvider.notifier);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (isLogin) {
+      await authNotifier.signInWithEmail(email, password);
+    } else {
+      await authNotifier.signUpWithEmail(email, password);
+    }
+  }
+
+  // --- All helper methods below are unchanged and work correctly ---
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        // FIX: Use the 'message' variable and remove 'const'
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.redAccent.shade400,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -43,46 +86,96 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> _signInWithEmail() async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
-      _showErrorSnackBar("Please fill in both email and password.");
-      return;
-    }
-    final success = await ref.read(authControllerProvider.notifier).signInWithEmail(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      ),
     );
-    if (success && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
-    }
   }
 
-  Future<void> _signUpWithEmail() async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
-      _showErrorSnackBar("Please fill in both email and password.");
-      return;
-    }
-    final success = await ref.read(authControllerProvider.notifier).signUpWithEmail(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-    if (success && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
-    }
-  }
+  void _showForgotPasswordDialog() {
+    final theme = ref.read(themeProvider);
+    final dialogEmailController =
+    TextEditingController(text: _emailController.text);
 
-  Future<void> _signInWithGoogle() async {
-    final success = await ref.read(authControllerProvider.notifier).signInWithGoogle();
-    if (success && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(MainAppScreen.routeName, (route) => false);
-    }
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Consumer(builder: (context, ref, child) {
+          final authState = ref.watch(authControllerProvider);
+          return AlertDialog(
+            backgroundColor: theme.background,
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: Text('Reset Password',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: theme.secondary)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                    'Enter your email address and we will send you a link to reset your password.',
+                    style: TextStyle(color: theme.inactive)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: dialogEmailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofocus: true,
+                  style: TextStyle(color: theme.inactive),
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    labelStyle: TextStyle(color: theme.inactive),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  child:
+                  Text('Cancel', style: TextStyle(color: theme.inactive)),
+                  onPressed: () => Navigator.of(dialogContext).pop()),
+              authState.isLoading
+                  ? const CircularProgressIndicator()
+                  : FilledButton(
+                style: FilledButton.styleFrom(
+                    backgroundColor: theme.secondary),
+                child: const Text('Send Email'),
+                onPressed: () async {
+                  final email = dialogEmailController.text.trim();
+                  if (email.isEmpty) {
+                    _showErrorSnackBar("Please enter an email address.");
+                    return;
+                  }
+                  final success = await ref
+                      .read(authControllerProvider.notifier)
+                      .sendPasswordResetEmail(email);
+                  if (dialogContext.mounted)
+                    Navigator.of(dialogContext).pop();
+                  if (success && mounted) {
+                    _showSuccessSnackBar(
+                        "Password reset email sent to $email");
+                  }
+                },
+              ),
+            ],
+          );
+        });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final materialTheme = Theme.of(context);
-    final appTheme = ref.watch(themeProvider); // Get theme from provider
+    final appTheme = ref.watch(themeProvider);
+    final isLoading = authState.isLoading;
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       next.whenOrNull(
@@ -90,119 +183,153 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     });
 
-    final isLoading = authState.isLoading;
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: appTheme.background, // UPDATED
-        appBar: AppBar(
-          toolbarHeight: 80,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            'Welcome to SalesSeekr',
-            style: materialTheme.textTheme.headlineMedium?.copyWith(
-              color: appTheme.secondary, // UPDATED
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          bottom: TabBar(
-            indicatorColor: appTheme.secondary, // UPDATED
-            indicatorWeight: 3.0,
-            labelColor: appTheme.secondary, // UPDATED
-            unselectedLabelColor: appTheme.inactive, // UPDATED
-            labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            unselectedLabelStyle: const TextStyle(fontSize: 16),
-            tabs: const [
-              Tab(text: 'Login'),
-              Tab(text: 'Sign Up'),
-            ],
+    return Scaffold(
+      backgroundColor: appTheme.background,
+      appBar: AppBar(
+        toolbarHeight: 80,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Welcome to SalesSeekr',
+          style: materialTheme.textTheme.headlineMedium?.copyWith(
+            color: appTheme.secondary,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        body: SafeArea(
-          child: TabBarView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              _buildForm(isLogin: true, isLoading: isLoading),
-              _buildForm(isLogin: false, isLoading: isLoading),
-            ],
-          ),
+        bottom: TabBar(
+          indicatorColor: appTheme.secondary,
+          indicatorWeight: 3.0,
+          labelColor: appTheme.secondary,
+          unselectedLabelColor: appTheme.inactive,
+          labelStyle:
+          const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 16),
+          tabs: const [
+            Tab(text: 'Login'),
+            Tab(text: 'Sign Up'),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildForm({required bool isLogin, required bool isLoading}) {
-    final appTheme = ref.watch(themeProvider); // Get theme
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: SafeArea(
+        child: TabBarView(
+          physics: const BouncingScrollPhysics(),
           children: [
-            const SizedBox(height: 20),
-            _buildTextField(
-              controller: _emailController,
-              label: 'Email Address',
-              icon: Icons.email_outlined,
-            ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _passwordController,
-              label: 'Password',
-              icon: Icons.lock_outline,
-              isPassword: true,
-            ),
-            if (isLogin) ...[
-              const SizedBox(height: 8),
-              _buildLoginOptions(),
-            ],
-            SizedBox(height: isLogin ? 24 : 40),
-            if (isLoading)
-              Center(child: CircularProgressIndicator(color: appTheme.secondary)) // UPDATED
-            else
-              _buildAuthActions(isLogin: isLogin, isLoading: isLoading),
+            // --- CHANGE 3: Pass the correct, unique key to each form ---
+            _buildForm(
+                key: _loginFormKey, isLogin: true, isLoading: isLoading),
+            _buildForm(
+                key: _signUpFormKey, isLogin: false, isLoading: isLoading),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool isPassword = false,
-  }) {
-    final appTheme = ref.watch(themeProvider); // Get theme
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      keyboardType: isPassword ? TextInputType.visiblePassword : TextInputType.emailAddress,
-      style: TextStyle(color: appTheme.inactive), // UPDATED (was textPrimary)
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: appTheme.inactive), // UPDATED
-        prefixIcon: Icon(icon, color: appTheme.inactive), // UPDATED
-        filled: true,
-        fillColor: appTheme.primary.withOpacity(0.5), // UPDATED & FIXED
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)), // UPDATED & FIXED
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: appTheme.secondary, width: 2), // UPDATED
+  // --- CHANGE 4: Modify the _buildForm signature to accept the key ---
+  Widget _buildForm(
+      {required Key key, required bool isLogin, required bool isLoading}) {
+    return Center(
+      // --- CHANGE 5: Use the passed-in key for the Form widget ---
+      child: Form(
+        key: key,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              _buildEmailField(),
+              const SizedBox(height: 16),
+              _buildPasswordField(),
+              if (isLogin) ...[
+                const SizedBox(height: 8),
+                _buildLoginOptions(),
+              ],
+              SizedBox(height: isLogin ? 24 : 40),
+              if (isLoading)
+                Center(
+                    child: CircularProgressIndicator(
+                        color: ref.watch(themeProvider).secondary))
+              else
+                _buildAuthActions(isLoading: isLoading),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildEmailField() {
+    final appTheme = ref.watch(themeProvider);
+    return TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      style: TextStyle(color: appTheme.inactive),
+      decoration: InputDecoration(
+        labelText: 'Email Address',
+        labelStyle: TextStyle(color: appTheme.inactive),
+        prefixIcon: Icon(Icons.email_outlined, color: appTheme.inactive),
+        filled: true,
+        fillColor: appTheme.primary.withOpacity(0.5),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: appTheme.secondary, width: 2),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your email address.';
+        }
+        if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+          return 'Please enter a valid email address.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    final appTheme = ref.watch(themeProvider);
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: true,
+      keyboardType: TextInputType.visiblePassword,
+      style: TextStyle(color: appTheme.inactive),
+      decoration: InputDecoration(
+        labelText: 'Password',
+        labelStyle: TextStyle(color: appTheme.inactive),
+        prefixIcon: Icon(Icons.lock_outline, color: appTheme.inactive),
+        filled: true,
+        fillColor: appTheme.primary.withOpacity(0.5),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: appTheme.secondary, width: 2),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your password.';
+        }
+        if (value.length < 6) {
+          return 'Password must be at least 6 characters long.';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildLoginOptions() {
-    final appTheme = ref.watch(themeProvider); // Get theme
+    final appTheme = ref.watch(themeProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -211,71 +338,85 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Checkbox(
               value: _keepLoggedIn,
               onChanged: (val) => setState(() => _keepLoggedIn = val ?? true),
-              activeColor: appTheme.secondary, // UPDATED
-              checkColor: appTheme.background, // UPDATED
-              side: BorderSide(color: appTheme.inactive.withOpacity(0.5), width: 2), // UPDATED & FIXED
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              activeColor: appTheme.secondary,
+              checkColor: appTheme.background,
+              side: BorderSide(
+                  color: appTheme.inactive.withOpacity(0.5), width: 2),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6)),
             ),
             GestureDetector(
               onTap: () => setState(() => _keepLoggedIn = !_keepLoggedIn),
-              child: Text("Remember me", style: TextStyle(color: appTheme.inactive)), // UPDATED (was textPrimary)
+              child:
+              Text("Remember me", style: TextStyle(color: appTheme.inactive)),
             ),
           ],
         ),
         TextButton(
-          onPressed: () => _showErrorSnackBar("Forgot Password clicked!"),
+          onPressed: _showForgotPasswordDialog,
           child: Text(
             'Forgot Password?',
-            style: TextStyle(color: appTheme.secondary, fontWeight: FontWeight.w600), // UPDATED
+            style: TextStyle(
+                color: appTheme.secondary, fontWeight: FontWeight.w600),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAuthActions({required bool isLogin, required bool isLoading}) {
-    final appTheme = ref.watch(themeProvider); // Get theme
+  Widget _buildAuthActions({required bool isLoading}) {
+    final appTheme = ref.watch(themeProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: appTheme.secondary, // UPDATED
-            foregroundColor: appTheme.primary, // UPDATED
+            backgroundColor: appTheme.secondary,
+            foregroundColor: appTheme.primary,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textStyle:
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          onPressed: isLoading ? null : (isLogin ? _signInWithEmail : _signUpWithEmail),
-          child: Text(isLogin ? 'Login' : 'Create Account'),
+          onPressed: isLoading ? null : _submitForm,
+          child: Text(DefaultTabController.of(context).index == 0
+              ? 'Login'
+              : 'Create Account'),
         ),
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(child: Divider(color: appTheme.inactive.withOpacity(0.3))), // UPDATED & FIXED
+            Expanded(
+                child: Divider(color: appTheme.inactive.withOpacity(0.3))),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text("OR", style: TextStyle(color: appTheme.inactive)), // UPDATED
+              child: Text("OR", style: TextStyle(color: appTheme.inactive)),
             ),
-            Expanded(child: Divider(color: appTheme.inactive.withOpacity(0.3))), // UPDATED & FIXED
+            Expanded(
+                child: Divider(color: appTheme.inactive.withOpacity(0.3))),
           ],
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           icon: SvgPicture.asset('assets/icons/google.svg', height: 22),
           label: const Text('Continue with Google'),
-          onPressed: isLoading ? null : _signInWithGoogle,
+          onPressed: isLoading
+              ? null
+              : () =>
+              ref.read(authControllerProvider.notifier).signInWithGoogle(),
           style: ElevatedButton.styleFrom(
-            backgroundColor: appTheme.pageBackground, // UPDATED (primary might be too dark)
-            foregroundColor: appTheme.inactive, // UPDATED (was textPrimary)
+            backgroundColor: appTheme.pageBackground,
+            foregroundColor: appTheme.inactive,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: appTheme.inactive.withOpacity(0.3)), // UPDATED & FIXED
+              side: BorderSide(color: appTheme.inactive.withOpacity(0.3)),
             ),
             elevation: 0,
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textStyle:
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ],
