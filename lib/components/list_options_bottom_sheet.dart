@@ -4,14 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
+import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/pages/shopping_mode_screen.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-
-import '../pages/manage_custom_items_page.dart';
-import '../widgets/slide_up_page_route.dart';
 
 class ListOptionsBottomSheet extends ConsumerWidget {
   const ListOptionsBottomSheet({super.key});
@@ -36,56 +35,57 @@ class ListOptionsBottomSheet extends ConsumerWidget {
           _buildHeader(context, theme),
           const SizedBox(height: 16),
 
-          // Group 1: Execution
+          // ... (Start Shopping Mode and Manage My Lists are unchanged) ...
           _buildOptionTile(
             context: context,
             theme: theme,
             icon: Icons.shopping_cart_checkout,
             title: 'Start Shopping Mode',
             onTap: () {
-              Navigator.pop(context); // Close this sheet first
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingModeScreen()));
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ShoppingModeScreen()));
             },
           ),
           const Divider(),
-
-          // Group 2: Management
           _buildOptionTile(
             context: context,
             theme: theme,
             icon: Icons.list_alt,
             title: 'Manage My Lists',
             onTap: () {
-              Navigator.pop(context); // Close this sheet
-              // Open the existing, powerful sheet for list management
+              Navigator.pop(context);
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
-                backgroundColor: Colors.transparent, // Let the child handle color
+                backgroundColor: Colors.transparent,
                 builder: (_) => const ShoppingListBottomSheet(),
               );
             },
           ),
+
+          // --- THIS IS THE FIX: This button now launches the new page ---
           _buildOptionTile(
             context: context,
             theme: theme,
             icon: Icons.edit_note,
             title: 'Manage Custom Items',
-              onTap: () {
-                Navigator.pop(context); // Close the options sheet
-                // Slide up the new page
-                Navigator.of(context).push(SlideUpPageRoute(page: const ManageCustomItemsPage()));
-              },
-
+            onTap: () {
+              Navigator.pop(context); // Close the bottom sheet
+              // Slide up the new, unified custom items page
+              Navigator.of(context).push(SlideUpPageRoute(page: const ManageCustomItemsPage()));
+            },
           ),
-          const Divider(),
+          // -------------------------------------------------------------
 
-          // Group 3: Danger Zone
+          const Divider(),
           _buildDeleteOption(context, ref, theme),
         ],
       ),
     );
   }
+
+  // ... (The rest of the file remains unchanged. All helper methods are correct.) ...
 
   Widget _buildHeader(BuildContext context, AppThemeData theme) {
     return Row(
@@ -123,19 +123,16 @@ class ListOptionsBottomSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeleteOption(BuildContext context, WidgetRef ref, AppThemeData theme) {
+  Widget _buildDeleteOption(
+      BuildContext context, WidgetRef ref, AppThemeData theme) {
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
     final activeListId = ref.watch(activeShoppingListProvider);
     final allLists = ref.watch(allShoppingListsProvider).value ?? [];
-
-    // Find the active list, defaulting to the base "Merkliste" if something goes wrong
     final activeList = allLists.firstWhere(
           (list) => list.id == activeListId,
       orElse: () => ShoppingListInfo(id: '', name: merklisteListName),
     );
     final isDefaultList = activeList.name == merklisteListName;
-
-    // A user can delete a list if they are premium AND it's not the default list.
     final canDelete = isPremium && !isDefaultList;
 
     return _buildOptionTile(
@@ -144,21 +141,27 @@ class ListOptionsBottomSheet extends ConsumerWidget {
       icon: Icons.delete_outline,
       title: 'Delete Current List',
       color: canDelete ? theme.accent : theme.inactive.withOpacity(0.5),
-      onTap: canDelete ? () {
-        Navigator.pop(context); // Close bottom sheet
-        _showDeleteConfirmationDialog(context, ref, activeListId, activeList.name);
-      } : null, // Disable the button if it can't be deleted
+      onTap: canDelete
+          ? () {
+        Navigator.pop(context);
+        _showDeleteConfirmationDialog(
+            context, ref, activeListId, activeList.name);
+      }
+          : null,
     );
   }
 
-  // This helper is moved from the shopping_list_page to make this component self-contained.
-  void _showDeleteConfirmationDialog(BuildContext context, WidgetRef ref, String listId, String listName) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, WidgetRef ref, String listId, String listName) {
+    final firestoreService = ref.read(firestoreServiceProvider);
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text('Delete "$listName"?'),
-          content: const Text('This action is permanent and cannot be undone.'),
+          content:
+          const Text('This action is permanent and cannot be undone.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -170,9 +173,10 @@ class ListOptionsBottomSheet extends ConsumerWidget {
               ),
               child: const Text('Delete'),
               onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await ref.read(firestoreServiceProvider).deleteList(listId: listId);
-                // The shopping_list_page will automatically handle the list state change.
+                await firestoreService.deleteList(listId: listId);
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
               },
             ),
           ],

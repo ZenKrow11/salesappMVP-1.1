@@ -5,9 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sales_app_mvp/components/bottom_summary_bar.dart';
-import 'package:sales_app_mvp/components/custom_item_storage_view.dart';
 import 'package:sales_app_mvp/components/management_grid_tile.dart';
-// --- REFACTOR: Import our new bottom sheet ---
 import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
@@ -18,23 +16,14 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-class ShoppingListPage extends ConsumerStatefulWidget {
+// --- REFACTOR: This can now be a simpler ConsumerWidget ---
+class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
 
   @override
-  ConsumerState<ShoppingListPage> createState() => _ShoppingListPageState();
-}
-
-class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
-  // --- REFACTOR: This state is no longer needed, the flow is simplified. ---
-  // bool _isShowingCustomStorage = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final init = ref.watch(initializationProvider);
     final theme = ref.watch(themeProvider);
-    // The scaffoldKey is no longer needed for the drawer but can be kept for other purposes.
-    final scaffoldKey = GlobalKey<ScaffoldState>();
 
     return init.when(
       loading: () => Scaffold(
@@ -46,10 +35,7 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
         body: Center(child: Text('Fatal Error: $err')),
       ),
       data: (_) => Scaffold(
-        key: scaffoldKey,
         backgroundColor: theme.pageBackground,
-        // --- REFACTOR: The Drawer is GONE! ---
-        // endDrawer: _buildDrawer(context, ref),
         body: SafeArea(
           child: Column(
             children: [
@@ -57,6 +43,7 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
               Expanded(
                 child: _buildBodyContent(context, ref),
               ),
+              // The summary bar is now always visible on this page.
               _buildSummaryBar(ref),
             ],
           ),
@@ -65,7 +52,37 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
     );
   }
 
-  // --- REFACTOR: Simplified body content. It no longer toggles views. ---
+  // --- REFACTOR: Simplified header, no longer needs scaffoldKey for a drawer ---
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: isPremium
+                ? _buildPremiumHeaderDropdown(ref, theme)
+                : _buildFreeUserHeader(context, theme),
+          ),
+          IconButton(
+            icon: Icon(Icons.settings, color: theme.inactive, size: 26),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const ListOptionsBottomSheet(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- REFACTOR: Simplified body content, it no longer toggles views ---
   Widget _buildBodyContent(BuildContext context, WidgetRef ref) {
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
     final theme = ref.watch(themeProvider);
@@ -99,6 +116,8 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
       },
     );
   }
+
+  // --- The rest of the file contains the helper methods ---
 
   Widget _buildGroupedGridView(BuildContext context, WidgetRef ref,
       List<Product> products, AppThemeData theme) {
@@ -181,41 +200,6 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
       ),
     );
   }
-
-  // --- REFACTOR: The entire _buildDrawer method is DELETED ---
-  // --- REFACTOR: The _showDeleteConfirmationDialog is DELETED (moved to the new sheet) ---
-
-  // --- REFACTOR: The header is simplified and now opens the new bottom sheet ---
-  Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider);
-    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: isPremium
-                ? _buildPremiumHeaderDropdown(ref, theme)
-                : _buildFreeUserHeader(context, theme),
-          ),
-          IconButton(
-            icon: Icon(Icons.settings, color: theme.inactive, size: 26),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const ListOptionsBottomSheet(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- No changes to the methods below ---
 
   Widget _buildPremiumHeaderDropdown(WidgetRef ref, AppThemeData theme) {
     final allListsAsync = ref.watch(allShoppingListsProvider);
