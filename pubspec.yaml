@@ -15,6 +15,7 @@ dependencies:
   cloud_firestore: ^5.0.1
   firebase_auth: ^5.1.0
   google_sign_in: ^6.2.1
+  firebase_ui_auth: ^1.2.11
 
   # State Management (Riverpod)
   flutter_riverpod: ^2.5.1
@@ -30,7 +31,7 @@ dependencies:
   cached_network_image: ^3.3.1
   collection: ^1.18.0
   flutter_svg: ^2.0.10+1
-  intl: ^0.19.0 # Updated to a more recent stable version
+  intl: ^0.20.2 # Updated to a more recent stable version
   responsive_framework: ^1.4.0
   scrollable_positioned_list: ^0.3.8
   sticky_headers: ^0.3.0
