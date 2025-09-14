@@ -1,4 +1,4 @@
-// lib/models/product.dart
+// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\models\product.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
@@ -59,12 +59,34 @@ class Product extends HiveObject {
     this.isOnSale = true,
   });
 
-  static DateTime? _timestampToDateTime(dynamic timestamp) {
-    if (timestamp is Timestamp) {
-      return timestamp.toDate();
+  // --- FIX START ---
+  // This function is now more robust and can handle Timestamps and Strings.
+  static DateTime? _timestampToDateTime(dynamic data) {
+    if (data == null) {
+      return null;
     }
+    // Handle Firestore Timestamp
+    if (data is Timestamp) {
+      return data.toDate();
+    }
+    // Handle ISO 8601 String format (e.g., "2023-10-27T10:00:00Z")
+    if (data is String) {
+      try {
+        return DateTime.parse(data);
+      } catch (e) {
+        // If parsing fails, return null to avoid crashing
+        return null;
+      }
+    }
+    // If it's already a DateTime (e.g., from Hive), just return it
+    if (data is DateTime) {
+      return data;
+    }
+    // Return null for any other type
     return null;
   }
+  // --- FIX END ---
+
 
   // In lib/models/product.dart
 
@@ -117,8 +139,9 @@ class Product extends HiveObject {
     'url': url,
     'imageUrl': imageUrl,
     'name_tokens': nameTokens,
-    'availableFrom': availableFrom,
-    'dealEnd': dealEnd,
+    // When saving back to Firestore, it's best to convert DateTime to a Timestamp
+    'availableFrom': availableFrom != null ? Timestamp.fromDate(availableFrom!) : null,
+    'dealEnd': dealEnd != null ? Timestamp.fromDate(dealEnd!) : null,
     'sonderkondition': sonderkondition,
     'isCustom': isCustom,
     'isOnSale': isOnSale,
