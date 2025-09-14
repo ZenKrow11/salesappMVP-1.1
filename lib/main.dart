@@ -32,17 +32,17 @@ Future<void> main() async {
   );
 
 
-/*
+
   // START: Block to connect to Firebase Emulators in debug mode
 
   if (kDebugMode) {
     try {
 
       //local emulator
-      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
 
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
-      //final host = '192.168.1.116';
+      final host = '192.168.1.116';
 
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
@@ -51,7 +51,7 @@ Future<void> main() async {
     }
   }
   // END: Emulator connection block
-*/
+
 
 
   // firebase emulators:start --only firestore,auth
@@ -81,9 +81,15 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      
+
+      // --- FIX: SET AuthGate AS THE HOME WIDGET ---
+      // This makes it the entry point of your app's UI.
+      // You cannot use both `home` and `initialRoute`.
       home: const AuthGate(),
 
+      // --- FIX: SIMPLIFY THE ROUTES MAP ---
+      // The initial routing is now handled by AuthGate.
+      // You only need routes for pages you might navigate to manually by name later.
       routes: {
         // We removed SplashScreen and AuthGate from here.
         LoginScreen.routeName: (context) => const LoginScreen(),
