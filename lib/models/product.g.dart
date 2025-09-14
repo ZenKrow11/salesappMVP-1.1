@@ -28,7 +28,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       url: fields[8] as String,
       imageUrl: fields[9] as String,
       nameTokens: (fields[10] as List).cast<String>(),
-      availableFrom: fields[11] as DateTime?,
+      dealStart: fields[11] as DateTime?,
       sonderkondition: fields[12] as String?,
       dealEnd: fields[13] as DateTime?,
       isCustom: fields[14] as bool,
@@ -63,7 +63,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(10)
       ..write(obj.nameTokens)
       ..writeByte(11)
-      ..write(obj.availableFrom)
+      ..write(obj.dealStart)
       ..writeByte(12)
       ..write(obj.sonderkondition)
       ..writeByte(13)

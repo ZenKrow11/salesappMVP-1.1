@@ -433,7 +433,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       return DateFormat('dd.MM.yyyy').format(date);
     }
 
-    final fromDate = formatDate(widget.product.availableFrom);
+    final fromDate = formatDate(widget.product.dealStart);
     final toDate = formatDate(widget.product.dealEnd);
 
     String availabilityText;
