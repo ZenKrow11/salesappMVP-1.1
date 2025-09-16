@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:sales_app_mvp/components/management_grid_tile.dart';
-// +++ ADD THIS IMPORT +++
+// No longer needed
+// import 'package:sales_app_mvp/components/management_grid_tile.dart';
 import 'package:sales_app_mvp/components/shopping_list_item_tile.dart';
 import 'package:sales_app_mvp/components/shopping_summary_bar.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -22,11 +22,7 @@ class ShoppingListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
     final theme = ref.watch(themeProvider);
-
-    // +++ ADD THIS LINE +++
-    // Watch the view mode provider to decide which layout to show.
     final isGridView = ref.watch(shoppingListViewModeProvider);
-    // +++ END ADD +++
 
     return asyncShoppingList.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -49,12 +45,9 @@ class ShoppingListPage extends ConsumerWidget {
         return Column(
           children: [
             Expanded(
-              // ======================= REFACTOR =======================
-              // Conditionally build the grid or the list based on the provider state.
               child: isGridView
                   ? _buildGroupedGridView(context, ref, products, theme)
                   : _buildGroupedListView(context, ref, products, theme),
-              // ========================================================
             ),
             ShoppingSummaryBar(products: products),
           ],
@@ -63,7 +56,6 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  // This method for the GRID view is UNCHANGED.
   Widget _buildGroupedGridView(BuildContext context, WidgetRef ref,
       List<Product> products, AppThemeData theme) {
     final groupedProducts = groupBy(products, (Product p) => CategoryService.getGroupingDisplayNameForProduct(p));
@@ -85,12 +77,17 @@ class ShoppingListPage extends ConsumerWidget {
                 crossAxisCount: 3,
                 crossAxisSpacing: 10.0,
                 mainAxisSpacing: 10.0,
-                childAspectRatio: 0.8,
+                childAspectRatio: 0.8, // Aspect ratio can be adjusted if needed
               ),
               delegate: SliverChildBuilderDelegate(
                     (context, index) {
                   final product = groupedProducts[groupName]![index];
-                  return ManagementGridTile(product: product, allProductsInList: products);
+                  // --- FIX: Use the unified tile with isGridView set to true ---
+                  return ShoppingListItemTile(
+                    product: product,
+                    allProductsInList: products,
+                    isGridView: true,
+                  );
                 },
                 childCount: groupedProducts[groupName]!.length,
               ),
@@ -101,9 +98,6 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  // +++ ADD THIS NEW METHOD +++
-  // This method builds the LIST view. It's very similar to the grid view
-  // but uses SliverList and ShoppingListItemTile.
   Widget _buildGroupedListView(BuildContext context, WidgetRef ref,
       List<Product> products, AppThemeData theme) {
     final groupedProducts = groupBy(products, (Product p) => CategoryService.getGroupingDisplayNameForProduct(p));
@@ -118,15 +112,15 @@ class ShoppingListPage extends ConsumerWidget {
               child: _buildGroupHeader(groupName, theme),
             ),
           ),
-          // The key difference is using SliverList instead of SliverGrid.
           SliverList(
             delegate: SliverChildBuilderDelegate(
                   (context, index) {
                 final product = groupedProducts[groupName]![index];
-                // And using our ShoppingListItemTile component.
+                // --- FIX: Use the unified tile with isGridView set to false ---
                 return ShoppingListItemTile(
                   product: product,
                   allProductsInList: products,
+                  isGridView: false,
                 );
               },
               childCount: groupedProducts[groupName]!.length,
@@ -136,9 +130,7 @@ class ShoppingListPage extends ConsumerWidget {
       ],
     );
   }
-  // +++ END ADD +++
 
-  // This helper method for the group headers also remains unchanged.
   Widget _buildGroupHeader(String groupName, AppThemeData theme) {
     final style = CategoryService.getStyleForGroupingName(groupName);
     return Container(
