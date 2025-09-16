@@ -11,8 +11,10 @@ class AppThemeData {
   final Color accent;        // A secondary accent color for special cases
   final Color alternateAccent; // A secondary accent color for special cases;
   final Color inactive;      // New: white color
-
   final Color pageBackground;
+
+  // +++ ADD THIS LINE +++
+  final Color savingsColor;  // A specific color for positive savings
 
   const AppThemeData({
     required this.primary,
@@ -22,6 +24,8 @@ class AppThemeData {
     required this.alternateAccent,
     required this.inactive,
     required this.pageBackground,
+    // +++ ADD THIS LINE +++
+    required this.savingsColor,
   });
 }
 
@@ -33,6 +37,8 @@ final AppThemeData defaultTheme = AppThemeData(
   alternateAccent: const Color(0xFFFDED00),
   inactive: const Color(0xFFFFFFFF),
   pageBackground: const Color(0xFF313846), // In-between color
+  // +++ ADD THIS LINE (Using a nice Material green) +++
+  savingsColor: const Color(0xFF4CAF50),
 );
 
 final themeProvider = Provider<AppThemeData>((ref) {

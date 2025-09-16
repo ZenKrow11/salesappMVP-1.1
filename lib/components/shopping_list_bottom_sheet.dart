@@ -1,7 +1,9 @@
 // lib/components/shopping_list_bottom_sheet.dart
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/shopping_list_info.dart'; // Import ShoppingListInfo
 import '../models/product.dart';
 import '../models/shopping_list_info.dart';
 import '../providers/shopping_list_provider.dart';
@@ -28,8 +30,7 @@ class ShoppingListBottomSheet extends ConsumerStatefulWidget {
       _ShoppingListBottomSheetState();
 }
 
-class _ShoppingListBottomSheetState
-    extends ConsumerState<ShoppingListBottomSheet>
+class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomSheet>
     with SingleTickerProviderStateMixin {
   final TextEditingController _newListController = TextEditingController();
   TabController? _tabController;
@@ -53,6 +54,7 @@ class _ShoppingListBottomSheetState
     super.dispose();
   }
 
+  // ... (All your helper methods like _addAndDismiss, etc. remain unchanged) ...
   void _addAndDismiss() {
     if (widget.product == null) return;
     ref.read(shoppingListsProvider.notifier).addToList(widget.product!);
@@ -73,7 +75,8 @@ class _ShoppingListBottomSheetState
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, String listId, String listName) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, String listId, String listName) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -92,7 +95,9 @@ class _ShoppingListBottomSheetState
               child: const Text('Delete'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                await ref.read(firestoreServiceProvider).deleteList(listId: listId);
+                await ref
+                    .read(firestoreServiceProvider)
+                    .deleteList(listId: listId);
               },
             ),
           ],
@@ -101,60 +106,58 @@ class _ShoppingListBottomSheetState
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
 
-    // --- THIS IS THE FIX ---
-    // The main container for the bottom sheet. We wrap its content in a Column
-    // that uses Expanded to correctly size the TabBarView.
-    // The `mainAxisSize.min` on the Column combined with Flexible on the TabBarView
-    // is a robust way to handle this.
     return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: theme.background,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
+      // --- CHANGE: Decreased the max height from 0.9 to 0.7 ---
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // Let the content determine the height
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 12),
-            _buildTabBar(),
-            const SizedBox(height: 16),
-            // We use Flexible here to allow the TabBarView to take up space,
-            // but it will also shrink if the content is small. This is
-            // more robust than Expanded for variable content size.
-            Flexible(
-              child: _buildTabContent(),
+        // This pushes the content up when the keyboard appears.
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.background,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-          ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            child: Column(
+              // This makes the column shrink to its content's height.
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 12),
+                _buildTabBar(),
+                const SizedBox(height: 16),
+                // Flexible allows the list view to take remaining space,
+                // but it's bounded by the BoxConstraints above, preventing overflow.
+                Flexible(
+                  child: TabBarView(
+                    controller: _tabController!,
+                    children: [
+                      _buildSelectList(),
+                      _buildNewListTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
-
-  // No changes to _buildTabContent needed now, the fix is in the parent.
-  Widget _buildTabContent() {
-    return TabBarView(
-      controller: _tabController!,
-      children: [
-        _buildSelectList(),
-        _buildNewListTab(),
-      ],
-    );
-  }
-
-  // ... (THE REST OF THE FILE REMAINS EXACTLY THE SAME) ...
 
   Widget _buildHeader() {
     final theme = ref.watch(themeProvider);
@@ -230,12 +233,33 @@ class _ShoppingListBottomSheetState
         if (lists.isEmpty) {
           return const Center(child: Text('Your default list is being prepared...'));
         }
-        // Use a ListView which is intrinsically scrollable.
+
+        // --- CHANGE: Logic to pin the default list to the top ---
+        ShoppingListInfo? defaultList;
+        List<ShoppingListInfo> customLists = [];
+        for (var list in lists) {
+          if (list.name == merklisteListName) {
+            defaultList = list;
+          } else {
+            customLists.add(list);
+          }
+        }
+
+        // Sort only the custom lists alphabetically
+        customLists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+        // Recombine the lists with the default one at the top
+        final orderedLists = <ShoppingListInfo>[];
+        if (defaultList != null) {
+          orderedLists.add(defaultList);
+        }
+        orderedLists.addAll(customLists);
+        // --- END CHANGE ---
+
         return ListView.builder(
-          shrinkWrap: true, // Important inside a Flexible Column
-          itemCount: lists.length,
+          itemCount: orderedLists.length, // Use the newly ordered list
           itemBuilder: (context, index) {
-            final list = lists[index];
+            final list = orderedLists[index]; // Use the newly ordered list
             final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
             final isDefaultList = list.name == merklisteListName;
 
@@ -245,7 +269,7 @@ class _ShoppingListBottomSheetState
                   ? theme.secondary.withOpacity(0.9)
                   : theme.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              margin: const EdgeInsets.symmetric(vertical: 4), // Add some spacing
+              margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
                 title: Text(
                   list.name,
@@ -287,35 +311,68 @@ class _ShoppingListBottomSheetState
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
     if (isPremium) {
-      return Column(
-        children: [
-          TextField(
-            controller: _newListController,
-            autofocus: _tabController?.index == 1,
-            style: TextStyle(color: theme.inactive),
-            onSubmitted: _createAndSetActive,
-            decoration: InputDecoration(
-              labelText: 'Enter new list name',
-              labelStyle: TextStyle(color: theme.inactive),
-              // ... borders
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.secondary,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => _createAndSetActive(_newListController.text),
-            child: Text(
-              'CREATE AND SELECT',
-              style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
+      // Watch the list of all shopping lists to check the current count.
+      final allListsAsync = ref.watch(allShoppingListsProvider);
+
+      return allListsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (lists) {
+          // Check if the user is below the maximum list limit.
+          final canCreateMoreLists = lists.length < 6;
+
+          if (canCreateMoreLists) {
+            // If they can create more, show the text field and button.
+            return Column(
+              mainAxisSize: MainAxisSize.min, // This tab's content is small, so min is fine here.
+              children: [
+                TextField(
+                  controller: _newListController,
+                  autofocus: _tabController?.index == 1,
+                  style: TextStyle(color: theme.inactive),
+                  onSubmitted: _createAndSetActive,
+                  decoration: InputDecoration(
+                    labelText: 'Enter new list name',
+                    labelStyle: TextStyle(color: theme.inactive),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.secondary,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => _createAndSetActive(_newListController.text),
+                  child: Text(
+                    'CREATE AND SELECT',
+                    style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // If the limit is reached, show an informational message instead.
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 48, color: theme.inactive.withOpacity(0.7)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'You have reached the maximum of 6 lists.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: theme.inactive),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
       );
     } else {
+      // This is the non-premium user view, now with updated text.
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -324,7 +381,7 @@ class _ShoppingListBottomSheetState
             Icon(Icons.lock_outline, size: 48, color: theme.inactive.withOpacity(0.7)),
             const SizedBox(height: 16),
             Text(
-              'Create unlimited custom lists with Premium.',
+              'Create up to 6 custom lists with Premium.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: theme.inactive),
             ),

@@ -17,7 +17,11 @@ import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
+import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 
+import '../widgets/slide_up_page_route.dart';
+import 'manage_custom_items_page.dart';
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
@@ -57,12 +61,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    // ========== THIS IS THE FIX ==========
-    // We now watch the initializationProvider at the top level of the main screen.
     final init = ref.watch(initializationProvider);
 
-    // This ensures no UI is built until the user's auth state is confirmed
-    // and the default shopping list is guaranteed to exist.
     return init.when(
       loading: () => Scaffold(
         backgroundColor: theme.pageBackground,
@@ -78,8 +78,38 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         },
         child: Scaffold(
           backgroundColor: theme.pageBackground,
-          appBar: currentIndex == 0 ? _buildHomePageAppBar(theme) : null,
-          body: _pages[currentIndex],
+          appBar: _buildAppBarForIndex(currentIndex, theme),
+
+          // ===================== REFACTOR START =====================
+          // The body is wrapped in a Stack to layer the FAB on top.
+          body: Stack(
+            children: [
+              // This is the main content of your page (HomePage, ShoppingListPage, etc.)
+              _pages[currentIndex],
+
+              // The FAB is now a settings button for the "Lists" tab (index 1).
+              // It has been moved up to avoid covering the summary bar.
+              if (currentIndex == 1)
+                Positioned(
+                  bottom: 80.0, // Raised to be above the summary bar
+                  right: 16.0,
+                  child: FloatingActionButton(
+                    backgroundColor: theme.secondary,
+                    foregroundColor: theme.primary,
+                    onPressed: () {
+                      // Opens the List Options bottom sheet, replacing the old FAB functionality.
+                      _showModalSheet(
+                            (_) => const ListOptionsBottomSheet(),
+                        isScrollControlled: true,
+                      );
+                    },
+                    child: const Icon(Icons.settings), // Icon changed to settings
+                  ),
+                ),
+            ],
+          ),
+          // ====================== REFACTOR END ======================
+
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: theme.primary,
             currentIndex: currentIndex,
@@ -104,7 +134,17 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         ),
       ),
     );
-    // ====================================
+  }
+
+  PreferredSizeWidget? _buildAppBarForIndex(int index, AppThemeData theme) {
+    switch (index) {
+      case 0: // Home Page
+        return _buildHomePageAppBar(theme);
+      case 1: // Shopping List Page
+        return _buildShoppingListPageAppBar(theme);
+      default: // All other pages (like Account) have no AppBar
+        return null;
+    }
   }
 
   PreferredSizeWidget _buildHomePageAppBar(AppThemeData theme) {
@@ -124,24 +164,36 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
+  PreferredSizeWidget _buildShoppingListPageAppBar(AppThemeData theme) {
+    return AppBar(
+      backgroundColor: theme.primary,
+      elevation: 0,
+      automaticallyImplyLeading: false, // Prevents back button
+      titleSpacing: 0, // Fine-tune spacing
+
+      // LEFT side of the AppBar
+      leading: _buildListSelectorWidget(ref, theme),
+      leadingWidth: 140, // Give it enough space for longer list names
+
+      // CENTER of the AppBar
+      title: _buildViewToggle(ref, theme),
+      centerTitle: true,
+
+      // RIGHT side of the AppBar
+      actions: [
+        _buildListActionsWidget(ref, theme),
+      ],
+    );
+  }
+
   Widget _buildInfoBar() {
     return Consumer(
       builder: (context, ref, child) {
         final theme = ref.watch(themeProvider);
-        // --- MODIFICATION START ---
-
-        // 1. Watch the active list provider. It's now a non-nullable String.
         final activeList = ref.watch(activeShoppingListProvider);
-
-        // 2. Watch the app's initialization status.
         final appData = ref.watch(appDataProvider);
         final bool isDataLoaded = appData.status == InitializationStatus.loaded;
-
-        // 3. The button text is simply the state of the provider. No fallback needed.
         final buttonText = activeList;
-
-        // --- MODIFICATION END ---
-
         final totalCount = appData.grandTotal;
         final filteredCount = ref.watch(homePageProductsProvider).whenData((groups) {
           return groups.fold<int>(0, (sum, group) => sum + group.products.length);
@@ -160,7 +212,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                   children: [
                     Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
                     const SizedBox(width: 8),
-                    // Use the new buttonText variable here
                     Text(buttonText, style: TextStyle(color: theme.inactive, fontSize: 16), overflow: TextOverflow.ellipsis),
                   ],
                 ),
@@ -171,6 +222,84 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
+    final activeList = ref.watch(activeShoppingListProvider);
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0),
+      child: InkWell(
+        onTap: () => _showModalSheet(
+                (_) => const ShoppingListBottomSheet(), isScrollControlled: true),
+        child: Row(
+          children: [
+            Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                activeList,
+                style: TextStyle(color: theme.inactive, fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggle(WidgetRef ref, AppThemeData theme) {
+    final isGridView = ref.watch(shoppingListViewModeProvider);
+
+    // The background container is now removed.
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Grid Button
+        IconButton(
+          icon: const Icon(Icons.grid_view),
+          color: isGridView ? theme.secondary : theme.inactive.withOpacity(0.7),
+          iconSize: 24, // Slightly larger for better tap area
+          splashRadius: 20,
+          onPressed: () {
+            ref.read(shoppingListViewModeProvider.notifier).state = true;
+          },
+        ),
+        const SizedBox(width: 8), // Spacing between the icons
+        // List Button
+        IconButton(
+          icon: const Icon(Icons.view_list),
+          color: !isGridView ? theme.secondary : theme.inactive.withOpacity(0.7),
+          iconSize: 24,
+          splashRadius: 20,
+          onPressed: () {
+            ref.read(shoppingListViewModeProvider.notifier).state = false;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListActionsWidget(WidgetRef ref, AppThemeData theme) {
+    final products = ref.watch(shoppingListWithDetailsProvider).value ?? [];
+    final itemCount = products.length;
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+    // You can change '∞' back to '60' if you prefer a hard limit for premium
+    final itemLimit = isPremium ? '60' : '30';
+
+    // The settings icon has been removed and its functionality moved to the FAB.
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0), // Right padding for spacing
+      child: Text(
+        '$itemCount/$itemLimit',
+        style: TextStyle(
+          color: theme.inactive,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 

@@ -427,12 +427,15 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
+  // In lib/components/product_details.dart
+
   Widget _buildAvailabilityInfo(AppThemeData theme) {
     String formatDate(DateTime? date) {
       if (date == null) return '';
       return DateFormat('dd.MM.yyyy').format(date);
     }
 
+    // --- FIX: Use the new field name 'dealStart' instead of 'availableFrom' ---
     final fromDate = formatDate(widget.product.dealStart);
     final toDate = formatDate(widget.product.dealEnd);
 
@@ -442,6 +445,8 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       availabilityText = 'Gültig vom $fromDate bis $toDate';
     } else if (fromDate.isNotEmpty) {
       availabilityText = 'Gültig ab $fromDate';
+    } else if (toDate.isNotEmpty) { // Added a case for when only the end date is known
+      availabilityText = 'Gültig bis $toDate';
     } else {
       availabilityText = 'Gültigkeit unbekannt';
     }

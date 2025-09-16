@@ -1,31 +1,29 @@
 // lib/components/shopping_list_item_tile.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 
-
-class ShoppingListItemTile extends StatelessWidget {
+class ShoppingListItemTile extends ConsumerWidget {
   final Product product;
   final List<Product> allProductsInList;
-  final AppThemeData theme;
-  final VoidCallback onRemove;
 
   const ShoppingListItemTile({
     super.key,
     required this.product,
     required this.allProductsInList,
-    required this.theme,
-    required this.onRemove,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
-    final discount = product.discountPercentage ?? 0;
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -40,67 +38,73 @@ class ShoppingListItemTile extends StatelessWidget {
           ));
         }
       },
+      onDoubleTap: () {
+        ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed "${product.name}"'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: ImageWithAspectRatio(
-                imageUrl: product.imageUrl ?? '',
-                maxWidth: 70,
-                maxHeight: 70,
-                fit: BoxFit.cover,
+            // ===================== REFACTOR START =====================
+            // The image is now wrapped in a Container to provide the
+            // white background and rounded corners, just like the grid tile.
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: ImageWithAspectRatio(
+                  imageUrl: product.imageUrl ?? '',
+                  fit: BoxFit.cover,
+                  maxWidth: 70,
+                  maxHeight: 70,
+                ),
               ),
             ),
+            // ====================== REFACTOR END ======================
             const SizedBox(width: 16),
+
+            // [Title]
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 16),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    product.store,
-                    style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12),
-                  ),
-                ],
+              child: Text(
+                product.name,
+                style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 16),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 8),
+
+            // [Store Logo / Price]
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                StoreLogo(
+                  storeName: product.store,
+                  height: 24,
+                ),
+                const SizedBox(height: 8),
                 Text(
                   '$priceString Fr.',
-                  style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const SizedBox(height: 4),
-                if (discount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: theme.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '$discount%',
-                      style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
+                  style: TextStyle(
+                    color: theme.secondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
+                ),
               ],
-            ),
-            IconButton(
-              icon: Icon(Icons.close, color: theme.accent, size: 24),
-              onPressed: onRemove,
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.only(left: 12, right: 4),
             ),
           ],
         ),

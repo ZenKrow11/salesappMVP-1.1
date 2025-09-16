@@ -10,7 +10,14 @@ import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- No changes in this section ---
+// ======================= NEW PROVIDER ADDED =======================
+// This provider will hold the current view state for the shopping list page.
+// `true` = Grid View, `false` = List View.
+final shoppingListViewModeProvider = StateProvider<bool>((ref) => true); // Default to Grid View
+// ==================================================================
+
+
+// --- No changes in the rest of the file ---
 final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) {
@@ -104,17 +111,14 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
-  // ========== THIS IS THE CORRECTED METHOD ==========
   /// Adds a product to a specific shopping list, identified by its ID.
   Future<void> addToSpecificList(Product product, String listId) async {
     await _firestoreService.addItemToList(
       listId: listId,
       productId: product.id,
-      // THE FIX: For custom items, we must pass their full data.
       productData: product.isCustom ? product.toJson() : null,
     );
   }
-  // ====================================================
 
   /// This method works implicitly on the active list.
   Future<void> removeItemFromList(Product product) async {
@@ -134,8 +138,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 }
-
-// --- No changes below this line ---
 
 final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, void>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
