@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // Import for direct use
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -57,7 +57,7 @@ class ShoppingListItemTile extends ConsumerWidget {
     );
   }
 
-  // --- NEW: Method to build the grid tile with the requested layout ---
+  // --- MODIFIED: Method to build the grid tile with the fix ---
   Widget _buildGridTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
@@ -66,18 +66,27 @@ class ShoppingListItemTile extends ConsumerWidget {
       color: Colors.white, // White background for the image
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior: Clip.antiAlias, // Ensures Stack children respect the border radius
+      // clipBehavior is good, but we will be more explicit for the image.
+      clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // --- FIX: Using CachedNetworkImage directly to fill the space ---
-          // This resolves the missing parameter error.
-          CachedNetworkImage(
-            imageUrl: product.imageUrl ?? '',
-            fit: BoxFit.cover,
-            placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-            errorWidget: (context, url, error) => const Center(child: Icon(Icons.error)),
+          // --- FIX START ---
+          // By wrapping the image in a ClipRRect that matches the Card's border radius,
+          // we guarantee it will be clipped correctly.
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.0),
+            child: CachedNetworkImage(
+              imageUrl: product.imageUrl ?? '',
+              fit: BoxFit.cover,
+              // These are aesthetic improvements for a smoother look
+              placeholder: (context, url) => Container(color: Colors.grey[200]),
+              errorWidget: (context, url, error) => const Center(
+                child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+              ),
+            ),
           ),
+          // --- FIX END ---
 
           // Price in top-right corner
           Positioned(
@@ -143,7 +152,7 @@ class ShoppingListItemTile extends ConsumerWidget {
     );
   }
 
-  // --- This is the original list tile layout from your file ---
+  // --- No changes needed for the list tile layout ---
   Widget _buildListTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);

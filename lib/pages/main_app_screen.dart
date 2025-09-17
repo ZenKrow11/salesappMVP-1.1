@@ -79,37 +79,27 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         child: Scaffold(
           backgroundColor: theme.pageBackground,
           appBar: _buildAppBarForIndex(currentIndex, theme),
-
-          // ===================== REFACTOR START =====================
-          // The body is wrapped in a Stack to layer the FAB on top.
           body: Stack(
             children: [
-              // This is the main content of your page (HomePage, ShoppingListPage, etc.)
               _pages[currentIndex],
-
-              // The FAB is now a settings button for the "Lists" tab (index 1).
-              // It has been moved up to avoid covering the summary bar.
               if (currentIndex == 1)
                 Positioned(
-                  bottom: 80.0, // Raised to be above the summary bar
+                  bottom: 80.0,
                   right: 16.0,
                   child: FloatingActionButton(
                     backgroundColor: theme.secondary,
                     foregroundColor: theme.primary,
                     onPressed: () {
-                      // Opens the List Options bottom sheet, replacing the old FAB functionality.
                       _showModalSheet(
                             (_) => const ListOptionsBottomSheet(),
                         isScrollControlled: true,
                       );
                     },
-                    child: const Icon(Icons.settings), // Icon changed to settings
+                    child: const Icon(Icons.settings),
                   ),
                 ),
             ],
           ),
-          // ====================== REFACTOR END ======================
-
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: theme.primary,
             currentIndex: currentIndex,
@@ -168,18 +158,12 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     return AppBar(
       backgroundColor: theme.primary,
       elevation: 0,
-      automaticallyImplyLeading: false, // Prevents back button
-      titleSpacing: 0, // Fine-tune spacing
-
-      // LEFT side of the AppBar
+      automaticallyImplyLeading: false,
+      titleSpacing: 0,
       leading: _buildListSelectorWidget(ref, theme),
-      leadingWidth: 140, // Give it enough space for longer list names
-
-      // CENTER of the AppBar
+      leadingWidth: 150,
       title: _buildViewToggle(ref, theme),
       centerTitle: true,
-
-      // RIGHT side of the AppBar
       actions: [
         _buildListActionsWidget(ref, theme),
       ],
@@ -202,22 +186,41 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
         return Row(
           children: [
-            Opacity(
-              opacity: isDataLoaded ? 1.0 : 0.5,
-              child: InkWell(
-                onTap: isDataLoaded
-                    ? () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true)
-                    : null,
-                child: Row(
-                  children: [
-                    Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
-                    const SizedBox(width: 8),
-                    Text(buttonText, style: TextStyle(color: theme.inactive, fontSize: 16), overflow: TextOverflow.ellipsis),
-                  ],
+            Expanded(
+              child: Opacity(
+                opacity: isDataLoaded ? 1.0 : 0.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.background.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: InkWell(
+                    onTap: isDataLoaded
+                        ? () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true)
+                        : null,
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.list_alt_rounded, color: theme.secondary, size: 22.0),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              buttonText,
+                              style: TextStyle(color: theme.inactive, fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 12),
             ItemCountWidget(filtered: count.filtered, total: count.total),
           ],
         );
@@ -227,24 +230,36 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
     final activeList = ref.watch(activeShoppingListProvider);
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0),
-      child: InkWell(
-        onTap: () => _showModalSheet(
-                (_) => const ShoppingListBottomSheet(), isScrollControlled: true),
-        child: Row(
-          children: [
-            Icon(Icons.list_alt_rounded, color: theme.secondary, size: 24.0),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                activeList,
-                style: TextStyle(color: theme.inactive, fontSize: 16),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.background.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: InkWell(
+            onTap: () => _showModalSheet(
+                    (_) => const ShoppingListBottomSheet(), isScrollControlled: true),
+            borderRadius: BorderRadius.circular(12.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: Row(
+                children: [
+                  Icon(Icons.list_alt_rounded, color: theme.secondary, size: 22.0),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      activeList,
+                      style: TextStyle(color: theme.inactive, fontSize: 16),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -252,33 +267,45 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   Widget _buildViewToggle(WidgetRef ref, AppThemeData theme) {
     final isGridView = ref.watch(shoppingListViewModeProvider);
+    Widget buildToggleButton(bool forGridView) {
+      final bool isActive = forGridView == isGridView;
+      return GestureDetector(
+        onTap: () {
+          if (!isActive) {
+            ref.read(shoppingListViewModeProvider.notifier).state = forGridView;
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isActive ? theme.secondary : theme.background.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(9.0),
+          ),
+          child: Icon(
+            forGridView ? Icons.grid_view_rounded : Icons.view_list_rounded,
+            color: isActive ? theme.primary : theme.secondary.withOpacity(0.8),
+            size: 24,
+          ),
+        ),
+      );
+    }
 
-    // The background container is now removed.
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Grid Button
-        IconButton(
-          icon: const Icon(Icons.grid_view),
-          color: isGridView ? theme.secondary : theme.inactive.withOpacity(0.7),
-          iconSize: 24, // Slightly larger for better tap area
-          splashRadius: 20,
-          onPressed: () {
-            ref.read(shoppingListViewModeProvider.notifier).state = true;
-          },
-        ),
-        const SizedBox(width: 8), // Spacing between the icons
-        // List Button
-        IconButton(
-          icon: const Icon(Icons.view_list),
-          color: !isGridView ? theme.secondary : theme.inactive.withOpacity(0.7),
-          iconSize: 24,
-          splashRadius: 20,
-          onPressed: () {
-            ref.read(shoppingListViewModeProvider.notifier).state = false;
-          },
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(4.0),
+      decoration: BoxDecoration(
+        color: theme.background.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          buildToggleButton(true),
+          const SizedBox(width: 4),
+          buildToggleButton(false),
+        ],
+      ),
     );
   }
 
@@ -286,12 +313,10 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     final products = ref.watch(shoppingListWithDetailsProvider).value ?? [];
     final itemCount = products.length;
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-    // You can change '∞' back to '60' if you prefer a hard limit for premium
     final itemLimit = isPremium ? '60' : '30';
 
-    // The settings icon has been removed and its functionality moved to the FAB.
     return Padding(
-      padding: const EdgeInsets.only(right: 16.0), // Right padding for spacing
+      padding: const EdgeInsets.only(right: 16.0),
       child: Text(
         '$itemCount/$itemLimit',
         style: TextStyle(
@@ -315,7 +340,10 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             onPressed: () => _showModalSheet((_) => const SearchBottomSheet(), isScrollControlled: true),
           ),
         ),
+        // ===================== FIX START =====================
+        // This SizedBox creates the space between the buttons.
         const SizedBox(width: 8),
+        // ====================== FIX END ======================
         Expanded(
           child: _actionButton(
             theme: theme,
@@ -324,7 +352,10 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             onPressed: () => _showModalSheet((_) => const FilterBottomSheet(), isScrollControlled: true),
           ),
         ),
+        // ===================== FIX START =====================
+        // This SizedBox creates the space between the buttons.
         const SizedBox(width: 8),
+        // ====================== FIX END ======================
         const Expanded(
           child: SortButton(),
         ),

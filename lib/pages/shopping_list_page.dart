@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // No longer needed
-// import 'package:sales_app_mvp/components/management_grid_tile.dart';
 import 'package:sales_app_mvp/components/shopping_list_item_tile.dart';
 import 'package:sales_app_mvp/components/shopping_summary_bar.dart';
 import 'package:sales_app_mvp/models/product.dart';
