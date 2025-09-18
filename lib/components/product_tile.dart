@@ -1,22 +1,23 @@
 // lib/components/product_tile.dart
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/notification_helper.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:sales_app_mvp/models/categorizable.dart';
 
 class ProductTile extends ConsumerWidget {
-  final Product product;
+  final PlainProduct product;
   final VoidCallback onTap;
 
   const ProductTile({
@@ -34,35 +35,52 @@ class ProductTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoryStyle = CategoryService.getStyleForCategory(product.category);
+    // We can cast the PlainProduct as Categorizable for the service to use it.
+    final categorizableProduct = product as Categorizable;
+    final categoryStyle = CategoryService.getStyleForCategory(categorizableProduct.category);
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
+
+    // The shopping list needs the Hive-compatible `Product` object.
+    // We create it on-demand when an action is performed.
+    Product _createHiveProduct() {
+      return Product(
+          id: product.id,
+          store: product.store,
+          name: product.name,
+          currentPrice: product.currentPrice,
+          normalPrice: product.normalPrice,
+          discountPercentage: product.discountPercentage,
+          category: product.category,
+          subcategory: product.subcategory,
+          url: product.url,
+          imageUrl: product.imageUrl,
+          nameTokens: product.nameTokens,
+          dealStart: product.dealStart,
+          sonderkondition: product.sonderkondition,
+          dealEnd: product.dealEnd,
+          isCustom: product.isCustom,
+          isOnSale: product.isOnSale
+      );
+    }
 
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
+        final hiveProduct = _createHiveProduct(); // Create the object
 
         if (isInShoppingList) {
-          notifier.removeItemFromList(product);
-          showTopNotification(
-            context,
-            message: 'Removed from list',
-            theme: theme,
-          );
+          notifier.removeItemFromList(hiveProduct);
+          showTopNotification(context, message: 'Removed from list', theme: theme);
         } else {
-          notifier.addToList(product);
-          showTopNotification(
-            context,
-            message: 'Added to active list',
-            theme: theme,
-          );
+          notifier.addToList(hiveProduct);
+          showTopNotification(context, message: 'Added to active list', theme: theme);
         }
       },
-      // ========== THIS IS THE FIX ==========
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -70,29 +88,25 @@ class ProductTile extends ConsumerWidget {
           backgroundColor: theme.background,
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          // We now provide the required onConfirm callback.
-          builder: (ctx) => ShoppingListBottomSheet(
-            product: product,
-            onConfirm: (selectedListId) {
-              // Use the new notifier method to add to the chosen list
-              ref
-                  .read(shoppingListsProvider.notifier)
-                  .addToSpecificList(product, selectedListId);
-
-              // Close the bottom sheet after selection
-              Navigator.of(ctx).pop();
-
-              // Show a confirmation message
-              showTopNotification(
-                context, // Use the main build context for the notification
-                message: 'Added to "$selectedListId"',
-                theme: theme,
-              );
-            },
-          ),
+          builder: (ctx) {
+            final hiveProduct = _createHiveProduct(); // Create the object
+            return ShoppingListBottomSheet(
+              product: hiveProduct,
+              onConfirm: (selectedListId) {
+                ref
+                    .read(shoppingListsProvider.notifier)
+                    .addToSpecificList(hiveProduct, selectedListId);
+                Navigator.of(ctx).pop();
+                showTopNotification(
+                  context,
+                  message: 'Added to "$selectedListId"',
+                  theme: theme,
+                );
+              },
+            );
+          },
         );
       },
-      // ===================================
       child: Stack(
         children: [
           Container(
@@ -145,7 +159,6 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  // --- No changes below this line ---
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     return Column(

@@ -4,12 +4,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/product_details.dart';
-import 'package:sales_app_mvp/models/product.dart';
+
+import 'package:sales_app_mvp/models/plain_product.dart'; // <-- TYPE CHANGE
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/custom_physics_widget.dart';
 
 class ProductSwiperScreen extends ConsumerStatefulWidget {
-  final List<Product> products;
+  final List<PlainProduct> products; // <-- TYPE CHANGE
   final int initialIndex;
 
   const ProductSwiperScreen({
@@ -76,9 +77,11 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
                   itemCount: widget.products.length,
                   itemBuilder: (context, index) {
                     final product = widget.products[index];
+
+                    // This now correctly passes a PlainProduct to ProductDetails
                     return ProductDetails(
                       key: ValueKey(product.id),
-                      product: product,
+                      product: product, // <-- TYPE CHANGE
                       currentIndex: index + 1,
                       totalItems: widget.products.length,
                       onDragUpdate: _onDragUpdate,

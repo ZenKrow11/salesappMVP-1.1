@@ -44,21 +44,41 @@ class ProductSyncService {
   }
 
   /// --- Decides if a sync is needed ---
+  // lib/services/product_sync_service.dart
+
+  /// --- Decides if a sync is needed (IMPROVED LOGIC) ---
   Future<bool> needsSync() async {
     final remoteMetadata = await getRemoteMetadata();
     final localMetadata = getLocalMetadata();
 
-    if (remoteMetadata?['lastUpdated'] == null) {
-      return false; // Can't sync without server data
-    }
-    if (localMetadata['lastUpdated'] == null) {
-      return true; // Must sync if no local data
+    // Case 1: No remote metadata exists at all.
+    // If we have local data, we MUST sync to clear it.
+    // If we have no local data, we don't need to do anything.
+    if (remoteMetadata == null) {
+      return localMetadata.isNotEmpty;
     }
 
-    final remoteTimestamp =
-    (remoteMetadata!['lastUpdated'] as Timestamp).toDate();
-    final localTimestamp = localMetadata['lastUpdated'];
+    final remoteTimestampValue = remoteMetadata['lastUpdated'];
+    final localTimestampValue = localMetadata['lastUpdated'];
 
+    // Case 2: No timestamp on remote. Treat as an invalid state, but
+    // safer not to sync than to wipe data accidentally. A log would be good here.
+    if (remoteTimestampValue == null) {
+      print("[ProductSyncService] Warning: Remote metadata is missing 'lastUpdated' field.");
+      return false;
+    }
+
+    // Case 3: We have never synced before. We MUST sync.
+    if (localTimestampValue == null) {
+      return true;
+    }
+
+    // Case 4: Compare the timestamps.
+    // Note: The local timestamp is already a DateTime from the last sync.
+    final remoteTimestamp = (remoteTimestampValue as Timestamp).toDate();
+    final localTimestamp = localTimestampValue as DateTime;
+
+    // Sync only if the remote timestamp is newer.
     return remoteTimestamp.isAfter(localTimestamp);
   }
 
@@ -67,10 +87,25 @@ class ProductSyncService {
   /// saves them to Hive, and returns the new metadata.
   Future<Map<String, dynamic>> syncFromFirestore() async {
     final remoteMetadata = await getRemoteMetadata();
-    if (remoteMetadata == null || remoteMetadata['lastUpdated'] == null) {
-      throw Exception(
-          "Aborting sync: Could not retrieve valid remote metadata.");
+
+    // --- START: MODIFIED LOGIC ---
+
+    // Case 1: No data on the server at all.
+    // The correct action is to wipe the local cache and return an empty state.
+    if (remoteMetadata == null) {
+      print("[ProductSyncService] No remote metadata found. Clearing local cache.");
+      await _productBox.clear();
+      await _metadataBox.clear(); // Also clear local metadata
+      return {}; // Return empty metadata
     }
+
+    // This check is still good. If metadata exists, it MUST have a timestamp.
+    if (remoteMetadata['lastUpdated'] == null) {
+      throw Exception(
+          "Aborting sync: Remote metadata is present but is missing the 'lastUpdated' field.");
+    }
+
+    // --- END: MODIFIED LOGIC ---
 
     // Query products explicitly marked as on sale
     final productsSnapshot = await _firestore

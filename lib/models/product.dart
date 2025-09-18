@@ -2,12 +2,14 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
+import 'plain_product.dart';
+import 'categorizable.dart';
 
 part 'product.g.dart';
 
 /// Represents a product item, designed to be stored in both Firestore and local Hive cache.
 @HiveType(typeId: 0)
-class Product extends HiveObject {
+class Product extends HiveObject implements Categorizable {
   @HiveField(0)
   final String id;
   @HiveField(1)
@@ -31,7 +33,7 @@ class Product extends HiveObject {
   @HiveField(10)
   final List<String> nameTokens;
   @HiveField(11)
-  final DateTime? dealStart; // Corrected field name
+  final DateTime? dealStart;
   @HiveField(12)
   final String? sonderkondition;
   @HiveField(13)
@@ -53,7 +55,7 @@ class Product extends HiveObject {
     required this.url,
     required this.imageUrl,
     required this.nameTokens,
-    this.dealStart, // Corrected parameter name
+    this.dealStart,
     this.sonderkondition,
     this.dealEnd,
     this.isCustom = false,
@@ -78,7 +80,7 @@ class Product extends HiveObject {
       url: _parseString(data['url']),
       imageUrl: _parseString(data['imageUrl']),
       nameTokens: _parseStringList(data['name_tokens']),
-      dealStart: _parseDate(data['dealStart']), // Uses correct key
+      dealStart: _parseDate(data['dealStart']),
       dealEnd: _parseDate(data['dealEnd']),
       sonderkondition: sonderkonditionValue,
       isCustom: _parseBool(data['isCustom'], defaultValue: false),
@@ -98,7 +100,7 @@ class Product extends HiveObject {
     'url': url,
     'imageUrl': imageUrl,
     'name_tokens': nameTokens,
-    'dealStart': dealStart != null ? Timestamp.fromDate(dealStart!) : null, // Uses correct key
+    'dealStart': dealStart != null ? Timestamp.fromDate(dealStart!) : null,
     'dealEnd': dealEnd != null ? Timestamp.fromDate(dealEnd!) : null,
     'sonderkondition': sonderkondition,
     'isCustom': isCustom,
@@ -110,10 +112,9 @@ class Product extends HiveObject {
     return (normalPrice - currentPrice) / normalPrice;
   }
 
-  // --- METHOD ADDED BACK ---
-  /// Creates a non-Hive copy of the object. Useful for passing to isolates.
-  Product toPlainObject() {
-    return Product(
+  /// Convert Hive-backed Product to a plain, sendable object for isolates.
+  PlainProduct toPlainObject() {
+    return PlainProduct(
       id: id,
       store: store,
       name: name,
@@ -124,8 +125,8 @@ class Product extends HiveObject {
       subcategory: subcategory,
       url: url,
       imageUrl: imageUrl,
-      nameTokens: List<String>.from(nameTokens), // Create a new list
-      dealStart: dealStart, // Corrected field name
+      nameTokens: List<String>.from(nameTokens),
+      dealStart: dealStart,
       sonderkondition: sonderkondition,
       dealEnd: dealEnd,
       isCustom: isCustom,
@@ -134,7 +135,7 @@ class Product extends HiveObject {
   }
 }
 
-// Helper Functions (no changes needed here)
+// Helper Functions (unchanged)
 DateTime? _parseDate(dynamic data) {
   if (data is Timestamp) return data.toDate();
   return null;

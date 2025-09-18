@@ -20,27 +20,30 @@ class ShoppingListItemTile extends ConsumerWidget {
     super.key,
     required this.product,
     required this.allProductsInList,
-    this.isGridView = false, // Defaults to list view
+    this.isGridView = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Shared gesture handler for both grid and list views
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
         final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
         if (initialIndex != -1) {
+
+          // --- THIS IS THE FIX (Error at line 36) ---
+          // Convert the `List<Product>` to a `List<PlainProduct>` before navigating.
+          final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
+
           Navigator.of(context).push(SlideUpPageRoute(
             page: ProductSwiperScreen(
-              products: allProductsInList,
+              products: plainProducts, // Pass the converted list
               initialIndex: initialIndex,
             ),
           ));
         }
       },
       onDoubleTap: () {
-        // This logic now applies to the grid view as well, fixing the bug.
         ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
         ScaffoldMessenger.of(context)
           ..removeCurrentSnackBar()

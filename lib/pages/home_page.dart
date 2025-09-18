@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-// --- IMPORTS are simplified to only what's needed for the product list ---
 import 'package:sales_app_mvp/components/product_tile.dart';
-import 'package:sales_app_mvp/models/product.dart';
+// --- REMOVE `Product` import, as this page only deals with the plain version now ---
+// import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
@@ -21,14 +21,12 @@ const double kHeaderVerticalPadding = 8.0;
 const double kHeaderHeight = 44.0;
 const double kStickyHeaderTotalHeight = kHeaderHeight + (kHeaderVerticalPadding * 2);
 
-// --- UPDATED: Changed from StatefulWidget to the simpler ConsumerWidget ---
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncGroups = ref.watch(homePageProductsProvider);
-
 
     return asyncGroups.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -39,17 +37,14 @@ class HomePage extends ConsumerWidget {
             child: Text('No products found matching your criteria.'),
           );
         }
-        // If data is available, it directly returns the scrollable product list.
         return _ProductList(groups: groups);
       },
     );
   }
 }
 
-
 class _ProductList extends ConsumerWidget {
   final List<ProductGroup> groups;
-
   const _ProductList({required this.groups});
 
   @override
@@ -67,7 +62,8 @@ class _ProductList extends ConsumerWidget {
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
-            sliver: _buildSliverGrid(ref, group, paginationState),
+            // --- FIX A: Pass the full `groups` list for the onTap handler ---
+            sliver: _buildSliverGrid(ref, groups, group, paginationState),
           ),
           if ((paginationState[group.style.displayName] ?? kCollapsedItemLimit) < group.products.length)
             SliverToBoxAdapter(
@@ -91,10 +87,12 @@ class _ProductList extends ConsumerWidget {
     );
   }
 
-  Widget _buildSliverGrid(WidgetRef ref, ProductGroup group, Map<String, int> paginationState) {
+  Widget _buildSliverGrid(WidgetRef ref, List<ProductGroup> allGroups, ProductGroup group, Map<String, int> paginationState) {
     final categoryName = group.style.displayName;
     final itemsToShowCount = paginationState[categoryName] ?? kCollapsedItemLimit;
-    final List<Product> productsToShow = group.products.take(itemsToShowCount).toList();
+
+    // --- FIX B: (Error at line 97) `productsToShow` is now of type `List<PlainProduct>` ---
+    final List<PlainProduct> productsToShow = group.products.take(itemsToShowCount).toList();
 
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -106,12 +104,16 @@ class _ProductList extends ConsumerWidget {
       delegate: SliverChildBuilderDelegate(
             (context, gridIndex) {
           final product = productsToShow[gridIndex];
+
+          // You will need to update ProductTile to accept a `PlainProduct`
           return ProductTile(
             product: product,
             onTap: () {
-              final flatSortedProducts = groups.expand((g) => g.products).toList();
+              // --- FIX C: `flatSortedProducts` is now of type `List<PlainProduct>` ---
+              final flatSortedProducts = allGroups.expand((g) => g.products).toList();
               final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
 
+              // --- FIX D: (Error at line 116) `ProductSwiperScreen` must accept a `List<PlainProduct>` ---
               final Widget swiperPage = ProductSwiperScreen(
                 products: flatSortedProducts,
                 initialIndex: initialIndex != -1 ? initialIndex : 0,

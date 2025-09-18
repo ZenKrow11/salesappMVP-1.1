@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-// REMOVED: No longer need NamedList
-import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/product.dart'; // <-- Keep Product for creating Hive object
+import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
@@ -18,7 +18,7 @@ import 'package:sales_app_mvp/widgets/notification_helper.dart';
 enum _GestureType { none, swipingUp, swipingDown }
 
 class ProductDetails extends ConsumerStatefulWidget {
-  final Product product;
+  final PlainProduct product; // <-- TYPE CHANGE
   final int currentIndex;
   final int totalItems;
   final Function(double progress) onDragUpdate;
@@ -165,36 +165,41 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
-  // --- MODIFICATION START ---
   void _handleDoubleTapSave(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(shoppingListsProvider.notifier);
     final theme = ref.read(themeProvider);
 
-    // 1. Get the list of products directly from the new provider.
-    final shoppingListProducts = ref.read(shoppingListWithDetailsProvider).value ?? [];
+    // Create the Hive-compatible object from the PlainProduct
+    final hiveProduct = Product(
+        id: widget.product.id,
+        store: widget.product.store,
+        name: widget.product.name,
+        currentPrice: widget.product.currentPrice,
+        normalPrice: widget.product.normalPrice,
+        discountPercentage: widget.product.discountPercentage,
+        category: widget.product.category,
+        subcategory: widget.product.subcategory,
+        url: widget.product.url,
+        imageUrl: widget.product.imageUrl,
+        nameTokens: widget.product.nameTokens,
+        dealStart: widget.product.dealStart,
+        sonderkondition: widget.product.sonderkondition,
+        dealEnd: widget.product.dealEnd,
+        isCustom: widget.product.isCustom,
+        isOnSale: widget.product.isOnSale
+    );
 
-    // 2. Check if the item is in the list.
+    final shoppingListProducts = ref.read(shoppingListWithDetailsProvider).value ?? [];
     final isItemInList = shoppingListProducts.any((item) => item.id == widget.product.id);
 
     if (isItemInList) {
-      // 3. Call the simplified remove method.
-      notifier.removeItemFromList(widget.product);
-      showTopNotification(
-        context,
-        message: 'Removed from "Merkliste"',
-        theme: theme,
-      );
+      notifier.removeItemFromList(hiveProduct); // Use the converted object
+      showTopNotification(context, message: 'Removed from "Merkliste"', theme: theme);
     } else {
-      // 4. Call the simplified add method.
-      notifier.addToList(widget.product);
-      showTopNotification(
-        context,
-        message: 'Added to "Merkliste"',
-        theme: theme,
-      );
+      notifier.addToList(hiveProduct); // Use the converted object
+      showTopNotification(context, message: 'Added to "Merkliste"', theme: theme);
     }
   }
-  // --- MODIFICATION END ---
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);

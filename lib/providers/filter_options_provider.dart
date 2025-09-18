@@ -3,19 +3,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
-import 'package:sales_app_mvp/models/product.dart';
+// import 'package:sales_app_mvp/models/product.dart'; // No longer needed
+import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-
-// --- MODIFICATION: This import is replaced ---
-// import 'package:sales_app_mvp/models/products_provider.dart';
-// --- With our new master provider ---
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 
-
-// --- All helper functions and classes below this line are UNCHANGED ---
+// --- FIX E: Update helper functions to accept `PlainProduct` ---
 List<String> _getUniqueOptions(
-    List<Product> products,
-    String Function(Product) getField,
+    List<PlainProduct> products,
+    String Function(PlainProduct) getField,
     ) {
   final options =
   products.map(getField).where((value) => value.isNotEmpty).toSet().toList();
@@ -24,9 +20,8 @@ List<String> _getUniqueOptions(
 }
 
 class _OptionsInput {
-  final List<Product> products;
+  final List<PlainProduct> products; // <-- TYPE CHANGE
   final FilterState filterState;
-
   _OptionsInput({required this.products, required this.filterState});
 }
 
@@ -37,7 +32,7 @@ List<String> _generateStoreOptionsInBackground(_OptionsInput input) {
 
 List<String> _generateCategoryOptionsInBackground(_OptionsInput input) {
   debugPrint("[ISOLATE] Generating category options...");
-  List<Product> relevantProducts = input.products;
+  List<PlainProduct> relevantProducts = input.products; // <-- TYPE CHANGE
   if (input.filterState.selectedStores.isNotEmpty) {
     relevantProducts = input.products
         .where((p) => input.filterState.selectedStores.contains(p.store))
@@ -48,7 +43,7 @@ List<String> _generateCategoryOptionsInBackground(_OptionsInput input) {
 
 List<String> _generateSubcategoryOptionsInBackground(_OptionsInput input) {
   debugPrint("[ISOLATE] Generating subcategory options...");
-  List<Product> relevantProducts = input.products;
+  List<PlainProduct> relevantProducts = input.products; // <-- TYPE CHANGE
   if (input.filterState.selectedStores.isNotEmpty) {
     relevantProducts = relevantProducts
         .where((p) => input.filterState.selectedStores.contains(p.store))
@@ -62,18 +57,10 @@ List<String> _generateSubcategoryOptionsInBackground(_OptionsInput input) {
   return _getUniqueOptions(relevantProducts, (p) => p.subcategory);
 }
 
-// =========================================================================
-// === REFACTORED PROVIDERS
-// =========================================================================
-
-/// --- MODIFICATION: This private provider is now updated ---
-/// It now watches the master appDataProvider to get the product list.
-final _plainProductsProvider = Provider.autoDispose<List<Product>>((ref) {
-  // Watch the master app state
+// --- FIX F: (Error at line 77) Update the private provider to return `List<PlainProduct>` ---
+final _plainProductsProvider = Provider.autoDispose<List<PlainProduct>>((ref) { // <-- TYPE CHANGE
   final appData = ref.watch(appDataProvider);
-  // Get the list of products directly from the state
   final products = appData.allProducts;
-  // Convert HiveObjects to plain objects, ready for the isolate
   return products.map((p) => p.toPlainObject()).toList();
 });
 

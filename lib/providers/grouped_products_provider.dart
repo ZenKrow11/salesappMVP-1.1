@@ -5,45 +5,65 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
-import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 
+/// Group model returned to UI (contains plain product objects).
 class ProductGroup {
   final CategoryStyle style;
-  final List<Product> products;
+  final List<PlainProduct> products;
   ProductGroup({required this.style, required this.products});
 }
 
-class _GroupAndSortInput {
-  final List<Product> products;
-  final FilterState filter;
-  _GroupAndSortInput({required this.products, required this.filter});
-}
-
+/// Input object passed to compute() - NOTE: contains only sendable data
 class _FilterAndGroupInput {
-  final List<Product> allProducts;
+  final List<PlainProduct> allProducts;
   final FilterState filter;
   _FilterAndGroupInput({required this.allProducts, required this.filter});
 }
 
-List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
-  final products = input.products;
+/// This function runs inside the isolate. It MUST only handle sendable objects
+List<ProductGroup> _processProductDataInBackground(_FilterAndGroupInput input) {
+  debugPrint("[ISOLATE] Starting background processing task...");
+
+  final plainProducts = input.allProducts;
+  debugPrint("[ISOLATE] Received ${plainProducts.length} plain products.");
+
   final filter = input.filter;
-  if (products.isEmpty) {
+
+  // Filtering
+  List<PlainProduct> filteredProducts;
+  if (filter.isDefault) {
+    filteredProducts = plainProducts;
+  } else {
+    filteredProducts = plainProducts.where((product) {
+      if (filter.selectedStores.isNotEmpty && !filter.selectedStores.contains(product.store)) return false;
+      if (filter.selectedCategories.isNotEmpty && !filter.selectedCategories.contains(product.category)) return false;
+      if (filter.selectedSubcategories.isNotEmpty && !filter.selectedSubcategories.contains(product.subcategory)) return false;
+      if (filter.searchQuery.isNotEmpty) {
+        final query = filter.searchQuery.toLowerCase();
+        if (!product.name.toLowerCase().contains(query) && !product.nameTokens.any((k) => k.startsWith(query))) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+  debugPrint("[ISOLATE] Filtering complete. ${filteredProducts.length} products remaining.");
+
+  if (filteredProducts.isEmpty) {
     return [];
   }
 
-  final groupedByDisplayName = groupBy(
-    products,
-        (Product product) =>
-        CategoryService.getGroupingDisplayNameForProduct(product),
+  final groupedByDisplayName = groupBy<PlainProduct, String>(
+    filteredProducts,
+        (PlainProduct product) => CategoryService.getGroupingDisplayNameForProduct(product),
   );
 
   final categoryGroups = <ProductGroup>[];
-  // Now this line works because the constant is imported
   for (final displayName in categoryDisplayOrder) {
     if (groupedByDisplayName.containsKey(displayName)) {
       final productList = groupedByDisplayName[displayName]!;
@@ -52,6 +72,7 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
     }
   }
 
+  // Sorting within groups
   for (final group in categoryGroups) {
     group.products.sort((a, b) {
       switch (filter.sortOption) {
@@ -72,67 +93,26 @@ List<ProductGroup> _groupAndSortProductsInBackground(_GroupAndSortInput input) {
     });
   }
 
+  debugPrint("[ISOLATE] Task complete. Returning ${categoryGroups.length} groups.");
   return categoryGroups;
 }
 
-List<ProductGroup> _filterAndGroupProductsInBackground(
-    _FilterAndGroupInput input) {
-  debugPrint("[ISOLATE-COMBO] Starting filter and group task...");
-  final allProducts = input.allProducts;
-  final filter = input.filter;
-
-  List<Product> filteredProducts;
-  if (filter.isDefault) {
-    filteredProducts = allProducts;
-  } else {
-    filteredProducts = allProducts.where((product) {
-      if (filter.selectedStores.isNotEmpty &&
-          !filter.selectedStores.contains(product.store)) return false;
-      if (filter.selectedCategories.isNotEmpty &&
-          !filter.selectedCategories.contains(product.category)) return false;
-      if (filter.selectedSubcategories.isNotEmpty &&
-          !filter.selectedSubcategories.contains(product.subcategory))
-        return false;
-      if (filter.searchQuery.isNotEmpty) {
-        final query = filter.searchQuery.toLowerCase();
-        if (!product.name.toLowerCase().contains(query) &&
-            !product.nameTokens.any((k) => k.startsWith(query))) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-  }
-  debugPrint(
-      "[ISOLATE-COMBO] Filtering complete. ${filteredProducts.length} products remaining.");
-
-  final groupingInput =
-  _GroupAndSortInput(products: filteredProducts, filter: filter);
-  final groupedAndSortedProducts =
-  _groupAndSortProductsInBackground(groupingInput);
-
-  debugPrint(
-      "[ISOLATE-COMBO] Task complete. Returning ${groupedAndSortedProducts.length} groups.");
-  return groupedAndSortedProducts;
-}
-
+/// Provider that returns grouped products for the home page.
+/// IMPORTANT: convert Hive Product -> PlainProduct BEFORE calling compute().
 final homePageProductsProvider =
 FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   final appData = ref.watch(appDataProvider);
   final filter = ref.watch(filterStateProvider);
 
-  if (appData.status != InitializationStatus.loaded) {
+  if (appData.status != InitializationStatus.loaded || appData.allProducts.isEmpty) {
     return [];
   }
 
-  final allProducts = appData.allProducts;
-  if (allProducts.isEmpty) {
-    return [];
-  }
+  // Convert the Hive-backed Product objects into plain, sendable PlainProduct objects BEFORE compute.
+  final plainList = appData.allProducts.map((p) => p.toPlainObject()).toList();
 
-  final plainProducts = allProducts.map((p) => p.toPlainObject()).toList();
-  final input =
-  _FilterAndGroupInput(allProducts: plainProducts, filter: filter);
+  final input = _FilterAndGroupInput(allProducts: plainList, filter: filter);
 
-  return await compute(_filterAndGroupProductsInBackground, input);
+  // Run background processing on sendable data only.
+  return await compute(_processProductDataInBackground, input);
 });

@@ -102,8 +102,9 @@ class AppDataController extends StateNotifier<AppDataState> {
   }
 }
 
+// NEW, CORRECTED CODE
 final appDataProvider =
-StateNotifierProvider<AppDataController, AppDataState>((ref) {
+StateNotifierProvider.autoDispose<AppDataController, AppDataState>((ref) {
   final syncService = ref.watch(productSyncProvider);
   return AppDataController(ref, syncService);
 });

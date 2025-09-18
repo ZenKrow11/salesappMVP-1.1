@@ -3,6 +3,7 @@
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/categorizable.dart';
 
 class CategoryService {
   // 1. Original map for getting the style of ANY category (main or sub)
@@ -74,7 +75,7 @@ class CategoryService {
   /// NEW, ROBUST METHOD FOR GROUPING
   /// Returns the main category's display name (e.g., 'Alkoholische Getränke') for a given product.
   /// It intelligently checks both the product's category and subcategory fields.
-  static String getGroupingDisplayNameForProduct(Product product) {
+  static String getGroupingDisplayNameForProduct(Categorizable product) {
     // Check the main category field first, then the subcategory as a fallback.
     return _categoryToGroupingNameMap[product.category] ??
         _categoryToGroupingNameMap[product.subcategory] ??
