@@ -6,13 +6,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:sales_app_mvp/providers/storage_providers.dart';
+import 'package:hive/hive.dart';
+
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
-  return AuthController();
+  // Pass the ref to the controller
+  return AuthController(ref);
 });
 
 class AuthController extends StateNotifier<AsyncValue<void>> {
-  AuthController() : super(const AsyncData(null));
+  // Add a Ref parameter to access other providers
+  final Ref? _ref;
+  AuthController([this._ref]) : super(const AsyncData(null));
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -154,14 +160,22 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<void> signOut() async {
     state = const AsyncLoading();
     try {
+      // 1. Sign out from Firebase/Google first
       await _googleSignIn.signOut();
       await _auth.signOut();
+
+      // 2. Clear all local user data (VERY IMPORTANT)
+      if (_ref != null) {
+        await _ref!.read(productsBoxProvider).clear();
+        await _ref!.read(metadataBoxProvider).clear();
+        // Add any other user-specific boxes here
+      }
+
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
     }
   }
-
   Future<bool> sendPasswordResetEmail(String email) async {
     // Prevent action if another operation is already in progress.
     if (state.isLoading) return false;

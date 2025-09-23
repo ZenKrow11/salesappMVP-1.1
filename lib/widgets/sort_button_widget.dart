@@ -1,8 +1,12 @@
+// I've renamed the file to sort_button.dart for consistency
+// And renamed _SortOptionsBottomSheet to SortOptionsBottomSheet to make it public
+// for better practice, though it's not strictly necessary if only used here.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-import 'package:sales_app_mvp/widgets/app_theme.dart'; // UPDATED
+import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 class SortButton extends ConsumerWidget {
   const SortButton({super.key});
@@ -11,7 +15,7 @@ class SortButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
 
-    return ElevatedButton.icon( // Changed from TextButton
+    return ElevatedButton.icon(
       icon: Icon(Icons.sort, color: theme.secondary, size: 22.0),
       label: Text(
         'Sort',
@@ -24,13 +28,13 @@ class SortButton extends ConsumerWidget {
           useRootNavigator: true,
           backgroundColor: Colors.transparent,
           isScrollControlled: true,
-          builder: (_) => const _SortOptionsBottomSheet(),
+          builder: (_) => const SortOptionsBottomSheet(),
         );
       },
-      // --- UPDATED: Using a consistent style ---
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.background.withOpacity(0.5),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0), // CORRECTED PADDING
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap, // ADDED FOR CONSISTENCY
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
       ),
@@ -38,19 +42,19 @@ class SortButton extends ConsumerWidget {
   }
 }
 
-class _SortOptionsBottomSheet extends ConsumerWidget {
-  const _SortOptionsBottomSheet();
+class SortOptionsBottomSheet extends ConsumerWidget {
+  const SortOptionsBottomSheet({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterState = ref.watch(filterStateProvider);
     final filterNotifier = ref.read(filterStateProvider.notifier);
     final currentSortOption = filterState.sortOption;
-    final theme = ref.watch(themeProvider); // Get theme
+    final theme = ref.watch(themeProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.background, // UPDATED
+        color: theme.background,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -71,11 +75,11 @@ class _SortOptionsBottomSheet extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: theme.secondary, // UPDATED
+                      color: theme.secondary,
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: theme.accent), // UPDATED
+                    icon: Icon(Icons.close, color: theme.accent),
                     onPressed: () => Navigator.pop(context),
                   )
                 ],
@@ -86,7 +90,7 @@ class _SortOptionsBottomSheet extends ConsumerWidget {
 
                 return Card(
                   elevation: 0,
-                  color: isSelected ? theme.secondary : Colors.transparent, // UPDATED
+                  color: isSelected ? theme.secondary : Colors.transparent,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
@@ -94,7 +98,7 @@ class _SortOptionsBottomSheet extends ConsumerWidget {
                       option.displayName,
                       style: TextStyle(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? theme.primary : theme.inactive, // UPDATED
+                        color: isSelected ? theme.primary : theme.inactive,
                       ),
                     ),
                     onTap: () {

@@ -8,20 +8,21 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 
-import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
-import 'package:sales_app_mvp/components/search_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
-import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
-
-import '../widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'manage_custom_items_page.dart';
+
+// --- REFACTOR: Import the new dedicated button widgets ---
+import 'package:sales_app_mvp/widgets/search_button.dart';
+import 'package:sales_app_mvp/widgets/filter_button.dart';
+import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
@@ -145,7 +146,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
           child: _buildActionsBar(),
         ),
       ),
@@ -328,59 +329,26 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
+  // --- REFACTOR: This method is now clean and declarative ---
   Widget _buildActionsBar() {
-    final theme = ref.watch(themeProvider);
-    return Row(
+    return const Row(
       children: [
         Expanded(
-          child: _actionButton(
-            theme: theme,
-            icon: Icons.search,
-            label: 'Search',
-            onPressed: () => _showModalSheet((_) => const SearchBottomSheet(), isScrollControlled: true),
-          ),
+          child: SearchButton(),
         ),
-        // ===================== FIX START =====================
-        // This SizedBox creates the space between the buttons.
-        const SizedBox(width: 8),
-        // ====================== FIX END ======================
+        SizedBox(width: 8),
         Expanded(
-          child: _actionButton(
-            theme: theme,
-            icon: Icons.filter_alt,
-            label: 'Filter',
-            onPressed: () => _showModalSheet((_) => const FilterBottomSheet(), isScrollControlled: true),
-          ),
+          child: FilterButton(),
         ),
-        // ===================== FIX START =====================
-        // This SizedBox creates the space between the buttons.
-        const SizedBox(width: 8),
-        // ====================== FIX END ======================
-        const Expanded(
+        SizedBox(width: 8),
+        Expanded(
           child: SortButton(),
         ),
       ],
     );
   }
 
-  Widget _actionButton({
-    required AppThemeData theme,
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: theme.secondary, size: 22.0),
-      label: Text(label, style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.background.withOpacity(0.5),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 0,
-      ),
-    );
-  }
+  // --- REFACTOR: The _actionButton helper method has been completely removed ---
 
   void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
     showModalBottomSheet(

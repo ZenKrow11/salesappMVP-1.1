@@ -2,14 +2,13 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:sales_app_mvp/models/product.dart'; // No longer needed
-import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 
-
-// --- FIX G: Update helper classes to use `PlainProduct` ---
+// --- NO CHANGES NEEDED for these helper functions and classes ---
+// They already correctly use `PlainProduct`.
 class _SearchInput {
-  final List<PlainProduct> products; // <-- TYPE CHANGE
+  final List<PlainProduct> products;
   final String query;
   _SearchInput({required this.products, required this.query});
 }
@@ -21,7 +20,7 @@ List<String> _generateSuggestionsInBackground(_SearchInput input) {
   final lowerCaseQuery = input.query.toLowerCase();
   final suggestions = <String>{};
 
-  for (final product in allProducts) { // `product` is now a PlainProduct
+  for (final product in allProducts) {
     if (product.name.toLowerCase().contains(lowerCaseQuery)) {
       suggestions.add(product.name);
     }
@@ -36,23 +35,20 @@ List<String> _generateSuggestionsInBackground(_SearchInput input) {
   return suggestions.take(5).toList();
 }
 
-// --- FIX H: (Error at line 65) Update the provider logic ---
+/// Provides search suggestions based on a query.
 final searchSuggestionsProvider =
 FutureProvider.autoDispose.family<List<String>, String>((ref, query) async {
   if (query.length < 2) {
     return [];
   }
 
-  final appData = ref.watch(appDataProvider);
-  final allProducts = appData.allProducts;
-
-  if (allProducts.isEmpty) {
+  // --- FIX: Watch the new centralized provider. ---
+  // This removes the redundant `.map((p) => p.toPlainObject())` call from this provider.
+  final plainProducts = ref.watch(plainProductsProvider);
+  if (plainProducts.isEmpty) {
     return [];
   }
 
-  // This conversion to plain objects now happens once and is passed to the isolate
-  final plainProducts = allProducts.map((p) => p.toPlainObject()).toList();
   final input = _SearchInput(products: plainProducts, query: query);
-
   return compute(_generateSuggestionsInBackground, input);
 });

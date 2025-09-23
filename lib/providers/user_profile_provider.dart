@@ -3,20 +3,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+// Make sure you import main.dart to get access to the new provider
 import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/user_profile.dart';
-import 'package:sales_app_mvp/services/firestore_service.dart'; // Import FirestoreService
+import 'package:sales_app_mvp/services/firestore_service.dart';
 
-// This is your existing provider, it remains unchanged.
 final userProfileProvider = StreamProvider<UserProfile?>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
+  final authState = ref.watch(authValidationProvider);
   final user = authState.value;
   print("--- UserProfileProvider Re-running ---");
   if (user != null) {
     print("User is logged in. UID: ${user.uid}");
     final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-    return docRef.snapshots().map((snapshot) {
+    // VVVV --- THIS IS THE KEY CHANGE --- VVVV
+    return docRef.snapshots().distinct((prev, next) => prev.data() == next.data()).map((snapshot) {
+      // ^^^^ ----------------------------- ^^^^
       print("Snapshot received for user ${user.uid}");
 
       if (snapshot.exists) {
@@ -41,7 +43,6 @@ final userProfileProvider = StreamProvider<UserProfile?>((ref) {
 
 // ========== NEW NOTIFIER ADDED BELOW ========== //
 
-/// Notifier for handling user profile actions, like updating the display name.
 final userProfileNotifierProvider =
 StateNotifierProvider<UserProfileNotifier, AsyncValue<void>>((ref) {
   return UserProfileNotifier(ref);
@@ -51,23 +52,18 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
   UserProfileNotifier(this._ref) : super(const AsyncData(null));
 
-  User? get _user => _ref.read(authStateChangesProvider).value;
+  // FIXED: Reading the new validation provider
+  User? get _user => _ref.read(authValidationProvider).value;
 
-  /// Updates the user's display name in both Firebase Auth and Firestore.
   Future<void> updateDisplayName(String newName) async {
     if (_user == null) throw Exception("Not logged in");
     state = const AsyncLoading();
     try {
-      // 1. Update the display name in Firebase Auth
       await _user!.updateDisplayName(newName);
-
-      // 2. Update the display name in the Firestore document via FirestoreService
       await _ref.read(firestoreServiceProvider).updateUserProfile({'displayName': newName});
-
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
-      // It's good practice to rethrow so the UI can catch it if needed
       rethrow;
     }
   }

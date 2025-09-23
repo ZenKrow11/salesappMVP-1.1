@@ -27,7 +27,6 @@ class ShoppingModeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
-      // FIX: Restored full AppBar implementation
       appBar: AppBar(
         backgroundColor: theme.primary,
         elevation: 0,
@@ -40,7 +39,6 @@ class ShoppingModeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // FIX: Restored full FloatingActionButton.extended implementation
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (asyncShoppingList.hasValue) {
@@ -49,6 +47,8 @@ class ShoppingModeScreen extends ConsumerWidget {
         },
         icon: const Icon(Icons.check_circle_outline),
         label: const Text('Finish'),
+        backgroundColor: theme.secondary,
+        foregroundColor: theme.primary,
       ),
       body: asyncShoppingList.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -69,6 +69,7 @@ class ShoppingModeScreen extends ConsumerWidget {
               final isChecked = shoppingModeState.checkedProductIds.contains(product.id);
               final quantity = shoppingModeState.productQuantities[product.id] ?? 1;
 
+              // This now uses the redesigned tile with cleaner interaction
               return ShoppingModeListItemTile(
                 product: product,
                 isChecked: isChecked,
@@ -88,7 +89,7 @@ class ShoppingModeScreen extends ConsumerWidget {
   Widget _buildGroupSeparator(String groupName) {
     final style = CategoryService.getStyleForGroupingName(groupName);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -127,7 +128,7 @@ class ShoppingModeScreen extends ConsumerWidget {
             final currentQuantity = state.productQuantities[product.id] ?? 1;
 
             return AlertDialog(
-              contentPadding: const EdgeInsets.all(16.0),
+              contentPadding: const EdgeInsets.all(8.0),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

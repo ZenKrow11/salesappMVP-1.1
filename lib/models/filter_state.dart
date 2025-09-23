@@ -42,16 +42,20 @@ class FilterState with _$FilterState {
     @Default(SortOption.storeAlphabetical) SortOption sortOption,
   }) = _FilterState;
 
-  // Optional: Keep this only if you define custom methods (not needed here)
   const FilterState._();
-}
 
-// ✅ Extension for derived logic like `isDefault`
-extension FilterStateX on FilterState {
+  bool get isSearchActive => searchQuery.isNotEmpty;
+  bool get isFilterActive =>
+      selectedStores.isNotEmpty ||
+          selectedCategories.isNotEmpty ||
+          selectedSubcategories.isNotEmpty;
+
+  // ===================== FIX START =====================
+  /// A filter is in its "default" state if no search, filtering,
+  /// or non-default sorting is applied. This is used for optimization.
   bool get isDefault =>
-      selectedStores.isEmpty &&
-          selectedCategories.isEmpty &&
-          selectedSubcategories.isEmpty &&
-          searchQuery.isEmpty &&
+      !isSearchActive &&
+          !isFilterActive &&
           sortOption == SortOption.storeAlphabetical;
+// ====================== FIX END ======================
 }

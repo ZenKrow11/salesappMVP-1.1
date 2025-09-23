@@ -1,90 +1,106 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sales_app_mvp/components/top_notification.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-void showTopNotification(BuildContext context, {required String message, required AppThemeData theme}) {
-  OverlayEntry? overlayEntry;
+/// Defines the screen position for the notification.
+enum NotificationPosition {
+  top,
+  bottom,
+}
 
-  overlayEntry = OverlayEntry(
-    builder: (context) {
-      // --- FIX: Wrap the animator to control position and interaction ---
-      // Align positions the child at the top of the screen.
-      // IgnorePointer allows taps to pass through to the UI below.
-      return Align(
-        alignment: Alignment.topCenter,
-        child: IgnorePointer(
-          child: _TopNotificationAnimator(
-            child: TopNotification(
-              message: message,
-              theme: theme,
+/// Displays a custom in-app notification from either the top or bottom of the screen.
+/// This version is tuned for the specific AppBar and BottomNavBar heights of this app.
+void showAppNotification(
+    BuildContext context,
+    WidgetRef ref, {
+      required String message,
+      NotificationPosition position = NotificationPosition.bottom,
+      IconData icon = Icons.check_circle_outline,
+    }) {
+  // Ensure we have a valid context to work with.
+  if (!ScaffoldMessenger.of(context).mounted) return;
+
+  // Clear previous notifications to avoid stacking.
+  ScaffoldMessenger.of(context).clearSnackBars();
+
+  final theme = ref.read(themeProvider);
+  final mediaQuery = MediaQuery.of(context);
+
+  // --- LOGIC FOR POSITIONING AND STYLING ---
+
+  final bool isTopNotification = position == NotificationPosition.top;
+
+  // Define colors based on position for better UX.
+  final Color backgroundColor = isTopNotification ? theme.secondary : theme.primary;
+  final Color textColor = isTopNotification ? theme.primary : theme.inactive;
+  final Color iconColor = isTopNotification ? theme.primary : theme.secondary;
+
+  // Define margins based on the app's specific layout.
+  final EdgeInsets margin;
+  if (isTopNotification) {
+    // This margin is calculated to clear the tall HomePage AppBar.
+    // HomePage AppBar Height (~100px) + Status Bar Height + Padding (8px)
+    // We use a fixed offset that works for the tallest AppBar.
+    const double topBarOffset = 108.0;
+
+    margin = EdgeInsets.only(
+      top: mediaQuery.viewPadding.top + topBarOffset,
+      left: 16,
+      right: 16,
+    );
+  } else {
+    // This margin lifts the bottom notification above the BottomNavigationBar.
+    // BottomNavBar Height (~80px) + Padding (10px) = 90px
+    const double bottomNavBarOffset = 90.0;
+
+    margin = const EdgeInsets.fromLTRB(16, 16, 16, bottomNavBarOffset);
+  }
+
+  // --- BUILD AND SHOW THE SNACKBAR ---
+
+  final snackBar = SnackBar(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    behavior: SnackBarBehavior.floating, // Allows custom margins
+    margin: margin, // Use the calculated, context-aware margin
+
+    content: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: backgroundColor.withOpacity(0.98),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            onDispose: () {
-              overlayEntry?.remove();
-            },
           ),
-        ),
-      );
-    },
+        ],
+      ),
+    ),
+
+    padding: EdgeInsets.zero,
+    duration: const Duration(seconds: 3),
   );
 
-  Overlay.of(context).insert(overlayEntry);
-}
-
-class _TopNotificationAnimator extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onDispose;
-
-  const _TopNotificationAnimator({required this.child, required this.onDispose});
-
-  @override
-  _TopNotificationAnimatorState createState() => _TopNotificationAnimatorState();
-}
-
-class _TopNotificationAnimatorState extends State<_TopNotificationAnimator> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -1.5), // Start above the screen
-      end: const Offset(0.0, 0.0),    // End at the top
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
-    // Animate in
-    _controller.forward();
-
-    // Wait for a few seconds, then animate out and remove
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        _controller.reverse().then((_) {
-          widget.onDispose();
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _offsetAnimation,
-      child: widget.child,
-    );
-  }
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }

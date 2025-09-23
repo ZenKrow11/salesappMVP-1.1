@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Make sure you import main.dart to get access to the new provider
 import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
@@ -11,15 +12,12 @@ import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ======================= NEW PROVIDER ADDED =======================
-// This provider will hold the current view state for the shopping list page.
-// `true` = Grid View, `false` = List View.
 final shoppingListViewModeProvider = StateProvider<bool>((ref) => true); // Default to Grid View
 // ==================================================================
 
-
-// --- No changes in the rest of the file ---
 final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
-  final user = ref.watch(authStateChangesProvider).value;
+  // FIXED: Watching the new validation provider
+  final user = ref.watch(authValidationProvider).value;
   if (user == null) {
     return Stream.value({});
   }
@@ -31,7 +29,8 @@ final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
 const String merklisteListName = 'Merkliste';
 
 final initializationProvider = FutureProvider<void>((ref) async {
-  final user = await ref.watch(authStateChangesProvider.future);
+  // FIXED: Watching the new validation provider's future
+  final user = await ref.watch(authValidationProvider.future);
   if (user == null) {
     return;
   }
@@ -39,7 +38,8 @@ final initializationProvider = FutureProvider<void>((ref) async {
 });
 
 final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
+  // FIXED: Watching the new validation provider
+  final authState = ref.watch(authValidationProvider);
   if (authState.value == null) {
     return Stream.value([]);
   }
@@ -48,7 +48,8 @@ final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
 });
 
 final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
-  final user = ref.watch(authStateChangesProvider).value;
+  // FIXED: Watching the new validation provider
+  final user = ref.watch(authValidationProvider).value;
   final activeListId = ref.watch(activeShoppingListProvider);
 
   if (user == null) {
@@ -102,7 +103,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
     await _ref.read(activeShoppingListProvider.notifier).setActiveList(listName);
   }
 
-  /// Adds a product to the currently active shopping list.
   Future<void> addToList(Product product) async {
     final activeListId = _ref.read(activeShoppingListProvider);
     await _firestoreService.addItemToList(
@@ -111,7 +111,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
-  /// Adds a product to a specific shopping list, identified by its ID.
   Future<void> addToSpecificList(Product product, String listId) async {
     await _firestoreService.addItemToList(
       listId: listId,
@@ -120,7 +119,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
-  /// This method works implicitly on the active list.
   Future<void> removeItemFromList(Product product) async {
     final activeListId = _ref.read(activeShoppingListProvider);
     await _firestoreService.removeItemFromList(

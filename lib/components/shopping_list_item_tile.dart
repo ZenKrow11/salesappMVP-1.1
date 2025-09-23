@@ -8,6 +8,7 @@ import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
+import 'package:sales_app_mvp/widgets/notification_helper.dart'; // Ensure this import is present
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 
@@ -30,68 +31,62 @@ class ShoppingListItemTile extends ConsumerWidget {
       onTap: () {
         final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
         if (initialIndex != -1) {
-
-          // --- THIS IS THE FIX (Error at line 36) ---
-          // Convert the `List<Product>` to a `List<PlainProduct>` before navigating.
           final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
 
           Navigator.of(context).push(SlideUpPageRoute(
             page: ProductSwiperScreen(
-              products: plainProducts, // Pass the converted list
+              products: plainProducts,
               initialIndex: initialIndex,
             ),
           ));
         }
       },
+      // --- THIS IS THE FIX ---
       onDoubleTap: () {
+        // First, perform the action
         ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
-        ScaffoldMessenger.of(context)
-          ..removeCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text('Removed "${product.name}"'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
+
+        // Then, show the new, consistent notification
+        showAppNotification(
+          context,
+          ref,
+          message: 'Removed "${product.name}"',
+          // A bottom notification is more standard for this kind of quick feedback.
+          // It's the default, so we don't need to specify the position.
+          // Using a neutral icon can be a nice touch for a "remove" action.
+          icon: Icons.info_outline,
+        );
       },
+      // --- END OF FIX ---
       child: isGridView
           ? _buildGridTile(context, ref)
           : _buildListTile(context, ref),
     );
   }
 
-  // --- MODIFIED: Method to build the grid tile with the fix ---
   Widget _buildGridTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
 
     return Card(
-      color: Colors.white, // White background for the image
+      color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // clipBehavior is good, but we will be more explicit for the image.
       clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // --- FIX START ---
-          // By wrapping the image in a ClipRRect that matches the Card's border radius,
-          // we guarantee it will be clipped correctly.
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: CachedNetworkImage(
               imageUrl: product.imageUrl ?? '',
               fit: BoxFit.cover,
-              // These are aesthetic improvements for a smoother look
               placeholder: (context, url) => Container(color: Colors.grey[200]),
               errorWidget: (context, url, error) => const Center(
                 child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
               ),
             ),
           ),
-          // --- FIX END ---
-
-          // Price in top-right corner
           Positioned(
             top: 6,
             right: 6,
@@ -107,22 +102,18 @@ class ShoppingListItemTile extends ConsumerWidget {
               child: Text(
                 '$priceString Fr.',
                 style: const TextStyle(
-                  color: Colors.black, // Explicitly black as requested
+                  color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
               ),
             ),
           ),
-
-          // Store logo in top-left
           Positioned(
             top: 6,
             left: 6,
             child: StoreLogo(storeName: product.store, height: 24),
           ),
-
-          // Title at the bottom with a gradient for readability
           Positioned(
             bottom: 0,
             left: 0,
@@ -155,7 +146,6 @@ class ShoppingListItemTile extends ConsumerWidget {
     );
   }
 
-  // --- No changes needed for the list tile layout ---
   Widget _buildListTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
@@ -174,7 +164,6 @@ class ShoppingListItemTile extends ConsumerWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              // Using ImageWithAspectRatio here is correct because we have a fixed size
               child: ImageWithAspectRatio(
                 imageUrl: product.imageUrl ?? '',
                 fit: BoxFit.cover,

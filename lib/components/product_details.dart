@@ -6,19 +6,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/models/product.dart'; // <-- Keep Product for creating Hive object
-import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
+import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
+// Note: This path points to the file we just refactored
 import 'package:sales_app_mvp/widgets/notification_helper.dart';
 
 enum _GestureType { none, swipingUp, swipingDown }
 
 class ProductDetails extends ConsumerStatefulWidget {
-  final PlainProduct product; // <-- TYPE CHANGE
+  final PlainProduct product;
   final int currentIndex;
   final int totalItems;
   final Function(double progress) onDragUpdate;
@@ -167,7 +168,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   void _handleDoubleTapSave(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(shoppingListsProvider.notifier);
-    final theme = ref.read(themeProvider);
 
     // Create the Hive-compatible object from the PlainProduct
     final hiveProduct = Product(
@@ -193,17 +193,18 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     final isItemInList = shoppingListProducts.any((item) => item.id == widget.product.id);
 
     if (isItemInList) {
-      notifier.removeItemFromList(hiveProduct); // Use the converted object
-      showTopNotification(context, message: 'Removed from "Merkliste"', theme: theme);
+      notifier.removeItemFromList(hiveProduct);
+      // --- FIX 1 ---
+      showAppNotification(context, ref, message: 'Removed from "Merkliste"', position: NotificationPosition.top);
     } else {
-      notifier.addToList(hiveProduct); // Use the converted object
-      showTopNotification(context, message: 'Added to "Merkliste"', theme: theme);
+      notifier.addToList(hiveProduct);
+      // --- FIX 2 ---
+      showAppNotification(context, ref, message: 'Added to "Merkliste"', position: NotificationPosition.top);
     }
   }
 
   void _launchURL(BuildContext context, String url) async {
     final uri = Uri.parse(url);
-    final theme = ref.read(themeProvider);
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $url';
@@ -211,10 +212,13 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     } catch (e) {
       debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        showTopNotification(
+        // --- FIX 3 ---
+        showAppNotification(
           context,
+          ref,
           message: "Could not open product link",
-          theme: theme,
+          position: NotificationPosition.top,
+          icon: Icons.error_outline, // Good to use an error icon here
         );
       }
     }
@@ -222,13 +226,9 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
 
   Widget _buildCardContent(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-
-    // --- MODIFICATION START ---
-    // Get the status of the item using the new provider pattern.
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
     final shoppingListProducts = asyncShoppingList.value ?? [];
     final isInShoppingList = shoppingListProducts.any((item) => item.id == widget.product.id);
-    // --- MODIFICATION END ---
 
     final cardUi = Center(
       child: Container(
@@ -261,7 +261,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
                       const Spacer(),
                       _buildSonderkonditionInfo(theme),
                       const SizedBox(height: 8),
-                      // Pass the status down to the image container
                       _buildImageContainer(context, theme, isInShoppingList),
                       const SizedBox(height: 12),
                       _buildPriceRow(),
@@ -291,7 +290,6 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
   }
 
   // --- WIDGET BUILDER METHODS (mostly unchanged) ---
-
   // (No changes needed in the rest of the file)
   Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
     return Row(
@@ -432,15 +430,12 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
     );
   }
 
-  // In lib/components/product_details.dart
-
   Widget _buildAvailabilityInfo(AppThemeData theme) {
     String formatDate(DateTime? date) {
       if (date == null) return '';
       return DateFormat('dd.MM.yyyy').format(date);
     }
 
-    // --- FIX: Use the new field name 'dealStart' instead of 'availableFrom' ---
     final fromDate = formatDate(widget.product.dealStart);
     final toDate = formatDate(widget.product.dealEnd);
 
@@ -450,7 +445,7 @@ class _ProductDetailsState extends ConsumerState<ProductDetails>
       availabilityText = 'Gültig vom $fromDate bis $toDate';
     } else if (fromDate.isNotEmpty) {
       availabilityText = 'Gültig ab $fromDate';
-    } else if (toDate.isNotEmpty) { // Added a case for when only the end date is known
+    } else if (toDate.isNotEmpty) {
       availabilityText = 'Gültig bis $toDate';
     } else {
       availabilityText = 'Gültigkeit unbekannt';

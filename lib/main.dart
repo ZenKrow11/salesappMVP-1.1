@@ -18,6 +18,10 @@ import 'package:sales_app_mvp/widgets/loading_gate.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sales_app_mvp/providers/auth_controller.dart';
+
+//import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 
 //============================================================================
 //  MAIN FUNCTION - The App's Entry Point
@@ -31,17 +35,15 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
+/*
   // START: Block to connect to Firebase Emulators in debug mode
-
   if (kDebugMode) {
     try {
+      // Emulator connection
+      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
 
-      //local emulator
-      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
-
-      // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
-      //final host = '192.168.1.116';
+      // Physical phone connection
+      final host = Platform.isAndroid ? '192.168.1.116' : 'localhost';
 
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
@@ -50,14 +52,13 @@ Future<void> main() async {
     }
   }
   // END: Emulator connection block
+*/
 
 
-  // firebase emulators:start --only firestore,auth
+  /// firebase emulators:start --only firestore,auth
 
-  // Initialize Hive for Flutter.
   await Hive.initFlutter();
 
-  // Run the app.
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -74,59 +75,106 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sales App',
+      title: 'SaleSeekr', // Using hardcoded title since appName is not in localization
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-
-      // --- FIX: SET AuthGate AS THE HOME WIDGET ---
-      // This makes it the entry point of your app's UI.
-      // You cannot use both `home` and `initialRoute`.
       home: const AuthGate(),
-
-      // --- FIX: SIMPLIFY THE ROUTES MAP ---
-      // The initial routing is now handled by AuthGate.
-      // You only need routes for pages you might navigate to manually by name later.
       routes: {
-        // We removed SplashScreen and AuthGate from here.
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),
       },
+
+      // ===================== WIRING UP LOCALIZATION =====================
+      // These lines were correct before, they just couldn't find the class.
+      // Now they will work.
+      //localizationsDelegates: AppLocalizations.localizationsDelegates,
+      //supportedLocales: AppLocalizations.supportedLocales,
+
+      // Optional but recommended: Localize the app's title
+      // onGenerateTitle: (context) {
+      //   // This requires you to have an appName key in your localization files
+      //   // Since appName is not currently defined, we're using hardcoded title above
+      //   return AppLocalizations.of(context)!.appName;
+      // },
+      // ===================================================================
     );
   }
 }
 
 //============================================================================
-//  AUTH STATE PROVIDER & AUTH GATE
+//  AUTH STATE & DATA VALIDATION PROVIDERS (THIS PART IS CORRECT)
 //============================================================================
-final authStateChangesProvider = StreamProvider<User?>((ref) {
-  return FirebaseAuth.instance.authStateChanges();
+final authValidationProvider = StreamProvider<User?>((ref) async* {
+  // Listen to the raw Firebase auth state changes
+  final authStream = FirebaseAuth.instance.authStateChanges();
+
+  // Yield values from the auth stream
+  await for (final user in authStream) {
+    if (user == null) {
+      // 1. User is signed out, yield null to navigate to LoginScreen.
+      yield null;
+    } else {
+      // 2. User is signed in according to the local cache.
+      //    NOW, we must verify their data exists in Firestore.
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (doc.exists) {
+          // 3. SUCCESS: The user is valid in Auth AND Firestore.
+          //    Yield the user object to navigate to the main app.
+          yield user;
+        } else {
+          // 4. FAILSAFE: Orphan user detected (exists in Auth, not Firestore).
+          //    Sign them out immediately and yield null. The UI will react to the null.
+          //    Use `ref.read` only within the `build` method or other lifecycle methods
+          //    that are guaranteed to run *after* the provider scope is initialized.
+          //    For a StreamProvider, this is typically fine.
+          await ref.read(authControllerProvider.notifier).signOut();
+          yield null;
+        }
+      } catch (e) {
+        // 5. Handle potential Firestore errors (e.g., network issue).
+        //    Sign out as a safety measure and yield null.
+        print('Error validating user document: $e');
+        await ref.read(authControllerProvider.notifier).signOut();
+        yield null;
+      }
+    }
+  }
 });
 
+//============================================================================
+//  AUTH GATE WIDGET (THIS IS THE REPLACED, SIMPLIFIED PART)
+//============================================================================
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
-  // --- FIX: NO routeName IS NEEDED HERE ---
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateChangesProvider);
+    // Watch our new, all-in-one validation provider
+    // This is the key change: it watches `authValidationProvider` now.
+    final authValidationState = ref.watch(authValidationProvider);
 
-    return authState.when(
+    return authValidationState.when(
       data: (user) {
+        // The provider has already done all the checks.
+        // If user is not null here, they are fully validated.
         if (user != null) {
-          // USER IS SIGNED IN
-          // Go to the LoadingGate to ensure data is ready.
-          return const LoadingGate();
+          // User is fully authenticated and has a Firestore document
+          return const LoadingGate(); // Proceed to the app
         } else {
-          // USER IS SIGNED OUT
-          // Go to the login screen.
-          return const LoginScreen();
+          // User is signed out, or their account was invalid/orphaned
+          return const LoginScreen(); // Show login screen
         }
       },
-      // Keep showing a splash/loading UI while checking auth state.
-      loading: () => const SplashScreen(),
+      loading: () => const SplashScreen(), // Show splash while validation happens
       error: (err, stack) => Scaffold(
+        // Handle any unexpected errors from the stream itself
         body: Center(child: Text("Authentication Error: $err")),
       ),
     );

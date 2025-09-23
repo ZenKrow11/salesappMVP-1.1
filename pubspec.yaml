@@ -1,14 +1,19 @@
 name: sales_app_mvp
 description: "MVP for SaleSeekr"
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0' # A safer range than a single version
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
   # Firebase
   firebase_core: ^3.1.0
@@ -31,7 +36,6 @@ dependencies:
   cached_network_image: ^3.3.1
   collection: ^1.18.0
   flutter_svg: ^2.0.10+1
-  intl: ^0.20.2 # Updated to a more recent stable version
   responsive_framework: ^1.4.0
   scrollable_positioned_list: ^0.3.8
   sticky_headers: ^0.3.0
@@ -42,7 +46,7 @@ dependencies:
   uuid: ^4.3.3
 
   # Code Generation (Annotations)
-  freezed_annotation: ^2.4.1 # Stable version
+  freezed_annotation: ^2.4.1
   auto_size_text: ^3.0.0
   grouped_list: ^6.0.0
 
@@ -50,16 +54,17 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4
 
-  # Code Generation (Generators) - STABLE, COMPATIBLE VERSIONS
+  # Code Generation (Generators)
   build_runner: ^2.4.9
-  freezed: ^2.5.2             # Use the stable version of freezed
+  freezed: ^2.5.2
   hive_generator: ^2.0.1
   riverpod_generator: ^2.4.0
 
 flutter:
+  generate: false
   uses-material-design: true
   assets:
     - assets/images/store_logos/

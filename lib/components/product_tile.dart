@@ -1,7 +1,7 @@
 // lib/components/product_tile.dart
 
-import 'package:flutter/material.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
@@ -12,6 +12,7 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+// Note: This path points to the file we just refactored
 import 'package:sales_app_mvp/widgets/notification_helper.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:sales_app_mvp/models/categorizable.dart';
@@ -35,7 +36,6 @@ class ProductTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We can cast the PlainProduct as Categorizable for the service to use it.
     final categorizableProduct = product as Categorizable;
     final categoryStyle = CategoryService.getStyleForCategory(categorizableProduct.category);
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
@@ -43,8 +43,6 @@ class ProductTile extends ConsumerWidget {
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
 
-    // The shopping list needs the Hive-compatible `Product` object.
-    // We create it on-demand when an action is performed.
     Product _createHiveProduct() {
       return Product(
           id: product.id,
@@ -70,15 +68,16 @@ class ProductTile extends ConsumerWidget {
       onTap: onTap,
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
-        final theme = ref.read(themeProvider);
-        final hiveProduct = _createHiveProduct(); // Create the object
+        final hiveProduct = _createHiveProduct();
 
         if (isInShoppingList) {
           notifier.removeItemFromList(hiveProduct);
-          showTopNotification(context, message: 'Removed from list', theme: theme);
+          // --- FIX 1 ---
+          showAppNotification(context, ref, message: 'Removed from list', position: NotificationPosition.top);
         } else {
           notifier.addToList(hiveProduct);
-          showTopNotification(context, message: 'Added to active list', theme: theme);
+          // --- FIX 2 ---
+          showAppNotification(context, ref, message: 'Added to active list', position: NotificationPosition.top);
         }
       },
       onLongPress: () {
@@ -89,7 +88,7 @@ class ProductTile extends ConsumerWidget {
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (ctx) {
-            final hiveProduct = _createHiveProduct(); // Create the object
+            final hiveProduct = _createHiveProduct();
             return ShoppingListBottomSheet(
               product: hiveProduct,
               onConfirm: (selectedListId) {
@@ -97,10 +96,12 @@ class ProductTile extends ConsumerWidget {
                     .read(shoppingListsProvider.notifier)
                     .addToSpecificList(hiveProduct, selectedListId);
                 Navigator.of(ctx).pop();
-                showTopNotification(
+                // --- FIX 3 ---
+                showAppNotification(
                   context,
+                  ref,
                   message: 'Added to "$selectedListId"',
-                  theme: theme,
+                  position: NotificationPosition.top,
                 );
               },
             );
