@@ -19,6 +19,9 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'generated/app_localizations.dart';
+//import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 //============================================================================
 //  MAIN FUNCTION - The App's Entry Point
 //============================================================================

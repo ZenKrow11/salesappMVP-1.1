@@ -1,0 +1,1013 @@
+{
+  "@@locale": "en",
+
+  "account": "Account",
+  "@account": {
+    "description": "Title for the account section or page."
+  },
+
+  "adPlaceholder": "Ad Placeholder\n300 x 250",
+  "@adPlaceholder": {
+    "description": "Placeholder text for an advertisement block on the loading screen."
+  },
+
+  "addedToActiveList": "Added to active list",
+  "@addedToActiveList": {
+    "description": "Notification message when an item is added to the default active list."
+  },
+
+  "addedTo": "Added to \"{listName}\"",
+  "@addedTo": {
+    "description": "Notification message when an item is added to a specifically named list.",
+    "placeholders": {
+      "listName": {
+        "type": "String",
+        "example": "Weekend Groceries"
+      }
+    }
+  },
+
+  "anUnknownErrorOccurred": "An unknown error occurred",
+  "@anUnknownErrorOccurred": {
+    "description": "Generic fallback error message."
+  },
+
+  "anUnexpectedErrorOccurred": "An unexpected error occurred.",
+  "@anUnexpectedErrorOccurred": {
+    "description": "Generic fallback error message for unexpected issues."
+  },
+
+  "appName": "SaleSeekr",
+  "@appName": {
+    "description": "The title of the application"
+  },
+
+  "apply": "APPLY",
+  "@apply": {
+    "description": "Button text for applying filters."
+  },
+
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button text to cancel an action, like in a dialog."
+  },
+
+  "categories": "Categories",
+  "@categories": {
+    "description": "Tab title for categories filter."
+  },
+
+  "categoryAlcoholicBeverages": "Alcoholic Beverages",
+  "@categoryAlcoholicBeverages": {
+    "description": "Main category name"
+  },
+
+  "categoryBakingIngredients": "Baking Ingredients",
+  "@categoryBakingIngredients": {
+    "description": "Sub-category name"
+  },
+
+  "categoryBeefVeal": "Beef & Veal",
+  "@categoryBeefVeal": {
+    "description": "Sub-category name"
+  },
+
+  "categoryBeer": "Beer",
+  "@categoryBeer": {
+    "description": "Sub-category name"
+  },
+
+  "categoryBread": "Bread",
+  "@categoryBread": {
+    "description": "Sub-category name"
+  },
+
+  "categoryBreadBakery": "Bread & Bakery",
+  "@categoryBreadBakery": {
+    "description": "Main category name"
+  },
+
+  "categoryButterEggs": "Butter & Eggs",
+  "@categoryButterEggs": {
+    "description": "Sub-category name"
+  },
+
+  "categoryCannedGoodsOilsSaucesSpices": "Cans, Oils, Sauces & Spices",
+  "@categoryCannedGoodsOilsSaucesSpices": {
+    "description": "Sub-category name"
+  },
+
+  "categoryCerealsGrains": "Cereals & Grains",
+  "@categoryCerealsGrains": {
+    "description": "Sub-category name"
+  },
+
+  "categoryCheese": "Cheese",
+  "@categoryCheese": {
+    "description": "Sub-category name"
+  },
+
+  "categoryChipsNuts": "Chips & Nuts",
+  "@categoryChipsNuts": {
+    "description": "Sub-category name"
+  },
+
+  "categoryChocolateCookies": "Chocolate & Cookies",
+  "@categoryChocolateCookies": {
+    "description": "Sub-category name"
+  },
+
+  "categoryCoffeeTeaCocoa": "Coffee, Tea & Cocoa",
+  "@categoryCoffeeTeaCocoa": {
+    "description": "Sub-category name"
+  },
+
+  "categoryConvenienceReadyMeals": "Convenience & Ready Meals",
+  "@categoryConvenienceReadyMeals": {
+    "description": "Sub-category name"
+  },
+
+  "categoryDairyEggs": "Dairy & Eggs",
+  "@categoryDairyEggs": {
+    "description": "Main category name"
+  },
+
+  "categoryFishMeat": "Fish & Meat",
+  "@categoryFishMeat": {
+    "description": "Main category name"
+  },
+
+  "categoryFishSeafood": "Fish & Seafood",
+  "@categoryFishSeafood": {
+    "description": "Sub-category name"
+  },
+
+  "categoryFruits": "Fruits",
+  "@categoryFruits": {
+    "description": "Sub-category name"
+  },
+
+  "categoryFruitsVegetables": "Fruits & Vegetables",
+  "@categoryFruitsVegetables": {
+    "description": "Main category name"
+  },
+
+  "categoryFrozenProductsSoups": "Frozen Products & Soups",
+  "@categoryFrozenProductsSoups": {
+    "description": "Sub-category name"
+  },
+
+  "categoryHoneyJamSpreads": "Honey, Jam & Spreads",
+  "@categoryHoneyJamSpreads": {
+    "description": "Sub-category name"
+  },
+
+  "categoryIceCreamSweets": "Ice Cream & Sweets",
+  "@categoryIceCreamSweets": {
+    "description": "Sub-category name"
+  },
+
+  "categoryMeatMixesAssorted": "Meat Mixes & Assorted",
+  "@categoryMeatMixesAssorted": {
+    "description": "Sub-category name"
+  },
+
+  "categoryMilkDairyProducts": "Milk & Dairy Products",
+  "@categoryMilkDairyProducts": {
+    "description": "Sub-category name"
+  },
+
+  "categoryNonAlcoholicBeverages": "Non-Alcoholic Beverages",
+  "@categoryNonAlcoholicBeverages": {
+    "description": "Main category name"
+  },
+
+  "categoryOther": "Other",
+  "@categoryOther": {
+    "description": "Main category name for miscellaneous items"
+  },
+
+  "categoryPantry": "Pantry",
+  "@categoryPantry": {
+    "description": "Main category name for pantry staples"
+  },
+
+  "categoryPastriesDesserts": "Pastries & Desserts",
+  "@categoryPastriesDesserts": {
+    "description": "Sub-category name"
+  },
+
+  "categoryPork": "Pork",
+  "@categoryPork": {
+    "description": "Sub-category name"
+  },
+
+  "categoryPoultry": "Poultry",
+  "@categoryPoultry": {
+    "description": "Sub-category name"
+  },
+
+  "categoryRicePasta": "Rice & Pasta",
+  "@categoryRicePasta": {
+    "description": "Sub-category name"
+  },
+
+  "categorySaltySnacksSweets": "Salty Snacks & Sweets",
+  "@categorySaltySnacksSweets": {
+    "description": "Main category name"
+  },
+
+  "categorySausagesColdCuts": "Sausages & Cold Cuts",
+  "@categorySausagesColdCuts": {
+    "description": "Sub-category name"
+  },
+
+  "categorySnacksAppetizers": "Snacks & Appetizers",
+  "@categorySnacksAppetizers": {
+    "description": "Sub-category name"
+  },
+
+  "categorySoftDrinksEnergyDrinks": "Soft Drinks & Energy Drinks",
+  "@categorySoftDrinksEnergyDrinks": {
+    "description": "Sub-category name"
+  },
+
+  "categorySpecialDiet": "Special Diet",
+  "@categorySpecialDiet": {
+    "description": "Main category name"
+  },
+
+  "categorySpiritsAssorted": "Spirits & Assorted",
+  "@categorySpiritsAssorted": {
+    "description": "Sub-category name"
+  },
+
+  "categoryUncategorized": "Uncategorized",
+  "@categoryUncategorized": {
+    "description": "Sub-category for uncategorized items"
+  },
+
+  "categoryVeganProducts": "Vegan Products",
+  "@categoryVeganProducts": {
+    "description": "Sub-category name"
+  },
+
+  "categoryVegetables": "Vegetables",
+  "@categoryVegetables": {
+    "description": "Sub-category name"
+  },
+
+  "categoryWaterJuices": "Water & Juices",
+  "@categoryWaterJuices": {
+    "description": "Sub-category name"
+  },
+
+  "categoryWinesSparklingWines": "Wines & Sparkling Wines",
+  "@categoryWinesSparklingWines": {
+    "description": "Sub-category name"
+  },
+
+  "changePassword": "Change Password",
+  "@changePassword": {
+    "description": "Title for the change password page and button."
+  },
+
+  "checkItem": "Check item",
+  "@checkItem": {
+    "description": "Tooltip for the checkbox in shopping mode to mark an item as found."
+  },
+
+
+
+  "continueWithGoogle": "Continue with Google",
+  "@continueWithGoogle": {
+    "description": "Button text for signing in with a Google account."
+  },
+
+  "couldNotOpenProductLink": "Could not open product link",
+  "@couldNotOpenProductLink": {
+    "description": "Error message when the app fails to launch a URL to a product page."
+  },
+
+  "createAccount": "Create Account",
+  "@createAccount": {
+    "description": "Button text for the sign-up form."
+  },
+
+  "createAndAddItem": "CREATE & ADD ITEM",
+  "@createAndAddItem": {
+    "description": "Button text for creating a new custom item and adding it to a list."
+  },
+
+  "createAndSelect": "CREATE AND SELECT",
+  "@createAndSelect": {
+    "description": "Button text for creating a new shopping list and making it the active one."
+  },
+
+  "createCustomItem": "Create Custom Item",
+  "@createCustomItem": {
+    "description": "AppBar title for the page where users create a new custom item."
+  },
+
+  "createCustomListsWithPremium": "Create up to {count} custom lists with Premium.",
+  "@createCustomListsWithPremium": {
+    "description": "Informational text for non-premium users about the list creation limit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+
+  "createItem": "CREATE ITEM",
+  "@createItem": {
+    "description": "Button text for creating a new custom item."
+  },
+
+  "createNew": "Create New",
+  "@createNew": {
+    "description": "Tab title for creating a new item or list."
+  },
+
+  "currencyFrancs": "Fr.",
+  "@currencyFrancs": {
+    "description": "Abbreviation for the currency Swiss Francs. See notes about number formatting.",
+    "example": "Fr."
+  },
+
+  "currentPassword": "Current Password",
+  "@currentPassword": {
+    "description": "Label for the current password input field."
+  },
+
+  "customCategoryPremium": "Custom Category (Premium)",
+  "@customCategoryPremium": {
+    "description": "Label for the custom category input field, a premium feature."
+  },
+
+  "customItemLimitReached": "You have reached your limit of {count} custom items.",
+  "@customItemLimitReached": {
+    "description": "Error message shown when a user tries to create more custom items than their plan allows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "15"
+      }
+    }
+  },
+
+  "dangerZone": "Danger Zone",
+  "@dangerZone": {
+    "description": "Section header on the account page for destructive actions."
+  },
+
+  "decreaseQuantity": "Decrease quantity",
+  "@decreaseQuantity": {
+    "description": "Tooltip for the minus button on the quantity stepper."
+  },
+
+  "defaultListName": "Merkliste",
+  "@defaultListName": {
+    "description": "The default name for the user's first shopping list."
+  },
+
+  "defaultListIsBeingPrepared": "Your default list is being prepared...",
+  "@defaultListIsBeingPrepared": {
+    "description": "Loading message shown while the initial default shopping list is being created for a user."
+  },
+
+  "delete": "Delete",
+  "@delete": {
+    "description": "Confirmation button text for deleting something, like a shopping list."
+  },
+
+  "deleteAccount": "Delete Account",
+  "@deleteAccount": {
+    "description": "Title and button text for the account deletion feature."
+  },
+
+  "deleteAccountConfirmationBody": "This action is permanent and cannot be undone. All your lists and data will be lost. Please enter your password to confirm.",
+  "@deleteAccountConfirmationBody": {
+    "description": "Warning message in the account deletion confirmation dialog."
+  },
+
+  "deleteListConfirmationBody": "This action is permanent and cannot be undone.",
+  "@deleteListConfirmationBody": {
+    "description": "Warning message in the confirmation dialog for deleting a list."
+  },
+
+  "deleteListConfirmationTitle": "Delete \"{listName}\"?",
+  "@deleteListConfirmationTitle": {
+    "description": "Title of the confirmation dialog when deleting a list.",
+    "placeholders": {
+      "listName": {
+        "type": "String",
+        "example": "Party Supplies"
+      }
+    }
+  },
+
+  "deletePermanently": "DELETE PERMANENTLY",
+  "@deletePermanently": {
+    "description": "Confirmation button text for permanently deleting an account."
+  },
+
+  "displayName": "Display Name",
+  "@displayName": {
+    "description": "Label for the display name input field."
+  },
+
+  "editCustomItem": "Edit Custom Item",
+  "@editCustomItem": {
+    "description": "AppBar title for the page where users edit an existing custom item."
+  },
+
+  "editProfile": "Edit Profile",
+  "@editProfile": {
+    "description": "Title for the edit profile dialog and button."
+  },
+
+  "emailAddress": "Email Address",
+  "@emailAddress": {
+    "description": "Label for the email input field."
+  },
+
+  "enterNewListName": "Enter new list name",
+  "@enterNewListName": {
+    "description": "Label for the text field where a user enters the name for a new shopping list."
+  },
+
+  "error": "Error: {error}",
+  "@error": {
+    "description": "Generic error message prefix.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Network request failed"
+      }
+    }
+  },
+
+  "errorLoadingList": "Error loading list: {error}",
+  "@errorLoadingList": {
+    "description": "Error message shown on the shopping list page when data fails to load.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "errorLoadingProfile": "Error loading profile",
+  "@errorLoadingProfile": {
+    "description": "Error message shown on the account page when the user's profile fails to load."
+  },
+
+  "errorSavingItem": "Error saving item: {error}",
+  "@errorSavingItem": {
+    "description": "Error message shown when saving a custom item fails.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Permission denied"
+      }
+    }
+  },
+
+  "failedToSendResetEmail": "Failed to send reset email.",
+  "@failedToSendResetEmail": {
+    "description": "Error message when the password reset email fails to send."
+  },
+
+  "fatalError": "Fatal Error: {error}",
+  "@fatalError": {
+    "description": "Error message for a critical, unrecoverable error.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "featureNotImplemented": "{featureName} is not yet implemented.",
+  "@featureNotImplemented": {
+    "description": "Placeholder message for features that are not yet built.",
+    "placeholders": {
+      "featureName": { "type": "String", "example": "Notifications" }
+    }
+  },
+
+  "filter": "Filter",
+  "@filter": {
+    "description": "Button text to open filtering options."
+  },
+
+  "filterProducts": "Filter Products",
+  "@filterProducts": {
+    "description": "Header title for the product filtering bottom sheet."
+  },
+
+  "finish": "Finish",
+  "@finish": {
+    "description": "Button text in shopping mode to finish the shopping session."
+  },
+
+  "finishShoppingBody": "Would you like to remove the items you checked off from your list?",
+  "@finishShoppingBody": {
+    "description": "Content of the confirmation dialog when finishing shopping."
+  },
+
+  "finishShoppingTitle": "Finish Shopping?",
+  "@finishShoppingTitle": {
+    "description": "Title of the confirmation dialog when finishing shopping."
+  },
+
+  "forgotPassword": "Forgot Password?",
+  "@forgotPassword": {
+    "description": "Button text for the password reset flow."
+  },
+
+  "increaseQuantity": "Increase quantity",
+  "@increaseQuantity": {
+    "description": "Tooltip for the plus button on the quantity stepper."
+  },
+
+  "initializing": "Initializing...",
+  "@initializing": {
+    "description": "Text shown on the splash screen while the app is loading."
+  },
+
+  "itemSavedSuccessfully": "\"{itemName}\" saved successfully.",
+  "@itemSavedSuccessfully": {
+    "description": "Success message shown after an item is saved.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Milk"
+      }
+    }
+  },
+
+  "itemName": "Item Name",
+  "@itemName": {
+    "description": "Label for the item name input field."
+  },
+
+  "keepAllItems": "Keep All Items",
+  "@keepAllItems": {
+    "description": "Button text in the finish shopping dialog to keep all items on the list."
+  },
+
+  "listIsEmpty": "This list is empty.\nDouble-tap an item on the sales page to add it.",
+  "@listIsEmpty": {
+    "description": "Message shown on the shopping list page when it contains no items."
+  },
+
+  "listOptions": "List Options",
+  "@listOptions": {
+    "description": "Header title for the list options bottom sheet."
+  },
+
+  "login": "Login",
+  "@login": {
+    "description": "Tab and button text for the login action."
+  },
+
+  "logout": "Logout",
+  "@logout": {
+    "description": "Title and button text for the logout action."
+  },
+
+  "logoutConfirmation": "Are you sure you want to logout?",
+  "@logoutConfirmation": {
+    "description": "Confirmation message in the logout dialog."
+  },
+
+  "manageCustomItemsTitle": "Manage Custom Items",
+  "@manageCustomItemsTitle": {
+    "description": "AppBar title for the page where users manage their custom items."
+  },
+
+  "manageItems": "Manage Items",
+  "@manageItems": {
+    "description": "Button label for navigating to the 'Manage Custom Items' page."
+  },
+
+  "manageLists": "Manage Lists",
+  "@manageLists": {
+    "description": "Button label for opening the 'Manage Lists' bottom sheet."
+  },
+
+  "manageMyLists": "Manage My Lists",
+  "@manageMyLists": {
+    "description": "Header title for the shopping list management bottom sheet."
+  },
+
+  "manageSubscription": "Manage Subscription",
+  "@manageSubscription": {
+    "description": "Button text for managing a premium subscription."
+  },
+
+  "maximumListsReached": "You have reached the maximum of {count} lists.",
+  "@maximumListsReached": {
+    "description": "Message shown to premium users when they have reached their shopping list limit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+
+  "myItems": "My Items",
+  "@myItems": {
+    "description": "Tab title for the user's library of custom created items."
+  },
+
+  "myLists": "My Lists",
+  "@myLists": {
+    "description": "Tab title for the user's existing shopping lists."
+  },
+
+  "navAccount": "Account",
+  "@navAccount": {
+    "description": "Label for the Account tab in the bottom navigation bar."
+  },
+
+  "navAllSales": "All Sales",
+  "@navAllSales": {
+    "description": "Label for the Home/All Sales tab in the bottom navigation bar."
+  },
+
+  "navLists": "Lists",
+  "@navLists": {
+    "description": "Label for the Shopping Lists tab in the bottom navigation bar."
+  },
+
+  "newPassword": "New Password",
+  "@newPassword": {
+    "description": "Label for the new password input field."
+  },
+
+  "noEmailAvailable": "No email available",
+  "@noEmailAvailable": {
+    "description": "Fallback text shown on the account page if a user has no email."
+  },
+
+  "noProductsFound": "No products found matching your criteria.",
+  "@noProductsFound": {
+    "description": "Message shown on the home page when filters result in no products."
+  },
+
+  "noSubcategoriesAvailable": "No specific subcategories available\nfor the selected category.",
+  "@noSubcategoriesAvailable": {
+    "description": "Message shown in the subcategory filter when the selected main category has no subcategories."
+  },
+
+  "noUserSignedIn": "No user is currently signed in.",
+  "@noUserSignedIn": {
+    "description": "Error message for actions that require an authenticated user."
+  },
+
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Button text for the notifications settings."
+  },
+
+  "or": "OR",
+  "@or": {
+    "description": "A separator text, typically used between login methods."
+  },
+
+  "orSelectMainCategory": "Or select a main category below:",
+  "@orSelectMainCategory": {
+    "description": "Instructional text when creating a custom item."
+  },
+
+  "password": "Password",
+  "@password": {
+    "description": "Label for the password input field."
+  },
+
+  "passwordChangedSuccessfully": "Password changed successfully!",
+  "@passwordChangedSuccessfully": {
+    "description": "Success message shown after a user changes their password."
+  },
+
+  "passwordResetEmailSent": "Password reset email sent to {email}",
+  "@passwordResetEmailSent": {
+    "description": "Success message after sending a password reset email.",
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+
+  "passwordTooShort": "Password must be at least {count} characters long.",
+  "@passwordTooShort": {
+    "description": "Validation error for a password that is too short.",
+    "placeholders": {
+      "count": { "type": "int", "example": "6" }
+    }
+  },
+
+  "pleaseEnterCurrentPassword": "Please enter your current password",
+  "@pleaseEnterCurrentPassword": {
+    "description": "Validation error for an empty current password field."
+  },
+
+  "pleaseEnterEmail": "Please enter an email address.",
+  "@pleaseEnterEmail": {
+    "description": "Validation error for an empty email field."
+  },
+
+  "pleaseEnterItemName": "Please enter an item name.",
+  "@pleaseEnterItemName": {
+    "description": "Validation error for an empty item name field."
+  },
+
+  "pleaseEnterNewPassword": "Please enter a new password",
+  "@pleaseEnterNewPassword": {
+    "description": "Validation error for an empty new password field."
+  },
+
+  "pleaseEnterPassword": "Please enter your password.",
+  "@pleaseEnterPassword": {
+    "description": "Validation error for an empty password field."
+  },
+
+  "pleaseEnterValidEmail": "Please enter a valid email address.",
+  "@pleaseEnterValidEmail": {
+    "description": "Validation error for an incorrectly formatted email."
+  },
+
+  "pleaseSelectCategory": "Please select a category.",
+  "@pleaseSelectCategory": {
+    "description": "Validation error when no category has been selected."
+  },
+
+  "pleaseSelectCategoryFirst": "Please select a category first\nto see available subcategories.",
+  "@pleaseSelectCategoryFirst": {
+    "description": "Instructional text in the subcategory filter tab when no main category is selected yet."
+  },
+
+  "premium": "Premium",
+  "@premium": {
+    "description": "Title for the Premium/Subscription section on the account page."
+  },
+
+  "rememberMe": "Remember me",
+  "@rememberMe": {
+    "description": "Label for the 'keep me logged in' checkbox."
+  },
+
+  "removeCheckedItems": "Remove Checked Items",
+  "@removeCheckedItems": {
+    "description": "Button text in the finish shopping dialog to remove checked items from the list."
+  },
+
+  "removedFromList": "Removed from list",
+  "@removedFromList": {
+    "description": "Notification message when an item is removed from the active list."
+  },
+
+  "removedFrom": "Removed from \"{listName}\"",
+  "@removedFrom": {
+    "description": "Notification message when an item is removed from a specific list.",
+    "placeholders": {
+      "listName": {
+        "type": "String",
+        "example": "Merkliste"
+      }
+    }
+  },
+
+  "removedItem": "Removed \"{itemName}\"",
+  "@removedItem": {
+    "description": "Notification message shown when an item is removed from the list via double tap.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Apples"
+      }
+    }
+  },
+
+  "reset": "RESET",
+  "@reset": {
+    "description": "Button text for resetting filters to their default state."
+  },
+
+  "resetPassword": "Reset Password",
+  "@resetPassword": {
+    "description": "Title for the password reset dialog."
+  },
+
+  "resetPasswordInstructions": "Enter your email address and we will send you a link to reset your password.",
+  "@resetPasswordInstructions": {
+    "description": "Instructions in the password reset dialog."
+  },
+
+  "save": "Save",
+  "@save": {
+    "description": "Button text for saving changes."
+  },
+
+  "saveChanges": "SAVE CHANGES",
+  "@saveChanges": {
+    "description": "Button text for saving changes when editing an item."
+  },
+
+  "saved": "Saved",
+  "@saved": {
+    "description": "Label for the total amount of money saved in the shopping summary bar."
+  },
+
+  "search": "Search",
+  "@search": {
+    "description": "Button text to open search."
+  },
+
+  "searchProducts": "Search Products",
+  "@searchProducts": {
+    "description": "Header title for the search bottom sheet."
+  },
+
+  "searchProductsHint": "Search products...",
+  "@searchProductsHint": {
+    "description": "Hint text for the search input field."
+  },
+
+  "selectCategory": "Select Category",
+  "@selectCategory": {
+    "description": "Label for the category selection dropdown menu."
+  },
+
+  "selectList": "Select List",
+  "@selectList": {
+    "description": "Default text on the button to select a shopping list when none is active."
+  },
+
+  "sendEmail": "Send Email",
+  "@sendEmail": {
+    "description": "Button text for sending a password reset email."
+  },
+
+  "settings": "Settings",
+  "@settings": {
+    "description": "Title for the settings section on the account page."
+  },
+
+  "shoppingListEmpty": "Your shopping list is empty.",
+  "@shoppingListEmpty": {
+    "description": "Message shown in shopping mode when the list has no items."
+  },
+
+  "shoppingMode": "Shopping Mode",
+  "@shoppingMode": {
+    "description": "Title for the shopping mode screen and button."
+  },
+
+  "showMore": "Show {count} more",
+  "@showMore": {
+    "description": "Button text to paginate and show more items in a category.",
+    "placeholders": {
+      "count": { "type": "int", "example": "15" }
+    }
+  },
+
+  "signUp": "Sign Up",
+  "@signUp": {
+    "description": "Tab text for the sign-up form."
+  },
+
+  "sort": "Sort",
+  "@sort": {
+    "description": "Button text to open sorting options."
+  },
+
+  "sortBy": "Sort By",
+  "@sortBy": {
+    "description": "Header title for the sorting options bottom sheet."
+  },
+
+  "sortDiscountHighToLow": "Discount: High-Low",
+  "@sortDiscountHighToLow": {
+    "description": "Sort option display name"
+  },
+
+  "sortDiscountLowToHigh": "Discount: Low-High",
+  "@sortDiscountLowToHigh": {
+    "description": "Sort option display name"
+  },
+
+  "sortPriceHighToLow": "Price: High-Low",
+  "@sortPriceHighToLow": {
+    "description": "Sort option display name"
+  },
+
+  "sortPriceLowToHigh": "Price: Low-High",
+  "@sortPriceLowToHigh": {
+    "description": "Sort option display name"
+  },
+
+  "sortProductAZ": "Product: A-Z",
+  "@sortProductAZ": {
+    "description": "Sort option display name"
+  },
+
+  "sortStoreAZ": "Store: A-Z",
+  "@sortStoreAZ": {
+    "description": "Sort option display name"
+  },
+
+  "stores": "Stores",
+  "@stores": {
+    "description": "Tab title for the stores filter."
+  },
+
+  "subcategories": "Subcategories",
+  "@subcategories": {
+    "description": "Tab title for the subcategories filter."
+  },
+
+  "theme": "Theme",
+  "@theme": {
+    "description": "Button text for theme settings."
+  },
+
+  "total": "Total",
+  "@total": {
+    "description": "Label for the total cost of items in the shopping summary bar."
+  },
+
+  "uncheckAllItems": "Uncheck All Items",
+  "@uncheckAllItems": {
+    "description": "Tooltip for the refresh button in shopping mode."
+  },
+
+  "uncheckItem": "Uncheck item",
+  "@uncheckItem": {
+    "description": "Tooltip for the checkbox in shopping mode to unmark an item as found."
+  },
+
+  "updatePassword": "UPDATE PASSWORD",
+  "@updatePassword": {
+    "description": "Button text to confirm a password update."
+  },
+
+  "upgradeNow": "Upgrade Now",
+  "@upgradeNow": {
+    "description": "Button text prompting non-premium users to upgrade."
+  },
+
+  "user": "User",
+  "@user": {
+    "description": "Fallback display name for a user if their name is not set."
+  },
+
+  "usingCustomCategoryAbove": "Using custom category above",
+  "@usingCustomCategoryAbove": {
+    "description": "Informational text shown when a user has entered a custom category, disabling the dropdown."
+  },
+
+  "validFrom": "Valid from {fromDate}",
+  "@validFrom": {
+    "description": "Indicates the start date of a product's sale.",
+    "placeholders": {
+      "fromDate": {
+        "type": "String",
+        "example": "24.12.2024"
+      }
+    }
+  },
+
+  "validFromTo": "Valid from {fromDate} to {toDate}",
+  "@validFromTo": {
+    "description": "Indicates the start and end date of a product's sale.",
+    "placeholders": {
+      "fromDate": { "type": "String" },
+      "toDate": { "type": "String" }
+    }
+  },
+
+  "validUntil": "Valid until {toDate}",
+  "@validUntil": {
+    "description": "Indicates the end date of a product's sale.",
+    "placeholders": {
+      "toDate": {
+        "type": "String",
+        "example": "31.12.2024"
+      }
+    }
+  },
+
+  "validityUnknown": "Validity unknown",
+  "@validityUnknown": {
+    "description": "Text shown when a product's sale period is not known."
+  },
+
+  "welcomeToAppName": "Welcome to {appName}",
+  "@welcomeToAppName": {
+    "description": "Welcome message on the login screen.",
+    "placeholders": {
+      "appName": { "type": "String", "example": "SaleSeekr" }
+    }
+  }
+}

@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_localizations:
+    sdk: flutter
+
+
   # Firebase
   firebase_core: ^3.1.0
   cloud_firestore: ^5.0.1
@@ -61,6 +65,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
+
   assets:
     - assets/images/store_logos/
     - assets/icons/
