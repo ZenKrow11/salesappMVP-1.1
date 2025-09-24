@@ -35,6 +35,7 @@ Future<void> main() async {
   );
 
 
+/*
   // START: Block to connect to Firebase Emulators in debug mode
 
   if (kDebugMode) {
@@ -53,6 +54,10 @@ Future<void> main() async {
     }
   }
   // END: Emulator connection block
+
+ */
+  
+
 
 
   // firebase emulators:start --only firestore,auth

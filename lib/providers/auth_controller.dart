@@ -15,7 +15,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   AuthController() : super(const AsyncData(null));
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> _createUserProfileDocument(User user) async {
@@ -123,7 +123,11 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      final googleUser = await _googleSignIn.signIn();
+      await GoogleSignIn.instance.initialize();
+      GoogleSignInAccount? googleUser;
+      if (GoogleSignIn.instance.supportsAuthenticate()) {
+        googleUser = await GoogleSignIn.instance.authenticate();
+      }
       if (googleUser == null) {
         state = const AsyncData(null);
         return false;
@@ -132,7 +136,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       final googleAuth = await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
@@ -150,6 +153,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       return false;
     }
   }
+
 
   Future<void> signOut() async {
     state = const AsyncLoading();
