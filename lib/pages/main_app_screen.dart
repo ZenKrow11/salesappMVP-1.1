@@ -8,20 +8,20 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 
-import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
-import 'package:sales_app_mvp/components/search_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
-import 'package:sales_app_mvp/widgets/sort_button_widget.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
-
-import '../widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'manage_custom_items_page.dart';
+
+import 'package:sales_app_mvp/widgets/search_button.dart';
+import 'package:sales_app_mvp/widgets/filter_button.dart';
+import 'package:sales_app_mvp/widgets/sort_button.dart';
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
@@ -79,27 +79,9 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         child: Scaffold(
           backgroundColor: theme.pageBackground,
           appBar: _buildAppBarForIndex(currentIndex, theme),
-          body: Stack(
-            children: [
-              _pages[currentIndex],
-              if (currentIndex == 1)
-                Positioned(
-                  bottom: 80.0,
-                  right: 16.0,
-                  child: FloatingActionButton(
-                    backgroundColor: theme.secondary,
-                    foregroundColor: theme.primary,
-                    onPressed: () {
-                      _showModalSheet(
-                            (_) => const ListOptionsBottomSheet(),
-                        isScrollControlled: true,
-                      );
-                    },
-                    child: const Icon(Icons.settings),
-                  ),
-                ),
-            ],
-          ),
+          // ===== FIX #1: REMOVE THE FAB =====
+          // The Stack and Positioned FAB are no longer needed here.
+          body: _pages[currentIndex],
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: theme.primary,
             currentIndex: currentIndex,
@@ -145,7 +127,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
           child: _buildActionsBar(),
         ),
       ),
@@ -165,7 +147,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       title: _buildViewToggle(ref, theme),
       centerTitle: true,
       actions: [
-        _buildListActionsWidget(ref, theme),
+        // ===== FIX #2: Call the new settings action widget =====
+        _buildShoppingListSettingsAction(theme),
       ],
     );
   }
@@ -221,7 +204,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            ItemCountWidget(filtered: count.filtered, total: count.total),
+            ItemCountWidget(filtered: count.filtered, total: count.total, showBackground: false,),
           ],
         );
       },
@@ -229,6 +212,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
+    // ... (This method remains unchanged)
     final activeList = ref.watch(activeShoppingListProvider);
     return Center(
       child: Padding(
@@ -266,6 +250,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   Widget _buildViewToggle(WidgetRef ref, AppThemeData theme) {
+    // ... (This method remains unchanged)
     final isGridView = ref.watch(shoppingListViewModeProvider);
     Widget buildToggleButton(bool forGridView) {
       final bool isActive = forGridView == isGridView;
@@ -309,76 +294,37 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  Widget _buildListActionsWidget(WidgetRef ref, AppThemeData theme) {
-    final products = ref.watch(shoppingListWithDetailsProvider).value ?? [];
-    final itemCount = products.length;
-    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-    final itemLimit = isPremium ? '60' : '30';
-
+  // ===== FIX #3: Repurpose this widget to be the settings button =====
+  Widget _buildShoppingListSettingsAction(AppThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: Text(
-        '$itemCount/$itemLimit',
-        style: TextStyle(
-          color: theme.inactive,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+      padding: const EdgeInsets.only(right: 8.0),
+      child: IconButton(
+        icon: Icon(Icons.settings, color: theme.inactive),
+        onPressed: () {
+          _showModalSheet(
+                (_) => const ListOptionsBottomSheet(),
+            isScrollControlled: true,
+          );
+        },
       ),
     );
   }
 
   Widget _buildActionsBar() {
-    final theme = ref.watch(themeProvider);
-    return Row(
+    return const Row(
       children: [
         Expanded(
-          child: _actionButton(
-            theme: theme,
-            icon: Icons.search,
-            label: 'Search',
-            onPressed: () => _showModalSheet((_) => const SearchBottomSheet(), isScrollControlled: true),
-          ),
+          child: SearchButton(),
         ),
-        // ===================== FIX START =====================
-        // This SizedBox creates the space between the buttons.
-        const SizedBox(width: 8),
-        // ====================== FIX END ======================
+        SizedBox(width: 8),
         Expanded(
-          child: _actionButton(
-            theme: theme,
-            icon: Icons.filter_alt,
-            label: 'Filter',
-            onPressed: () => _showModalSheet((_) => const FilterBottomSheet(), isScrollControlled: true),
-          ),
+          child: FilterButton(),
         ),
-        // ===================== FIX START =====================
-        // This SizedBox creates the space between the buttons.
-        const SizedBox(width: 8),
-        // ====================== FIX END ======================
-        const Expanded(
+        SizedBox(width: 8),
+        Expanded(
           child: SortButton(),
         ),
       ],
-    );
-  }
-
-  Widget _actionButton({
-    required AppThemeData theme,
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: theme.secondary, size: 22.0),
-      label: Text(label, style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.background.withOpacity(0.5),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 0,
-      ),
     );
   }
 

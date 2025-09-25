@@ -35,17 +35,17 @@ Future<void> main() async {
   );
 
 
-/*
+
   // START: Block to connect to Firebase Emulators in debug mode
 
   if (kDebugMode) {
     try {
 
       //local emulator
-      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
 
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
-      //final host = '192.168.1.116';
+      final host = '192.168.1.116';
 
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
@@ -54,9 +54,6 @@ Future<void> main() async {
     }
   }
   // END: Emulator connection block
-
- */
-  
 
 
 
@@ -88,16 +85,10 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
 
-      // --- FIX: SET AuthGate AS THE HOME WIDGET ---
-      // This makes it the entry point of your app's UI.
-      // You cannot use both `home` and `initialRoute`.
+      // --- AuthGate is the single entry point of your app's UI. ---
       home: const AuthGate(),
 
-      // --- FIX: SIMPLIFY THE ROUTES MAP ---
-      // The initial routing is now handled by AuthGate.
-      // You only need routes for pages you might navigate to manually by name later.
       routes: {
-        // We removed SplashScreen and AuthGate from here.
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),
       },
@@ -106,20 +97,40 @@ class MyApp extends StatelessWidget {
 }
 
 //============================================================================
-//  AUTH STATE PROVIDER & AUTH GATE
+//  SPLASH & AUTH PROVIDERS
 //============================================================================
+
+/// Ensures the splash screen is shown for a minimum duration for branding.
+final splashControllerProvider = FutureProvider<void>((ref) async {
+  // Adjust the duration as needed.
+  await Future.delayed(const Duration(seconds: 2));
+});
+
+/// Provides the current authentication state of the user.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
+//============================================================================
+//  AUTH GATE WIDGET
+//============================================================================
+
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
-  // --- FIX: NO routeName IS NEEDED HERE ---
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch both the authentication state and the splash screen timer.
     final authState = ref.watch(authStateChangesProvider);
+    final splashHasFinished = ref.watch(splashControllerProvider);
 
+    // If the splash screen timer hasn't finished, always show the splash screen.
+    // This takes precedence and ensures it's visible for a minimum time.
+    if (splashHasFinished is! AsyncData) {
+      return const SplashScreen();
+    }
+
+    // After the splash timer is done, then decide the screen based on auth state.
     return authState.when(
       data: (user) {
         if (user != null) {
@@ -132,7 +143,7 @@ class AuthGate extends ConsumerWidget {
           return const LoginScreen();
         }
       },
-      // Keep showing a splash/loading UI while checking auth state.
+      // Keep showing splash if auth state is still loading after the timer.
       loading: () => const SplashScreen(),
       error: (err, stack) => Scaffold(
         body: Center(child: Text("Authentication Error: $err")),

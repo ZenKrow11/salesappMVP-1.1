@@ -42,16 +42,19 @@ class FilterState with _$FilterState {
     @Default(SortOption.storeAlphabetical) SortOption sortOption,
   }) = _FilterState;
 
-  // Optional: Keep this only if you define custom methods (not needed here)
+  // Private constructor to allow for custom getters
   const FilterState._();
-}
 
-// ✅ Extension for derived logic like `isDefault`
-extension FilterStateX on FilterState {
+  // --- GETTERS THAT WERE MISSING ---
+  bool get isSearchActive => searchQuery.isNotEmpty;
+  bool get isFilterActive =>
+      selectedStores.isNotEmpty ||
+          selectedCategories.isNotEmpty ||
+          selectedSubcategories.isNotEmpty;
+
+  // Also including isDefault, as other parts of the app need it
   bool get isDefault =>
-      selectedStores.isEmpty &&
-          selectedCategories.isEmpty &&
-          selectedSubcategories.isEmpty &&
-          searchQuery.isEmpty &&
+      !isSearchActive &&
+          !isFilterActive &&
           sortOption == SortOption.storeAlphabetical;
 }
