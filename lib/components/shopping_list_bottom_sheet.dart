@@ -3,9 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/shopping_list_info.dart'; // Import ShoppingListInfo
-import '../models/product.dart';
 import '../models/shopping_list_info.dart';
+import '../models/product.dart';
 import '../providers/shopping_list_provider.dart';
 import '../services/firestore_service.dart';
 import '../widgets/app_theme.dart';

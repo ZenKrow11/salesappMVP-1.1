@@ -15,9 +15,6 @@ import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
-import 'package:sales_app_mvp/providers/user_profile_provider.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
-import 'manage_custom_items_page.dart';
 
 import 'package:sales_app_mvp/widgets/search_button.dart';
 import 'package:sales_app_mvp/widgets/filter_button.dart';
@@ -144,10 +141,10 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       titleSpacing: 0,
       leading: _buildListSelectorWidget(ref, theme),
       leadingWidth: 150,
-      title: _buildViewToggle(ref, theme),
+      title: null,
       centerTitle: true,
+
       actions: [
-        // ===== FIX #2: Call the new settings action widget =====
         _buildShoppingListSettingsAction(theme),
       ],
     );
@@ -294,7 +291,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // ===== FIX #3: Repurpose this widget to be the settings button =====
   Widget _buildShoppingListSettingsAction(AppThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),

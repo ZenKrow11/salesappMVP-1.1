@@ -32,53 +32,70 @@ class ListOptionsBottomSheet extends ConsumerWidget {
           children: [
             _buildHeader(context, theme),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Column(
               children: [
-                _buildOptionButton(
-                  theme: theme,
-                  icon: Icons.shopping_cart_checkout,
-                  label: 'Shopping Mode',
-                  onTap: () {
-                    // FIX: Correctly navigates to the ShoppingModeScreen
-                    Navigator.pop(context);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const ShoppingModeScreen()));
-                  },
+                // Top Row of the Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildOptionButton(
+                        context: context,
+                        theme: theme,
+                        icon: Icons.list_alt_rounded,
+                        label: 'Manage Lists',
+                        onTap: () {
+                          Navigator.pop(context); // Close this sheet first
+                          showModalBottomSheet(
+                            context: context,
+                            useRootNavigator: true,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (_) => const ShoppingListBottomSheet(),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildOptionButton(
+                        context: context,
+                        theme: theme,
+                        icon: Icons.add_box_outlined,
+                        label: 'Custom Items',
+                        onTap: () {
+                          Navigator.pop(context); // Close this sheet first
+                          Navigator.of(context, rootNavigator: true).push(
+                            SlideUpPageRoute(page: const ManageCustomItemsPage()),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                _buildOptionButton(
-                  theme: theme,
-                  icon: Icons.list_alt,
-                  label: 'Manage Lists',
-                  onTap: () {
-                    // FIX: Correctly shows the ShoppingListBottomSheet
-                    Navigator.pop(context); // Close this sheet first
-                    showModalBottomSheet(
-                      context: context,
-                      useRootNavigator: true,
-                      backgroundColor: Colors.transparent,
-                      isScrollControlled: true,
-                      builder: (_) => const ShoppingListBottomSheet(),
-                    );
-                  },
-                ),
-                _buildOptionButton(
-                  theme: theme,
-                  icon: Icons.edit_note, // Changed from basket to match old version
-                  label: 'Manage Items',
-                  onTap: () {
-                    // FIX: Correctly navigates to ManageCustomItemsPage
-                    final activeListId = ref.read(activeShoppingListProvider);
-                    Navigator.pop(context); // Close this sheet first
-                    Navigator.of(context).push(SlideUpPageRoute(
-                      page: ManageCustomItemsPage(listId: activeListId),
-                    ));
-                  },
-                ),
+                const SizedBox(height: 16),
+                // Bottom Row of the Grid
+                Row(
+                  children: [
+                    // The new View Mode Toggle
+                    Expanded(child: _buildViewModeToggle(context, ref, theme)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildOptionButton(
+                        context: context,
+                        theme: theme,
+                        icon: Icons.shopping_cart_checkout_rounded,
+                        label: 'Shopping Mode',
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const ShoppingModeScreen()));
+                        },
+                      ),
+                    ),
+                  ],
+                )
               ],
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -86,6 +103,7 @@ class ListOptionsBottomSheet extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, AppThemeData theme) {
+    // This method remains unchanged
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -106,29 +124,74 @@ class ListOptionsBottomSheet extends ConsumerWidget {
   }
 
   Widget _buildOptionButton({
+    required BuildContext context,
     required AppThemeData theme,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
   }) {
-    return Expanded(
+    // This helper method remains unchanged
+    return Material(
+      color: theme.primary,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Container(
+          height: 100,
+          padding: const EdgeInsets.all(12),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 48, color: theme.secondary),
-              const SizedBox(height: 12),
+              Icon(icon, color: theme.secondary, size: 32),
+              const SizedBox(height: 8),
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: theme.inactive,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
+                style: TextStyle(color: theme.inactive, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ====================================================================
+  // ===== FIX: Replaced the 'slider' with a single toggle button =====
+  // ====================================================================
+  Widget _buildViewModeToggle(BuildContext context, WidgetRef ref, AppThemeData theme) {
+    // 1. Watch the current view mode state.
+    final isGridView = ref.watch(shoppingListViewModeProvider);
+
+    // 2. Determine which icon and label to show based on the current state.
+    final IconData currentIcon = isGridView ? Icons.grid_view_rounded : Icons.view_list_rounded;
+    final String currentLabel = isGridView ? 'Grid View' : 'List View';
+
+    // 3. Use the same structure as _buildOptionButton for a consistent UI.
+    return Material(
+      color: theme.primary,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        // 4. When tapped, update the provider's state to the opposite value.
+        onTap: () {
+          ref.read(shoppingListViewModeProvider.notifier).state = !isGridView;
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 100,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Use the dynamic icon
+              Icon(currentIcon, color: theme.secondary, size: 32),
+              const SizedBox(height: 8),
+              // Use the dynamic label for clarity
+              Text(
+                currentLabel,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: theme.inactive, fontSize: 14),
               ),
             ],
           ),

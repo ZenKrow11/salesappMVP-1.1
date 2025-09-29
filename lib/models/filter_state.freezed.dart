@@ -22,9 +22,7 @@ mixin _$FilterState {
   List<String> get selectedSubcategories => throw _privateConstructorUsedError;
   SortOption get sortOption => throw _privateConstructorUsedError;
 
-  /// Create a copy of FilterState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $FilterStateCopyWith<FilterState> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -53,8 +51,6 @@ class _$FilterStateCopyWithImpl<$Res, $Val extends FilterState>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of FilterState
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -113,8 +109,6 @@ class __$$FilterStateImplCopyWithImpl<$Res>
       _$FilterStateImpl _value, $Res Function(_$FilterStateImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of FilterState
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -157,7 +151,7 @@ class _$FilterStateImpl extends _FilterState {
       final List<String> selectedStores = const [],
       final List<String> selectedCategories = const [],
       final List<String> selectedSubcategories = const [],
-      this.sortOption = SortOption.storeAlphabetical})
+      this.sortOption = SortOption.discountHighToLow})
       : _selectedStores = selectedStores,
         _selectedCategories = selectedCategories,
         _selectedSubcategories = selectedSubcategories,
@@ -230,9 +224,7 @@ class _$FilterStateImpl extends _FilterState {
       const DeepCollectionEquality().hash(_selectedSubcategories),
       sortOption);
 
-  /// Create a copy of FilterState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$FilterStateImplCopyWith<_$FilterStateImpl> get copyWith =>
@@ -258,11 +250,8 @@ abstract class _FilterState extends FilterState {
   List<String> get selectedSubcategories;
   @override
   SortOption get sortOption;
-
-  /// Create a copy of FilterState
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$FilterStateImplCopyWith<_$FilterStateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

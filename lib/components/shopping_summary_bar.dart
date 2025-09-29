@@ -26,63 +26,82 @@ class ShoppingSummaryBar extends ConsumerWidget {
     final itemLimit = isPremium ? 60 : 30;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      // ===== FIX #3: Reduce vertical padding =====
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), // Adjusted to 8 for better balance, 2 was very tight
       decoration: BoxDecoration(
         color: theme.pageBackground,
         border: Border(
           top: BorderSide(color: theme.background, width: 1.0),
         ),
       ),
+      // ===== FIX #2: Use spaceBetween for even distribution =====
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start, // Aligns the top of each column
         children: [
-          ItemCountWidget(
-            filtered: products.length,
-            total: itemLimit,
-            // ===== FIX: Tell the widget NOT to show its background =====
-            showBackground: false,
+          // ===== FIX #1: Added a new helper for the item count with a title =====
+          _buildItemCountSummary(products.length, itemLimit),
+
+          _buildSummaryItem(
+            'Saved',
+            '${totalSavings.toStringAsFixed(2)} Fr.',
+            theme.savingsColor,
+            CrossAxisAlignment.center, // Center-align the middle element
           ),
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _buildSummaryItem(
-                  'Saved',
-                  '${totalSavings.toStringAsFixed(2)} Fr.',
-                  theme.savingsColor,
-                ),
-                const SizedBox(width: 24),
-                _buildSummaryItem(
-                  'Total',
-                  '${totalCost.toStringAsFixed(2)} Fr.',
-                  theme.secondary,
-                ),
-              ],
-            ),
+
+          _buildSummaryItem(
+            'Total',
+            '${totalCost.toStringAsFixed(2)} Fr.',
+            theme.secondary,
+            CrossAxisAlignment.end, // Right-align the last element
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, Color valueColor) {
-    // ... (this helper method remains unchanged)
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
+  // ===== NEW HELPER WIDGET =====
+  // This gives the item count a title, consistent with the other summary items.
+  Widget _buildItemCountSummary(int filtered, int total) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start, // Left-align this block
       children: [
         Text(
-          '$label: ',
+          'Items',
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
+        const SizedBox(height: 2),
+        ItemCountWidget(
+          filtered: filtered,
+          total: total,
+          showBackground: false,
+        ),
+      ],
+    );
+  }
+
+  // --- MODIFIED HELPER WIDGET ---
+  // Added an alignment parameter for more flexibility
+  Widget _buildSummaryItem(String label, String value, Color valueColor, CrossAxisAlignment alignment) {
+    return Column(
+      crossAxisAlignment: alignment,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(
             color: valueColor,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),

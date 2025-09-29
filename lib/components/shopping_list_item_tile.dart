@@ -30,14 +30,11 @@ class ShoppingListItemTile extends ConsumerWidget {
       onTap: () {
         final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
         if (initialIndex != -1) {
-
-          // --- THIS IS THE FIX (Error at line 36) ---
-          // Convert the `List<Product>` to a `List<PlainProduct>` before navigating.
           final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
 
           Navigator.of(context).push(SlideUpPageRoute(
             page: ProductSwiperScreen(
-              products: plainProducts, // Pass the converted list
+              products: plainProducts,
               initialIndex: initialIndex,
             ),
           ));
@@ -60,69 +57,59 @@ class ShoppingListItemTile extends ConsumerWidget {
     );
   }
 
-  // --- MODIFIED: Method to build the grid tile with the fix ---
   Widget _buildGridTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
 
     return Card(
-      color: Colors.white, // White background for the image
+      color: theme.primary, // Background color if image fails
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // clipBehavior is good, but we will be more explicit for the image.
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.antiAlias, // Important for clipping the image and gradients
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // --- FIX START ---
-          // By wrapping the image in a ClipRRect that matches the Card's border radius,
-          // we guarantee it will be clipped correctly.
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.0),
-            child: CachedNetworkImage(
-              imageUrl: product.imageUrl ?? '',
-              fit: BoxFit.cover,
-              // These are aesthetic improvements for a smoother look
-              placeholder: (context, url) => Container(color: Colors.grey[200]),
-              errorWidget: (context, url, error) => const Center(
-                child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
-              ),
+          // --- Layer 1: The Image (fills the whole card) ---
+          CachedNetworkImage(
+            imageUrl: product.imageUrl ?? '',
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(color: Colors.grey[200]),
+            errorWidget: (context, url, error) => const Center(
+              child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
             ),
           ),
-          // --- FIX END ---
 
-          // Price in top-right corner
+          // --- Layer 2: Top overlay for the Product Name ---
           Positioned(
-            top: 6,
-            right: 6,
+            top: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 2)
-                  ]
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                ),
               ),
               child: Text(
-                '$priceString Fr.',
+                product.name,
+                // FIX: Title is now a single line
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.black, // Explicitly black as requested
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 14,
+                  shadows: [Shadow(blurRadius: 2.0, color: Colors.black)],
                 ),
               ),
             ),
           ),
 
-          // Store logo in top-left
-          Positioned(
-            top: 6,
-            left: 6,
-            child: StoreLogo(storeName: product.store, height: 24),
-          ),
-
-          // Title at the bottom with a gradient for readability
+          // --- Layer 3: Bottom overlay for Store and Price ---
           Positioned(
             bottom: 0,
             left: 0,
@@ -133,20 +120,26 @@ class ShoppingListItemTile extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.85), Colors.transparent],
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
                 ),
               ),
-              child: Text(
-                product.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  shadows: [Shadow(blurRadius: 2.0, color: Colors.black)],
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // FIX: Using the smaller logo size
+                  StoreLogo(storeName: product.store, height: 18),
+                  Text(
+                    '$priceString Fr.',
+                    style: TextStyle(
+                      color: theme.secondary,
+                      fontWeight: FontWeight.bold,
+                      // FIX: Using the smaller font size
+                      fontSize: 14,
+                      shadows: const [Shadow(blurRadius: 2.0, color: Colors.black)],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -174,7 +167,6 @@ class ShoppingListItemTile extends ConsumerWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              // Using ImageWithAspectRatio here is correct because we have a fixed size
               child: ImageWithAspectRatio(
                 imageUrl: product.imageUrl ?? '',
                 fit: BoxFit.cover,
