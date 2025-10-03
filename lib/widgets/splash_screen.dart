@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 class SplashScreen extends ConsumerWidget {
-  static const routeName = '/'; // Keep this if you use it in main.dart
+  static const routeName = '/';
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
 
-    // This is now just a simple display widget.
-    // AuthGate handles all the logic and navigation.
     return Scaffold(
       backgroundColor: theme.pageBackground,
       body: Center(
@@ -27,7 +28,8 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Initializing...',
+              // 2. REPLACE THE HARDCODED STRING
+              AppLocalizations.of(context)!.initializing,
               style: TextStyle(
                 fontSize: 18,
                 color: theme.inactive,

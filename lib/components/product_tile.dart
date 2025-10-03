@@ -1,8 +1,11 @@
 // lib/components/product_tile.dart
 
-import 'package:flutter/material.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // <-- CRITICAL FIX: ADDED THIS IMPORT
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
@@ -35,7 +38,9 @@ class ProductTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We can cast the PlainProduct as Categorizable for the service to use it.
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
+
     final categorizableProduct = product as Categorizable;
     final categoryStyle = CategoryService.getStyleForCategory(categorizableProduct.category);
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
@@ -43,26 +48,15 @@ class ProductTile extends ConsumerWidget {
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
 
-    // The shopping list needs the Hive-compatible `Product` object.
-    // We create it on-demand when an action is performed.
     Product _createHiveProduct() {
       return Product(
-          id: product.id,
-          store: product.store,
-          name: product.name,
-          currentPrice: product.currentPrice,
-          normalPrice: product.normalPrice,
-          discountPercentage: product.discountPercentage,
-          category: product.category,
-          subcategory: product.subcategory,
-          url: product.url,
-          imageUrl: product.imageUrl,
-          nameTokens: product.nameTokens,
-          dealStart: product.dealStart,
-          sonderkondition: product.sonderkondition,
-          dealEnd: product.dealEnd,
-          isCustom: product.isCustom,
-          isOnSale: product.isOnSale
+          id: product.id, store: product.store, name: product.name,
+          currentPrice: product.currentPrice, normalPrice: product.normalPrice,
+          discountPercentage: product.discountPercentage, category: product.category,
+          subcategory: product.subcategory, url: product.url, imageUrl: product.imageUrl,
+          nameTokens: product.nameTokens, dealStart: product.dealStart,
+          sonderkondition: product.sonderkondition, dealEnd: product.dealEnd,
+          isCustom: product.isCustom, isOnSale: product.isOnSale
       );
     }
 
@@ -71,14 +65,15 @@ class ProductTile extends ConsumerWidget {
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
-        final hiveProduct = _createHiveProduct(); // Create the object
+        final hiveProduct = _createHiveProduct();
 
         if (isInShoppingList) {
           notifier.removeItemFromList(hiveProduct);
-          showTopNotification(context, message: 'Removed from list', theme: theme);
+          // 3. REPLACE HARDCODED NOTIFICATION TEXT
+          showTopNotification(context, message: l10n.removedFromList, theme: theme);
         } else {
           notifier.addToList(hiveProduct);
-          showTopNotification(context, message: 'Added to active list', theme: theme);
+          showTopNotification(context, message: l10n.addedToActiveList, theme: theme);
         }
       },
       onLongPress: () {
@@ -89,7 +84,7 @@ class ProductTile extends ConsumerWidget {
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (ctx) {
-            final hiveProduct = _createHiveProduct(); // Create the object
+            final hiveProduct = _createHiveProduct();
             return ShoppingListBottomSheet(
               product: hiveProduct,
               onConfirm: (selectedListId) {
@@ -99,7 +94,8 @@ class ProductTile extends ConsumerWidget {
                 Navigator.of(ctx).pop();
                 showTopNotification(
                   context,
-                  message: 'Added to "$selectedListId"',
+                  // USE PARAMETERIZED STRING
+                  message: l10n.addedTo(selectedListId),
                   theme: theme,
                 );
               },
@@ -128,7 +124,8 @@ class ProductTile extends ConsumerWidget {
               borderRadius: BorderRadius.circular(10.0),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: _buildContent(context, ref),
+                // 4. PASS l10n OBJECT TO HELPER
+                child: _buildContent(context, ref, l10n),
               ),
             ),
           ),
@@ -159,8 +156,8 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider);
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildContent(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -196,11 +193,11 @@ class ProductTile extends ConsumerWidget {
                           fontSize: 28,
                           fontFamily: Icons.star.fontFamily,
                           package: Icons.star.fontPackage,
-                          color: theme.secondary,
+                          color: ref.watch(themeProvider).secondary,
                           shadows: [
                             Shadow(
                               blurRadius: 10,
-                              color: theme.primary,
+                              color: ref.watch(themeProvider).primary,
                               offset: const Offset(0, 0),
                             ),
                           ],
@@ -213,7 +210,8 @@ class ProductTile extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        _buildPriceRow(context, ref),
+        // PASS l10n OBJECT TO HELPER
+        _buildPriceRow(context, ref, l10n),
       ],
     );
   }
@@ -248,7 +246,8 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, WidgetRef ref) {
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildPriceRow(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -265,7 +264,8 @@ class ProductTile extends ConsumerWidget {
         const SizedBox(width: 8),
         Expanded(
           child: AutoSizeText(
-            '${product.currentPrice.toStringAsFixed(2)} Fr.',
+            // 5. USE LOCALIZED CURRENCY SYMBOL
+            '${product.currentPrice.toStringAsFixed(2)} ${l10n.currencyFrancs}',
             style: GoogleFonts.montserrat(
               fontSize: 24,
               fontWeight: FontWeight.bold,

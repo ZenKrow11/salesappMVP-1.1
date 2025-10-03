@@ -1,8 +1,11 @@
 // lib/components/shopping_list_bottom_sheet.dart
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import '../models/shopping_list_info.dart';
 import '../models/product.dart';
 import '../providers/shopping_list_provider.dart';
@@ -53,45 +56,48 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     super.dispose();
   }
 
-  // ... (All your helper methods like _addAndDismiss, etc. remain unchanged) ...
+  // 2. LOCALIZE ALL HELPER METHODS THAT SHOW UI TEXT
   void _addAndDismiss() {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.product == null) return;
     ref.read(shoppingListsProvider.notifier).addToList(widget.product!);
     widget.onConfirm!(merklisteListName);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Added to "Merkliste"')),
+      SnackBar(content: Text(l10n.addedTo(merklisteListName))),
     );
     Navigator.of(context).pop();
   }
 
   void _createAndSetActive(String listName) {
+    final l10n = AppLocalizations.of(context)!;
     if (listName.trim().isEmpty) return;
     final trimmedName = listName.trim();
     ref.read(shoppingListsProvider.notifier).createNewList(trimmedName);
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Created and selected list "$trimmedName"')),
+      SnackBar(content: Text(l10n.createdAndSelectedList(trimmedName))),
     );
   }
 
   void _showDeleteConfirmationDialog(
       BuildContext context, String listId, String listName) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Delete "$listName"?'),
-          content: const Text('This action is permanent and cannot be undone.'),
+          title: Text(l10n.deleteListConfirmationTitle(listName)),
+          content: Text(l10n.deleteListConfirmationBody),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
               onPressed: () => Navigator.of(dialogContext).pop(),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('Delete'),
+              child: Text(l10n.delete),
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 await ref
@@ -105,18 +111,17 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
+    // 3. GET THE l10n OBJECT IN THE MAIN BUILD METHOD
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      // --- CHANGE: Decreased the max height from 0.9 to 0.7 ---
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       child: Padding(
-        // This pushes the content up when the keyboard appears.
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
@@ -131,22 +136,20 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
             child: Column(
-              // This makes the column shrink to its content's height.
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeader(),
+                // 4. PASS l10n TO ALL HELPER WIDGETS
+                _buildHeader(l10n),
                 const SizedBox(height: 12),
-                _buildTabBar(),
+                _buildTabBar(l10n),
                 const SizedBox(height: 16),
-                // Flexible allows the list view to take remaining space,
-                // but it's bounded by the BoxConstraints above, preventing overflow.
                 Flexible(
                   child: TabBarView(
                     controller: _tabController!,
                     children: [
-                      _buildSelectList(),
-                      _buildNewListTab(),
+                      _buildSelectList(l10n),
+                      _buildNewListTab(l10n),
                     ],
                   ),
                 ),
@@ -158,13 +161,13 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Manage My Lists',
+          l10n.manageMyLists,
           style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -178,7 +181,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
@@ -189,10 +192,10 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
       tabs: [
-        const Tab(text: 'My Lists'),
+        Tab(text: l10n.myLists),
         Tab(
           child: Text(
-            'Create New',
+            l10n.createNew,
             style: TextStyle(
               color: isPremium ? null : theme.inactive.withOpacity(0.5),
             ),
@@ -202,7 +205,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
-  Widget _buildSelectList() {
+  Widget _buildSelectList(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
     final activeListId = ref.watch(activeShoppingListProvider);
@@ -227,13 +230,13 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
 
     return allListsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
       data: (lists) {
         if (lists.isEmpty) {
-          return const Center(child: Text('Your default list is being prepared...'));
+          return Center(child: Text(l10n.defaultListIsBeingPrepared));
         }
 
-        // --- CHANGE: Logic to pin the default list to the top ---
+        // ... (sorting logic remains unchanged)
         ShoppingListInfo? defaultList;
         List<ShoppingListInfo> customLists = [];
         for (var list in lists) {
@@ -243,22 +246,17 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
             customLists.add(list);
           }
         }
-
-        // Sort only the custom lists alphabetically
         customLists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
-        // Recombine the lists with the default one at the top
         final orderedLists = <ShoppingListInfo>[];
         if (defaultList != null) {
           orderedLists.add(defaultList);
         }
         orderedLists.addAll(customLists);
-        // --- END CHANGE ---
 
         return ListView.builder(
-          itemCount: orderedLists.length, // Use the newly ordered list
+          itemCount: orderedLists.length,
           itemBuilder: (context, index) {
-            final list = orderedLists[index]; // Use the newly ordered list
+            final list = orderedLists[index];
             final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
             final isDefaultList = list.name == merklisteListName;
 
@@ -305,25 +303,23 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
-  Widget _buildNewListTab() {
+  Widget _buildNewListTab(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
 
     if (isPremium) {
-      // Watch the list of all shopping lists to check the current count.
       final allListsAsync = ref.watch(allShoppingListsProvider);
 
       return allListsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
         data: (lists) {
-          // Check if the user is below the maximum list limit.
-          final canCreateMoreLists = lists.length < 6;
+          final maxLists = 6;
+          final canCreateMoreLists = lists.length < maxLists;
 
           if (canCreateMoreLists) {
-            // If they can create more, show the text field and button.
             return Column(
-              mainAxisSize: MainAxisSize.min, // This tab's content is small, so min is fine here.
+              mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: _newListController,
@@ -331,7 +327,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                   style: TextStyle(color: theme.inactive),
                   onSubmitted: _createAndSetActive,
                   decoration: InputDecoration(
-                    labelText: 'Enter new list name',
+                    labelText: l10n.enterNewListName,
                     labelStyle: TextStyle(color: theme.inactive),
                   ),
                 ),
@@ -344,14 +340,13 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                   ),
                   onPressed: () => _createAndSetActive(_newListController.text),
                   child: Text(
-                    'CREATE AND SELECT',
+                    l10n.createAndSelect,
                     style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             );
           } else {
-            // If the limit is reached, show an informational message instead.
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -360,7 +355,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                   Icon(Icons.inventory_2_outlined, size: 48, color: theme.inactive.withOpacity(0.7)),
                   const SizedBox(height: 16),
                   Text(
-                    'You have reached the maximum of 6 lists.',
+                    l10n.maximumListsReached(maxLists),
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: theme.inactive),
                   ),
@@ -371,7 +366,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
         },
       );
     } else {
-      // This is the non-premium user view, now with updated text.
+      final maxLists = 6;
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -380,7 +375,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
             Icon(Icons.lock_outline, size: 48, color: theme.inactive.withOpacity(0.7)),
             const SizedBox(height: 16),
             Text(
-              'Create up to 6 custom lists with Premium.',
+              l10n.createCustomListsWithPremium(maxLists),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: theme.inactive),
             ),
@@ -391,7 +386,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                 Navigator.of(context).pop();
                 context.findAncestorStateOfType<MainAppScreenState>()?.navigateToTab(2);
               },
-              child: Text('Upgrade Now', style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
+              child: Text(l10n.upgradeNow, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

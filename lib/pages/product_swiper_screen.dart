@@ -1,16 +1,13 @@
 // lib/pages/product_swiper_screen.dart
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/product_details.dart';
-
-import 'package:sales_app_mvp/models/plain_product.dart'; // <-- TYPE CHANGE
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/widgets/custom_physics_widget.dart';
 
 class ProductSwiperScreen extends ConsumerStatefulWidget {
-  final List<PlainProduct> products; // <-- TYPE CHANGE
+  final List<PlainProduct> products;
   final int initialIndex;
 
   const ProductSwiperScreen({
@@ -20,40 +17,25 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProductSwiperScreen> createState() => _ProductSwiperScreenState();
+  ConsumerState<ProductSwiperScreen> createState() =>
+      _ProductSwiperScreenState();
 }
 
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   late final PageController _pageController;
-  double _backgroundOpacity = 1.0;
-  bool _isPopping = false;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController = PageController(
+      initialPage: widget.initialIndex,
+    );
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  void _onDragUpdate(double progress) {
-    if (_isPopping) return;
-    setState(() => _backgroundOpacity = 1.0 - progress);
-  }
-
-  void _onDismissCancelled() {
-    setState(() => _backgroundOpacity = 1.0);
-  }
-
-  void _onDismissConfirmed() {
-    setState(() {
-      _isPopping = true;
-      _backgroundOpacity = 0.0;
-    });
   }
 
   @override
@@ -63,48 +45,60 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        color: theme.background.withOpacity(_backgroundOpacity),
-        child: Column(
-          children: [
-            Container(height: statusBarHeight, color: theme.primary.withOpacity(_backgroundOpacity)),
-            Expanded(
-              child: IgnorePointer(
-                ignoring: _isPopping,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(color: theme.background.withOpacity(0.95)),
+          ),
+          Column(
+            children: [
+              // Leave status bar space transparent
+              Container(height: statusBarHeight, color: Colors.transparent),
+              Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  physics: const ComfortablePageScrollPhysics(dragThreshold: 15.0),
+                  scrollDirection: Axis.vertical,
+                  physics: const _ReelsPhysics(),
                   itemCount: widget.products.length,
                   itemBuilder: (context, index) {
                     final product = widget.products[index];
 
-                    // This now correctly passes a PlainProduct to ProductDetails
+                    // Each product detail fills the screen, like TikTok/Shorts
                     return ProductDetails(
                       key: ValueKey(product.id),
-                      product: product, // <-- TYPE CHANGE
+                      product: product,
                       currentIndex: index + 1,
                       totalItems: widget.products.length,
-                      onDragUpdate: _onDragUpdate,
-                      onDismissCancelled: _onDismissCancelled,
-                      onDismissConfirmed: _onDismissConfirmed,
-                      onPrevious: () {
-                        if (_pageController.page?.round() != 0) {
-                          _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                        }
-                      },
-                      onNext: () {
-                        if (_pageController.page?.round() != widget.products.length - 1) {
-                          _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                        }
-                      },
                     );
                   },
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Custom scroll physics tuned for TikTok/YouTube Shorts style
+class _ReelsPhysics extends PageScrollPhysics {
+  const _ReelsPhysics({ScrollPhysics? parent}) : super(parent: parent);
+
+  @override
+  _ReelsPhysics applyTo(ScrollPhysics? ancestor) {
+    return _ReelsPhysics(parent: buildParent(ancestor));
+  }
+
+  /// Lower fling threshold so a light swipe changes pages
+  @override
+  double get minFlingVelocity => 200.0;
+
+  /// Cap velocity to avoid overly fast flings
+  @override
+  double get maxFlingVelocity => 4000.0;
+
+  /// Faster snapping animation (default is ~300ms)
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 180);
 }

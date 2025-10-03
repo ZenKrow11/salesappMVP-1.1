@@ -2,6 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
@@ -25,6 +29,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   }
 
   Future<void> _submit() async {
+    // Get localizations here for the success message
+    final l10n = AppLocalizations.of(context)!;
+
     if (_formKey.currentState?.validate() ?? false) {
       final success = await ref.read(authControllerProvider.notifier).changePassword(
         currentPassword: _currentPasswordController.text,
@@ -32,7 +39,8 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password changed successfully!'), backgroundColor: Colors.green),
+          // 2. USE LOCALIZED SUCCESS MESSAGE
+          SnackBar(content: Text(l10n.passwordChangedSuccessfully), backgroundColor: Colors.green),
         );
         Navigator.of(context).pop();
       }
@@ -43,6 +51,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
     final authState = ref.watch(authControllerProvider);
+
+    // 3. GET LOCALIZATIONS FOR THE BUILD METHOD
+    final l10n = AppLocalizations.of(context)!;
 
     ref.listen<AsyncValue>(authControllerProvider, (_, state) {
       if (state is AsyncError) {
@@ -55,7 +66,8 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     return Scaffold(
       backgroundColor: theme.pageBackground,
       appBar: AppBar(
-        title: Text('Change Password', style: TextStyle(color: theme.inactive)),
+        // 4. REPLACE ALL HARDCODED STRINGS
+        title: Text(l10n.changePassword, style: TextStyle(color: theme.inactive)),
         backgroundColor: theme.primary,
         iconTheme: IconThemeData(color: theme.inactive),
       ),
@@ -68,20 +80,21 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
             children: [
               TextFormField(
                 controller: _currentPasswordController,
-                decoration: InputDecoration(labelText: 'Current Password', labelStyle: TextStyle(color: theme.inactive)),
+                decoration: InputDecoration(labelText: l10n.currentPassword, labelStyle: TextStyle(color: theme.inactive)),
                 style: TextStyle(color: theme.inactive),
                 obscureText: true,
-                validator: (value) => value!.isEmpty ? 'Please enter your current password' : null,
+                validator: (value) => value!.isEmpty ? l10n.pleaseEnterCurrentPassword : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _newPasswordController,
-                decoration: InputDecoration(labelText: 'New Password', labelStyle: TextStyle(color: theme.inactive)),
+                decoration: InputDecoration(labelText: l10n.newPassword, labelStyle: TextStyle(color: theme.inactive)),
                 style: TextStyle(color: theme.inactive),
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter a new password';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty) return l10n.pleaseEnterNewPassword;
+                  // Use the parameterized string for length validation
+                  if (value.length < 6) return l10n.passwordTooShort(6);
                   return null;
                 },
               ),
@@ -94,7 +107,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                   backgroundColor: theme.secondary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('UPDATE PASSWORD'),
+                child: Text(l10n.updatePassword),
               ),
             ],
           ),

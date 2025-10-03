@@ -1,6 +1,12 @@
+// lib/components/subcategories_filter_tab.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -20,13 +26,16 @@ class SubcategoriesFilterTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     if (localFilterState.selectedCategories.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
+          // 3. REPLACE HARDCODED TEXT
           child: Text(
-            'Please select a category first\nto see available subcategories.',
+            l10n.pleaseSelectCategoryFirst,
             textAlign: TextAlign.center,
             style: TextStyle(color: theme.inactive, fontSize: 16),
           ),
@@ -51,7 +60,7 @@ class SubcategoriesFilterTab extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Text(
-            'No specific subcategories available\nfor the selected category.',
+            l10n.noSubcategoriesAvailable,
             textAlign: TextAlign.center,
             style: TextStyle(color: theme.inactive, fontSize: 16),
           ),
@@ -93,6 +102,8 @@ class SubcategoriesFilterTab extends ConsumerWidget {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
+                    // NOTE: This text is correct as is. 'sub.name' is data
+                    // that should be localized at its source (CategoryService).
                     child: Text(
                       sub.name,
                       style: TextStyle(

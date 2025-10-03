@@ -1,5 +1,11 @@
+// lib/components/stores_filter_tab.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -22,10 +28,13 @@ class StoresFilterTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
     final theme = ref.watch(themeProvider);
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     return asyncStoreOptions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      // 3. REPLACE THE HARDCODED ERROR TEXT
+      error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
       data: (storeOptions) {
         return GridView.builder(
           padding: const EdgeInsets.all(20),
@@ -86,6 +95,7 @@ class StoresFilterTab extends ConsumerWidget {
     );
   }
 
+  // This helper method has no text, so it remains unchanged.
   Widget _buildModeToggleTile(AppThemeData theme) {
     final iconData = isIncludeMode ? Icons.add_circle : Icons.remove_circle;
     final iconColor = isIncludeMode ? theme.secondary : theme.accent;

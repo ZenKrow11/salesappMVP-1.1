@@ -14,6 +14,7 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/quantity_stepper.dart';
+import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 class ShoppingModeScreen extends ConsumerWidget {
   const ShoppingModeScreen({super.key});
@@ -24,23 +25,22 @@ class ShoppingModeScreen extends ConsumerWidget {
     final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
     final shoppingModeState = ref.watch(shoppingModeProvider);
     final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
-      // FIX: Restored full AppBar implementation
       appBar: AppBar(
         backgroundColor: theme.primary,
         elevation: 0,
-        title: const Text('Shopping Mode'),
+        title: Text(l10n.shoppingMode),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Uncheck All Items',
+            tooltip: l10n.uncheckAllItems,
             onPressed: shoppingModeNotifier.clearChecks,
           ),
         ],
       ),
-      // FIX: Restored full FloatingActionButton.extended implementation
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (asyncShoppingList.hasValue) {
@@ -48,23 +48,25 @@ class ShoppingModeScreen extends ConsumerWidget {
           }
         },
         icon: const Icon(Icons.check_circle_outline),
-        label: const Text('Finish'),
+        label: Text(l10n.finish),
       ),
       body: asyncShoppingList.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
         data: (products) {
           if (products.isEmpty) {
             return Center(
-              child: Text('Your shopping list is empty.', style: TextStyle(color: theme.inactive)),
+              child: Text(l10n.shoppingListEmpty, style: TextStyle(color: theme.inactive)),
             );
           }
           return GroupedListView<Product, String>(
             elements: products,
-            groupBy: (product) => CategoryService.getGroupingDisplayNameForProduct(product),
+            // CORE FIX: Group by raw category ID
+            groupBy: (product) => product.category,
             useStickyGroupSeparators: true,
             stickyHeaderBackgroundColor: theme.pageBackground,
-            groupSeparatorBuilder: (String groupName) => _buildGroupSeparator(groupName),
+            // CORE FIX: Pass context to translate the group ID
+            groupSeparatorBuilder: (String groupFirestoreName) => _buildGroupSeparator(groupFirestoreName, context),
             itemBuilder: (context, product) {
               final isChecked = shoppingModeState.checkedProductIds.contains(product.id);
               final quantity = shoppingModeState.productQuantities[product.id] ?? 1;
@@ -85,27 +87,20 @@ class ShoppingModeScreen extends ConsumerWidget {
   }
 
   // FIX: Restored full _buildGroupSeparator method body
-  Widget _buildGroupSeparator(String groupName) {
-    final style = CategoryService.getStyleForGroupingName(groupName);
+  Widget _buildGroupSeparator(String groupFirestoreName, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final style = CategoryService.getLocalizedStyleForGroupingName(groupFirestoreName, l10n);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: style.color,
-          borderRadius: BorderRadius.circular(5.0),
-        ),
+        decoration: BoxDecoration(color: style.color, borderRadius: BorderRadius.circular(5.0)),
         child: Row(
           children: [
-            SvgPicture.asset(
-              style.iconAssetPath,
-              height: 20,
-              width: 20,
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
+            SvgPicture.asset(style.iconAssetPath, height: 20, width: 20, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
             const SizedBox(width: 8),
             Text(
-              groupName,
+              style.displayName, // Now correctly translated
               style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],

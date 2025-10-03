@@ -3,10 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/models/products_provider.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+import 'package:sales_app_mvp/providers/settings_provider.dart';
 
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
@@ -60,6 +64,9 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     final theme = ref.watch(themeProvider);
     final init = ref.watch(initializationProvider);
 
+    // Get a reference to the localizations once.
+    final l10n = AppLocalizations.of(context)!;
+
     return init.when(
       loading: () => Scaffold(
         backgroundColor: theme.pageBackground,
@@ -67,7 +74,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       ),
       error: (err, stack) => Scaffold(
         backgroundColor: theme.pageBackground,
-        body: Center(child: Text('Fatal Error: $err')),
+        // 2. USE THE LOCALIZED ERROR STRING
+        body: Center(child: Text(l10n.fatalError(err.toString()))),
       ),
       data: (_) => GestureDetector(
         onTap: () {
@@ -75,9 +83,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         },
         child: Scaffold(
           backgroundColor: theme.pageBackground,
-          appBar: _buildAppBarForIndex(currentIndex, theme),
-          // ===== FIX #1: REMOVE THE FAB =====
-          // The Stack and Positioned FAB are no longer needed here.
+          // 3. PASS CONTEXT TO THE HELPER METHOD TO ACCESS LOCALIZATIONS
+          appBar: _buildAppBarForIndex(context, currentIndex, theme, ref),
           body: _pages[currentIndex],
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: theme.primary,
@@ -85,18 +92,19 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             selectedItemColor: theme.secondary,
             unselectedItemColor: theme.inactive,
             onTap: navigateToTab,
-            items: const [
+            // 4. USE LOCALIZED LABELS FOR NAVIGATION ITEMS
+            items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.attach_money, size: 36),
-                label: 'All Sales',
+                icon: const Icon(Icons.attach_money, size: 36),
+                label: l10n.navAllSales,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.list, size: 36),
-                label: 'Lists',
+                icon: const Icon(Icons.list, size: 36),
+                label: l10n.navLists,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.person, size: 36),
-                label: 'Account',
+                icon: const Icon(Icons.person, size: 36),
+                label: l10n.navAccount,
               ),
             ],
           ),
@@ -105,12 +113,14 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  PreferredSizeWidget? _buildAppBarForIndex(int index, AppThemeData theme) {
+  // Update signature to accept BuildContext
+  PreferredSizeWidget? _buildAppBarForIndex(BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
     switch (index) {
       case 0: // Home Page
         return _buildHomePageAppBar(theme);
       case 1: // Shopping List Page
-        return _buildShoppingListPageAppBar(theme);
+      // Pass context along
+        return _buildShoppingListPageAppBar(context, theme, ref);
       default: // All other pages (like Account) have no AppBar
         return null;
     }
@@ -133,7 +143,13 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  PreferredSizeWidget _buildShoppingListPageAppBar(AppThemeData theme) {
+  // Update signature to accept BuildContext
+  PreferredSizeWidget _buildShoppingListPageAppBar(BuildContext context, AppThemeData theme, WidgetRef ref) {
+    final isGridView = ref.watch(settingsProvider);
+
+    // Get a reference to localizations here as well
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: theme.primary,
       elevation: 0,
@@ -143,13 +159,25 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       leadingWidth: 150,
       title: null,
       centerTitle: true,
-
       actions: [
+        IconButton(
+          icon: Icon(
+            isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+            color: theme.inactive,
+          ),
+          // 5. USE LOCALIZED TOOLTIPS
+          tooltip: isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
+          onPressed: () {
+            ref.read(settingsProvider.notifier).toggleView();
+          },
+        ),
         _buildShoppingListSettingsAction(theme),
       ],
     );
   }
 
+  // No changes needed in the methods below this point, so they are omitted for brevity.
+  // ... _buildInfoBar(), _buildListSelectorWidget(), etc.
   Widget _buildInfoBar() {
     return Consumer(
       builder: (context, ref, child) {
@@ -209,7 +237,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
-    // ... (This method remains unchanged)
     final activeList = ref.watch(activeShoppingListProvider);
     return Center(
       child: Padding(
@@ -242,51 +269,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildViewToggle(WidgetRef ref, AppThemeData theme) {
-    // ... (This method remains unchanged)
-    final isGridView = ref.watch(shoppingListViewModeProvider);
-    Widget buildToggleButton(bool forGridView) {
-      final bool isActive = forGridView == isGridView;
-      return GestureDetector(
-        onTap: () {
-          if (!isActive) {
-            ref.read(shoppingListViewModeProvider.notifier).state = forGridView;
-          }
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: isActive ? theme.secondary : theme.background.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(9.0),
-          ),
-          child: Icon(
-            forGridView ? Icons.grid_view_rounded : Icons.view_list_rounded,
-            color: isActive ? theme.primary : theme.secondary.withOpacity(0.8),
-            size: 24,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4.0),
-      decoration: BoxDecoration(
-        color: theme.background.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          buildToggleButton(true),
-          const SizedBox(width: 4),
-          buildToggleButton(false),
-        ],
       ),
     );
   }

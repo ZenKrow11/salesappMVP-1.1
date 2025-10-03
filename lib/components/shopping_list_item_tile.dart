@@ -2,7 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -25,133 +28,128 @@ class ShoppingListItemTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
-        if (initialIndex != -1) {
-          final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
+    if (isGridView) {
+      return _buildGridTile(context, ref);
+    } else {
+      return GestureDetector(
+        onTap: () => _onTap(context),
+        onDoubleTap: () => _onDoubleTap(context, ref),
+        child: _buildListTile(context, ref),
+      );
+    }
+  }
 
-          Navigator.of(context).push(SlideUpPageRoute(
-            page: ProductSwiperScreen(
-              products: plainProducts,
-              initialIndex: initialIndex,
-            ),
-          ));
-        }
-      },
-      onDoubleTap: () {
-        ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
-        ScaffoldMessenger.of(context)
-          ..removeCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text('Removed "${product.name}"'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-      },
-      child: isGridView
-          ? _buildGridTile(context, ref)
-          : _buildListTile(context, ref),
-    );
+  void _onTap(BuildContext context) {
+    final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
+    if (initialIndex != -1) {
+      final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
+      Navigator.of(context).push(SlideUpPageRoute(
+        page: ProductSwiperScreen(
+          products: plainProducts,
+          initialIndex: initialIndex,
+        ),
+      ));
+    }
+  }
+
+  void _onDoubleTap(BuildContext context, WidgetRef ref) {
+    // 2. GET THE LOCALIZATIONS OBJECT FOR THE NOTIFICATION
+    final l10n = AppLocalizations.of(context)!;
+    ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          // 3. USE THE PARAMETERIZED LOCALIZED STRING
+          content: Text(l10n.removedItem(product.name)),
+          duration: const Duration(seconds: 1),
+        ),
+      );
   }
 
   Widget _buildGridTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
+    final nameTextStyle = TextStyle(
+      color: theme.inactive,
+      fontWeight: FontWeight.bold,
+      fontSize: 14,
+      height: 1.3,
+    );
+    final double twoLineTextHeight =
+        nameTextStyle.fontSize! * nameTextStyle.height! * 2;
+    // GET LOCALIZATIONS FOR THE TILE UI
+    final l10n = AppLocalizations.of(context)!;
 
     return Card(
-      color: theme.primary, // Background color if image fails
+      color: theme.primary,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior: Clip.antiAlias, // Important for clipping the image and gradients
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // --- Layer 1: The Image (fills the whole card) ---
-          CachedNetworkImage(
-            imageUrl: product.imageUrl ?? '',
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(color: Colors.grey[200]),
-            errorWidget: (context, url, error) => const Center(
-              child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
-            ),
-          ),
-
-          // --- Layer 2: Top overlay for the Product Name ---
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                ),
-              ),
-              child: Text(
-                product.name,
-                // FIX: Title is now a single line
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  shadows: [Shadow(blurRadius: 2.0, color: Colors.black)],
+      clipBehavior: Clip.antiAlias,
+      child: GestureDetector(
+        onTap: () => _onTap(context),
+        onDoubleTap: () => _onDoubleTap(context, ref),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ImageWithAspectRatio(
+                  imageUrl: product.imageUrl ?? '',
+                  fit: BoxFit.contain,
+                  maxWidth: double.infinity,
+                  maxHeight: double.infinity,
                 ),
               ),
             ),
-          ),
-
-          // --- Layer 3: Bottom overlay for Store and Price ---
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // FIX: Using the smaller logo size
-                  StoreLogo(storeName: product.store, height: 18),
-                  Text(
-                    '$priceString Fr.',
-                    style: TextStyle(
-                      color: theme.secondary,
-                      fontWeight: FontWeight.bold,
-                      // FIX: Using the smaller font size
-                      fontSize: 14,
-                      shadows: const [Shadow(blurRadius: 2.0, color: Colors.black)],
+                  Container(
+                    height: twoLineTextHeight,
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: nameTextStyle,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      StoreLogo(storeName: product.store, height: 18),
+                      Text(
+                        // 4. USE THE LOCALIZED CURRENCY SYMBOL
+                        '$priceString ${l10n.currencyFrancs}',
+                        style: TextStyle(
+                          color: theme.secondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // --- No changes needed for the list tile layout ---
   Widget _buildListTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
+    // GET LOCALIZATIONS FOR THE TILE UI
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16),
@@ -179,7 +177,11 @@ class ShoppingListItemTile extends ConsumerWidget {
           Expanded(
             child: Text(
               product.name,
-              style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                color: theme.inactive,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -192,7 +194,8 @@ class ShoppingListItemTile extends ConsumerWidget {
               StoreLogo(storeName: product.store, height: 24),
               const SizedBox(height: 8),
               Text(
-                '$priceString Fr.',
+                // USE THE LOCALIZED CURRENCY SYMBOL
+                '$priceString ${l10n.currencyFrancs}',
                 style: TextStyle(
                   color: theme.secondary,
                   fontWeight: FontWeight.bold,

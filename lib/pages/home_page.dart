@@ -4,18 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:sales_app_mvp/components/product_tile.dart';
-// --- REMOVE `Product` import, as this page only deals with the plain version now ---
-// import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/models/plain_product.dart'; // <-- IMPORT PlainProduct
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
+import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
+
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
-
+import 'package:sales_app_mvp/components/product_tile.dart';
 
 const double kHeaderVerticalPadding = 8.0;
 const double kHeaderHeight = 44.0;
@@ -27,14 +28,17 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncGroups = ref.watch(homePageProductsProvider);
+    // 2. GET LOCALIZATIONS FOR THE BUILD METHOD
+    final l10n = AppLocalizations.of(context)!;
 
     return asyncGroups.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      // 3. USE LOCALIZED STRINGS FOR ERROR AND EMPTY STATES
+      error: (error, stack) => Center(child: Text(l10n.error(error.toString()))),
       data: (groups) {
         if (groups.isEmpty) {
-          return const Center(
-            child: Text('No products found matching your criteria.'),
+          return Center(
+            child: Text(l10n.noProductsFound),
           );
         }
         return _ProductList(groups: groups);
@@ -56,27 +60,29 @@ class _ProductList extends ConsumerWidget {
         for (final group in groups) ...[
           SliverToBoxAdapter(
             child: _GroupHeader(
-              style: group.style,
+              style: group.style, // The style contains the TRANSLATED name for display
               itemCount: group.products.length,
             ),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
-            // --- FIX A: Pass the full `groups` list for the onTap handler ---
             sliver: _buildSliverGrid(ref, groups, group, paginationState),
           ),
-          if ((paginationState[group.style.displayName] ?? kCollapsedItemLimit) < group.products.length)
+          // --- THIS IS THE KEY CHANGE FOR PAGINATION ---
+          if ((paginationState[group.firestoreName] ?? kCollapsedItemLimit) < group.products.length)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
                 child: _ShowMoreButton(
                   totalItemCount: group.products.length,
-                  showingItemCount: paginationState[group.style.displayName] ?? kCollapsedItemLimit,
+                  // Use the stable firestoreName as the key
+                  showingItemCount: paginationState[group.firestoreName] ?? kCollapsedItemLimit,
                   onPressed: () {
                     ref.read(categoryPaginationProvider.notifier).update((state) {
-                      final categoryName = group.style.displayName;
-                      final newCount = (state[categoryName] ?? kCollapsedItemLimit) + kPaginationIncrement;
-                      return {...state, categoryName: newCount};
+                      // Use the stable firestoreName as the key
+                      final categoryKey = group.firestoreName;
+                      final newCount = (state[categoryKey] ?? kCollapsedItemLimit) + kPaginationIncrement;
+                      return {...state, categoryKey: newCount};
                     });
                   },
                 ),
@@ -87,11 +93,11 @@ class _ProductList extends ConsumerWidget {
     );
   }
 
+  // No localization changes needed in _buildSliverGrid
   Widget _buildSliverGrid(WidgetRef ref, List<ProductGroup> allGroups, ProductGroup group, Map<String, int> paginationState) {
-    final categoryName = group.style.displayName;
-    final itemsToShowCount = paginationState[categoryName] ?? kCollapsedItemLimit;
-
-    // --- FIX B: (Error at line 97) `productsToShow` is now of type `List<PlainProduct>` ---
+    // ... (rest of the method is unchanged)
+    final categoryKey = group.firestoreName;
+    final itemsToShowCount = paginationState[categoryKey] ?? kCollapsedItemLimit;
     final List<PlainProduct> productsToShow = group.products.take(itemsToShowCount).toList();
 
     return SliverGrid(
@@ -105,15 +111,12 @@ class _ProductList extends ConsumerWidget {
             (context, gridIndex) {
           final product = productsToShow[gridIndex];
 
-          // You will need to update ProductTile to accept a `PlainProduct`
           return ProductTile(
             product: product,
             onTap: () {
-              // --- FIX C: `flatSortedProducts` is now of type `List<PlainProduct>` ---
               final flatSortedProducts = allGroups.expand((g) => g.products).toList();
               final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
 
-              // --- FIX D: (Error at line 116) `ProductSwiperScreen` must accept a `List<PlainProduct>` ---
               final Widget swiperPage = ProductSwiperScreen(
                 products: flatSortedProducts,
                 initialIndex: initialIndex != -1 ? initialIndex : 0,
@@ -162,6 +165,7 @@ class _GroupHeader extends ConsumerWidget {
                 colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
               ),
               const SizedBox(width: 12),
+              // NOTE: This text is handled correctly at the source (CategoryService)
               Text(
                 style.displayName,
                 style: TextStyle(
@@ -203,14 +207,17 @@ class _ShowMoreButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final remainingCount = totalItemCount - showingItemCount;
+    // GET LOCALIZATIONS FOR THIS WIDGET
+    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(top: 16.0),
         child: TextButton.icon(
           icon: Icon(Icons.expand_more, color: theme.secondary),
+          // 4. USE THE PARAMETERIZED LOCALIZED STRING
           label: Text(
-            'Show $remainingCount more',
+            l10n.showMore(remainingCount),
             style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold),
           ),
           onPressed: onPressed,

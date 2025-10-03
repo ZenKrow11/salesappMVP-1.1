@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
   return AuthController();
@@ -37,6 +39,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
     try {
       final user = _auth.currentUser;
+      // You can keep this one as an Exception because it's a developer error, not a user-facing one.
       if (user == null || user.email == null) throw Exception('No user is currently signed in.');
 
       final cred = EmailAuthProvider.credential(
@@ -51,7 +54,13 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       return true;
     } on FirebaseAuthException catch (e, st) {
       debugPrint('CHANGE PASSWORD ERROR: [${e.code}] ${e.message}');
-      state = AsyncError(e.message ?? 'An unknown error occurred', st);
+
+      // === CHANGE IS HERE ===
+      // BEFORE: state = AsyncError(e.message ?? 'An unknown error occurred', st);
+      // AFTER: Pass the original exception object. Let the UI decide what to show.
+      state = AsyncError(e, st);
+      // =======================
+
       return false;
     }
   }

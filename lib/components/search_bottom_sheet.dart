@@ -3,8 +3,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-// --- FIX: Added this import to define AppThemeData ---
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 class SearchBottomSheet extends ConsumerStatefulWidget {
@@ -54,6 +57,8 @@ class _SearchBottomSheetState extends ConsumerState<SearchBottomSheet> {
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
     final bool showClearButton = _textController.text.isNotEmpty;
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -70,7 +75,8 @@ class _SearchBottomSheetState extends ConsumerState<SearchBottomSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildHeader(theme),
+              // 3. PASS l10n OBJECT TO HELPER
+              _buildHeader(theme, l10n),
               const SizedBox(height: 16),
               TextField(
                 controller: _textController,
@@ -81,7 +87,8 @@ class _SearchBottomSheetState extends ConsumerState<SearchBottomSheet> {
                 },
                 style: TextStyle(color: theme.secondary),
                 decoration: InputDecoration(
-                  hintText: 'Search products...',
+                  // 4. REPLACE HARDCODED TEXT
+                  hintText: l10n.searchProductsHint,
                   hintStyle: TextStyle(color: theme.inactive),
                   prefixIcon: Icon(Icons.search, color: theme.secondary),
                   suffixIcon: showClearButton
@@ -105,13 +112,13 @@ class _SearchBottomSheetState extends ConsumerState<SearchBottomSheet> {
     );
   }
 
-  // --- FIX: Corrected the type hint from 'AppTheme' to 'AppThemeData' ---
-  Widget _buildHeader(AppThemeData theme) {
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildHeader(AppThemeData theme, AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Search Products',
+          l10n.searchProducts,
           style: TextStyle(
             fontSize: 20,
             color: theme.secondary,

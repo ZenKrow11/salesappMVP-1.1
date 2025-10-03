@@ -1,90 +1,109 @@
 // lib/services/category_service.dart
 
+import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
-import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/categorizable.dart';
 
 class CategoryService {
-  // 1. Original map for getting the style of ANY category (main or sub)
-  static final Map<String, CategoryStyle> _styleMap = _createStyleMap();
-
-  // 2. NEW: A map to find the main category's DISPLAY NAME for any given category name.
-  static final Map<String, String> _categoryToGroupingNameMap = _createGroupingMap();
-
-  // 3. NEW: A map to get the MAIN CATEGORY's style directly from its DISPLAY NAME.
-  static final Map<String, CategoryStyle> _groupingNameToStyleMap = _createGroupingStyleMap();
-
-  // --- MAP CREATION (LOGIC IS CONSOLIDATED HERE) ---
-
-  static Map<String, CategoryStyle> _createStyleMap() {
-    final map = <String, CategoryStyle>{};
-    for (var mainCat in allCategories) {
-      map[mainCat.firestoreName] = mainCat.style;
-      for (var subCat in mainCat.subcategories) {
-        map[subCat.name] = CategoryStyle(
-          displayName: mainCat.style.displayName,
-          color: mainCat.style.color,
-          iconAssetPath: subCat.iconAssetPath,
-        );
-      }
+  /// The central translation hub for all category and subcategory names.
+  static String _getLocalizedName(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'categoryNonAlcoholicBeverages': return l10n.categoryNonAlcoholicBeverages;
+      case 'categoryCoffeeTeaCocoa': return l10n.categoryCoffeeTeaCocoa;
+      case 'categorySoftDrinksEnergyDrinks': return l10n.categorySoftDrinksEnergyDrinks;
+      case 'categoryWaterJuices': return l10n.categoryWaterJuices;
+      case 'categoryAlcoholicBeverages': return l10n.categoryAlcoholicBeverages;
+      case 'categoryBeer': return l10n.categoryBeer;
+      case 'categorySpiritsAssorted': return l10n.categorySpiritsAssorted;
+      case 'categoryWinesSparklingWines': return l10n.categoryWinesSparklingWines;
+      case 'categoryBreadBakery': return l10n.categoryBreadBakery;
+      case 'categoryBakingIngredients': return l10n.categoryBakingIngredients;
+      case 'categoryBread': return l10n.categoryBread;
+      case 'categoryPastriesDesserts': return l10n.categoryPastriesDesserts;
+      case 'categoryFishMeat': return l10n.categoryFishMeat;
+      case 'categoryMeatMixesAssorted': return l10n.categoryMeatMixesAssorted;
+      case 'categoryFishSeafood': return l10n.categoryFishSeafood;
+      case 'categoryPoultry': return l10n.categoryPoultry;
+      case 'categoryBeefVeal': return l10n.categoryBeefVeal;
+      case 'categoryPork': return l10n.categoryPork;
+      case 'categorySausagesColdCuts': return l10n.categorySausagesColdCuts;
+      case 'categoryFruitsVegetables': return l10n.categoryFruitsVegetables;
+      case 'categoryFruits': return l10n.categoryFruits;
+      case 'categoryVegetables': return l10n.categoryVegetables;
+      case 'categoryDairyEggs': return l10n.categoryDairyEggs;
+      case 'categoryButterEggs': return l10n.categoryButterEggs;
+      case 'categoryCheese': return l10n.categoryCheese;
+      case 'categoryMilkDairyProducts': return l10n.categoryMilkDairyProducts;
+      case 'categorySaltySnacksSweets': return l10n.categorySaltySnacksSweets;
+      case 'categorySnacksAppetizers': return l10n.categorySnacksAppetizers;
+      case 'categoryChipsNuts': return l10n.categoryChipsNuts;
+      case 'categoryIceCreamSweets': return l10n.categoryIceCreamSweets;
+      case 'categoryChocolateCookies': return l10n.categoryChocolateCookies;
+      case 'categorySpecialDiet': return l10n.categorySpecialDiet;
+      case 'categoryConvenienceReadyMeals': return l10n.categoryConvenienceReadyMeals;
+      case 'categoryVeganProducts': return l10n.categoryVeganProducts;
+      case 'categoryPantry': return l10n.categoryPantry;
+      case 'categoryCerealsGrains': return l10n.categoryCerealsGrains;
+      case 'categoryCannedGoodsOilsSaucesSpices': return l10n.categoryCannedGoodsOilsSaucesSpices;
+      case 'categoryHoneyJamSpreads': return l10n.categoryHoneyJamSpreads;
+      case 'categoryRicePasta': return l10n.categoryRicePasta;
+      case 'categoryFrozenProductsSoups': return l10n.categoryFrozenProductsSoups;
+      case 'categoryOther': return l10n.categoryOther;
+      case 'categoryUncategorized': return l10n.categoryUncategorized;
+      default: return key;
     }
-    return map;
   }
 
-  static Map<String, String> _createGroupingMap() {
-    final map = <String, String>{};
-    for (var mainCat in allCategories) {
-      map[mainCat.firestoreName] = mainCat.style.displayName;
-      for (var subCat in mainCat.subcategories) {
-        map[subCat.name] = mainCat.style.displayName;
-      }
-    }
-    return map;
-  }
+  // --- NEW UNIFIED & CORRECTED PUBLIC METHODS ---
 
-  static Map<String, CategoryStyle> _createGroupingStyleMap() {
-    final map = <String, CategoryStyle>{};
-    for (var mainCat in allCategories) {
-      map[mainCat.style.displayName] = mainCat.style;
-    }
-    return map;
-  }
-
-  // --- ADD THIS METHOD ---
-  /// Returns the complete list of all main categories and their definitions.
+  /// Returns the complete list of all main category definitions.
   static List<MainCategory> getAllCategories() {
     return allCategories;
   }
-  // --- END OF ADDITION ---
 
-  // --- PUBLIC METHODS (TO BE USED BY THE APP) ---
-
-  /// Gets the style for any specific category or subcategory name.
-  /// Used for individual chips.
-  static CategoryStyle getStyleForCategory(String categoryName) {
-    return _styleMap[categoryName] ?? defaultCategoryStyle;
+  /// Takes a category KEY and returns the translated string.
+  static String getLocalizedCategoryName(String key, AppLocalizations l10n) {
+    return _getLocalizedName(key, l10n);
   }
 
-  /// NEW: Gets the main category's style from the group's display name.
-  /// Used for the group header in the UI.
-  static CategoryStyle getStyleForGroupingName(String displayName) {
-    return _groupingNameToStyleMap[displayName] ?? defaultCategoryStyle;
+  /// Returns a `CategoryStyle` for a given category KEY.
+  /// The `displayName` in the returned style will still be a KEY.
+  static CategoryStyle getStyleForCategory(String categoryKey) {
+    for (var mainCat in allCategories) {
+      if (mainCat.firestoreName == categoryKey || mainCat.style.displayName == categoryKey) {
+        return mainCat.style;
+      }
+      for (var subCat in mainCat.subcategories) {
+        if (subCat.name == categoryKey) {
+          return CategoryStyle(
+            displayName: mainCat.style.displayName,
+            color: mainCat.style.color,
+            iconAssetPath: subCat.iconAssetPath,
+          );
+        }
+      }
+    }
+    return defaultCategoryStyle;
   }
 
-  /// NEW, ROBUST METHOD FOR GROUPING
-  /// Returns the main category's display name (e.g., 'Alkoholische Getränke') for a given product.
-  /// It intelligently checks both the product's category and subcategory fields.
-  static String getGroupingDisplayNameForProduct(Categorizable product) {
-    // Check the main category field first, then the subcategory as a fallback.
-    return _categoryToGroupingNameMap[product.category] ??
-        _categoryToGroupingNameMap[product.subcategory] ??
-        defaultCategoryStyle.displayName;
+  /// Checks if a given category KEY corresponds to a subcategory.
+  static bool isSubCategory(String categoryNameKey) {
+    for (var mainCat in allCategories) {
+      if (mainCat.subcategories.any((sub) => sub.name == categoryNameKey)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  // --- Unchanged Methods ---
-  static final Set<String> _mainCategoryNames = allCategories.map((c) => c.firestoreName).toSet();
-  static final Set<String> _subCategoryNames = allCategories.expand((c) => c.subcategories).map((sc) => sc.name).toSet();
-  static bool isMainCategory(String categoryName) => _mainCategoryNames.contains(categoryName);
-  static bool isSubCategory(String categoryName) => _subCategoryNames.contains(categoryName);
+  /// Takes a stable Firestore name and returns a `CategoryStyle` with the `displayName` already translated.
+  static CategoryStyle getLocalizedStyleForGroupingName(String firestoreName, AppLocalizations l10n) {
+    final mainCat = allCategories.firstWhere(
+            (cat) => cat.firestoreName == firestoreName,
+        orElse: () => allCategories.last
+    );
+    // Return a *new* style object with the translated name
+    return mainCat.style.copyWith(displayName: _getLocalizedName(mainCat.style.displayName, l10n));
+  }
 }

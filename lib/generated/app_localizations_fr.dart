@@ -15,6 +15,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get adPlaceholder => 'Espace publicitaire\n300 x 250';
 
   @override
+  String get add => 'ADD';
+
+  @override
+  String get added => 'ADDED';
+
+  @override
   String get addedToActiveList => 'Ajouté à la liste active';
 
   @override
@@ -41,137 +47,140 @@ class AppLocalizationsFr extends AppLocalizations {
   String get categories => 'Catégories';
 
   @override
+  String get categoryNonAlcoholicBeverages => 'Boissons non alcoolisées';
+
+  @override
+  String get categoryCoffeeTeaCocoa => 'Café, Thé & Cacao';
+
+  @override
+  String get categorySoftDrinksEnergyDrinks => 'Sodas & Boissons énergisantes';
+
+  @override
+  String get categoryWaterJuices => 'Eau & Jus';
+
+  @override
   String get categoryAlcoholicBeverages => 'Boissons alcoolisées';
-
-  @override
-  String get categoryBakingIngredients => 'Ingrédients de boulangerie';
-
-  @override
-  String get categoryBeefVeal => 'Bœuf & Veau';
 
   @override
   String get categoryBeer => 'Bière';
 
   @override
-  String get categoryBread => 'Pain';
+  String get categorySpiritsAssorted => 'Spiritueux & Divers';
+
+  @override
+  String get categoryWinesSparklingWines => 'Vins & Mousseux';
 
   @override
   String get categoryBreadBakery => 'Pain & Boulangerie';
 
   @override
+  String get categoryBakingIngredients => 'Ingrédients de boulangerie';
+
+  @override
+  String get categoryBread => 'Pain';
+
+  @override
+  String get categoryPastriesDesserts => 'Pâtisseries & Desserts';
+
+  @override
+  String get categoryFishMeat => 'Poisson & Viande';
+
+  @override
+  String get categoryMeatMixesAssorted => 'Mélanges de viande & Divers';
+
+  @override
+  String get categoryFishSeafood => 'Poisson & Fruits de mer';
+
+  @override
+  String get categoryPoultry => 'Volaille';
+
+  @override
+  String get categoryBeefVeal => 'Bœuf & Veau';
+
+  @override
+  String get categoryPork => 'Porc';
+
+  @override
+  String get categorySausagesColdCuts => 'Saucisses & Charcuterie';
+
+  @override
+  String get categoryFruitsVegetables => 'Fruits & Légumes';
+
+  @override
+  String get categoryFruits => 'Fruits';
+
+  @override
+  String get categoryVegetables => 'Légumes';
+
+  @override
+  String get categoryDairyEggs => 'Produits laitiers & Œufs';
+
+  @override
   String get categoryButterEggs => 'Beurre & Œufs';
+
+  @override
+  String get categoryCheese => 'Fromage';
+
+  @override
+  String get categoryMilkDairyProducts => 'Lait & Produits laitiers';
+
+  @override
+  String get categorySaltySnacksSweets => 'Snacks salés & Sucreries';
+
+  @override
+  String get categorySnacksAppetizers => 'Snacks & Apéritifs';
+
+  @override
+  String get categoryChipsNuts => 'Chips & Noix';
+
+  @override
+  String get categoryIceCreamSweets => 'Glaces & Confiseries';
+
+  @override
+  String get categoryChocolateCookies => 'Chocolat & Biscuits';
+
+  @override
+  String get categorySpecialDiet => 'Alimentation spéciale';
+
+  @override
+  String get categoryConvenienceReadyMeals => 'Plats préparés & Convenience';
+
+  @override
+  String get categoryVeganProducts => 'Produits végétaliens';
+
+  @override
+  String get categoryPantry => 'Garde-manger';
+
+  @override
+  String get categoryCerealsGrains => 'Céréales';
 
   @override
   String get categoryCannedGoodsOilsSaucesSpices =>
       'Conserves, Huiles, Sauces & Épices';
 
   @override
-  String get categoryCerealsGrains => 'Céréales';
-
-  @override
-  String get categoryCheese => 'Fromage';
-
-  @override
-  String get categoryChipsNuts => 'Chips & Noix';
-
-  @override
-  String get categoryChocolateCookies => 'Chocolat & Biscuits';
-
-  @override
-  String get categoryCoffeeTeaCocoa => 'Café, Thé & Cacao';
-
-  @override
-  String get categoryConvenienceReadyMeals => 'Plats préparés & Convenience';
-
-  @override
-  String get categoryDairyEggs => 'Produits laitiers & Œufs';
-
-  @override
-  String get categoryFishMeat => 'Poisson & Viande';
-
-  @override
-  String get categoryFishSeafood => 'Poisson & Fruits de mer';
-
-  @override
-  String get categoryFruits => 'Fruits';
-
-  @override
-  String get categoryFruitsVegetables => 'Fruits & Légumes';
-
-  @override
-  String get categoryFrozenProductsSoups => 'Produits surgelés & Soupes';
-
-  @override
   String get categoryHoneyJamSpreads => 'Miel, Confiture & Pâtes à tartiner';
-
-  @override
-  String get categoryIceCreamSweets => 'Glaces & Confiseries';
-
-  @override
-  String get categoryMeatMixesAssorted => 'Mélanges de viande & Divers';
-
-  @override
-  String get categoryMilkDairyProducts => 'Lait & Produits laitiers';
-
-  @override
-  String get categoryNonAlcoholicBeverages => 'Boissons non alcoolisées';
-
-  @override
-  String get categoryOther => 'Autre';
-
-  @override
-  String get categoryPantry => 'Garde-manger';
-
-  @override
-  String get categoryPastriesDesserts => 'Pâtisseries & Desserts';
-
-  @override
-  String get categoryPork => 'Porc';
-
-  @override
-  String get categoryPoultry => 'Volaille';
 
   @override
   String get categoryRicePasta => 'Riz & Pâtes';
 
   @override
-  String get categorySaltySnacksSweets => 'Snacks salés & Sucreries';
+  String get categoryFrozenProductsSoups => 'Produits surgelés & Soupes';
 
   @override
-  String get categorySausagesColdCuts => 'Saucisses & Charcuterie';
-
-  @override
-  String get categorySnacksAppetizers => 'Snacks & Apéritifs';
-
-  @override
-  String get categorySoftDrinksEnergyDrinks => 'Sodas & Boissons énergisantes';
-
-  @override
-  String get categorySpecialDiet => 'Alimentation spéciale';
-
-  @override
-  String get categorySpiritsAssorted => 'Spiritueux & Divers';
+  String get categoryOther => 'Autre';
 
   @override
   String get categoryUncategorized => 'Non catégorisé';
-
-  @override
-  String get categoryVeganProducts => 'Produits végétaliens';
-
-  @override
-  String get categoryVegetables => 'Légumes';
-
-  @override
-  String get categoryWaterJuices => 'Eau & Jus';
-
-  @override
-  String get categoryWinesSparklingWines => 'Vins & Mousseux';
 
   @override
   String get changePassword => 'Changer le mot de passe';
 
   @override
   String get checkItem => 'Cocher l\'article';
+
+  @override
+  String get close => 'CLOSE';
 
   @override
   String get continueWithGoogle => 'Continuer avec Google';
@@ -188,6 +197,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get createAndSelect => 'CRÉER ET SÉLECTIONNER';
+
+  @override
+  String createdAndSelectedList(String listName) {
+    return 'Created and selected list \"$listName\"';
+  }
 
   @override
   String get createCustomItem => 'Créer un article personnalisé';
@@ -216,6 +230,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String customItemLimitReached(int count) {
     return 'Vous avez atteint votre limite de $count articles personnalisés.';
   }
+
+  @override
+  String get customItems => 'Custom Items';
 
   @override
   String get dangerZone => 'Zone de danger';
@@ -323,6 +340,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get initializing => 'Initialisation...';
+
+  @override
+  String get itemsLabel => 'Items';
 
   @override
   String itemSavedSuccessfully(String itemName) {
@@ -523,6 +543,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settings => 'Paramètres';
 
   @override
+  String get shop => 'Shop';
+
+  @override
   String get shoppingListEmpty => 'Votre liste de courses est vide.';
 
   @override
@@ -568,6 +591,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get theme => 'Thème';
+
+  @override
+  String get tooltipShowAsList => 'Show as list';
+
+  @override
+  String get tooltipShowAsGrid => 'Show as grid';
 
   @override
   String get total => 'Total';

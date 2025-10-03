@@ -2,17 +2,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/models/category_definitions.dart';
+
 import 'package:uuid/uuid.dart';
 
 class CreateCustomItemTab extends ConsumerStatefulWidget {
   final Product? productToEdit;
-  // This listId is passed from the FAB flow
   final String? listId;
 
   const CreateCustomItemTab({super.key, this.productToEdit, this.listId});
@@ -53,28 +58,22 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
   }
 
   Future<void> _submitForm() async {
+    // 2. GET LOCALIZATIONS FOR SNACKBARS
+    final l10n = AppLocalizations.of(context)!;
+
     if (!_formKey.currentState!.validate()) return;
 
     final firestoreService = ref.read(firestoreServiceProvider);
-    final userProfile = ref
-        .read(userProfileProvider)
-        .value;
-    final customItems = ref
-        .read(customItemsProvider)
-        .value ?? [];
+    final userProfile = ref.read(userProfileProvider).value;
+    final customItems = ref.read(customItemsProvider).value ?? [];
 
     if (userProfile == null) return;
-    if (!_isEditing &&
-        customItems.length >= (userProfile.isPremium ? 45 : 15)) {
-      // Handle item limit and show snackbar
+    final limit = userProfile.isPremium ? 45 : 15;
+    if (!_isEditing && customItems.length >= limit) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('You have reached your limit of ${(userProfile.isPremium
-            ? 45
-            : 15)} custom items.'),
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .error,
+        // 3. USE LOCALIZED, PARAMETERIZED STRINGS
+        content: Text(l10n.customItemLimitReached(limit)),
+        backgroundColor: Theme.of(context).colorScheme.error,
       ));
       return;
     }
@@ -111,37 +110,26 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
         await firestoreService.updateCustomItemInStorage(productToSave);
       } else {
         await firestoreService.addCustomItemToStorage(productToSave);
-
-        // ===================== FIX IS HERE =====================
-        final targetListId = widget.listId ??
-            ref.read(activeShoppingListProvider);
-
-        // We add a simple null check. This satisfies the compiler and is good practice.
+        final targetListId = widget.listId ?? ref.read(activeShoppingListProvider);
         if (targetListId != null) {
           await ref
               .read(shoppingListsProvider.notifier)
               .addToSpecificList(productToSave, targetListId);
         } else {
-          // This is a fallback in case something goes wrong, though it's unlikely.
           throw Exception("No target list ID found to add the item to.");
         }
-        // ==========================================================
       }
 
       if (mounted) {
-        // If coming from the FAB, always pop the page.
         if (widget.listId != null) {
           Navigator.of(context).pop();
         }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('"${productToSave.name}" saved successfully.'),
+            content: Text(l10n.itemSavedSuccessfully(productToSave.name)),
             backgroundColor: Colors.green,
           ),
         );
-
-        // If NOT coming from the FAB, clear the form for another entry.
         if (widget.listId == null && !_isEditing) {
           _formKey.currentState?.reset();
           _nameController.clear();
@@ -153,11 +141,8 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving item: ${e.toString()}'),
-            backgroundColor: Theme
-                .of(context)
-                .colorScheme
-                .error,
+            content: Text(l10n.errorSavingItem(e.toString())),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -167,14 +152,18 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    final isPremium = ref
-        .watch(userProfileProvider)
-        .value
-        ?.isPremium ?? false;
-    final allCategories = CategoryService.getAllCategories();
+    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+    // lib/components/create_custom_item_tab.dart around line 154
+    final l10n = AppLocalizations.of(context)!; // Already there
+    final allCategories = categoryDisplayOrder
+        .map((firestoreName) => (
+    firestoreName: firestoreName,
+    style: CategoryService.getLocalizedStyleForGroupingName(firestoreName, l10n)
+    ))
+        .toList();
     bool isCustomCategoryEntered = _customCategoryController.text.isNotEmpty;
 
-    // A helper for consistent input decoration
+
     InputDecoration styledInputDecoration(String label) {
       return InputDecoration(
         labelText: label,
@@ -203,15 +192,14 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 4. REPLACE ALL HARDCODED STRINGS IN THE UI
             TextFormField(
               controller: _nameController,
               style: TextStyle(color: theme.inactive),
-              decoration: styledInputDecoration('Item Name'),
+              decoration: styledInputDecoration(l10n.itemName),
               validator: (value) =>
-              (value == null || value
-                  .trim()
-                  .isEmpty)
-                  ? 'Please enter an item name.'
+              (value == null || value.trim().isEmpty)
+                  ? l10n.pleaseEnterItemName
                   : null,
             ),
             const SizedBox(height: 24),
@@ -219,7 +207,7 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
               TextFormField(
                 controller: _customCategoryController,
                 style: TextStyle(color: theme.inactive),
-                decoration: styledInputDecoration('Custom Category (Premium)'),
+                decoration: styledInputDecoration(l10n.customCategoryPremium),
                 onChanged: (value) {
                   setState(() {});
                 },
@@ -229,8 +217,8 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
                     vertical: 12.0, horizontal: 8.0),
                 child: Text(
                   isCustomCategoryEntered
-                      ? 'Using custom category above'
-                      : 'Or select a main category below:',
+                      ? l10n.usingCustomCategoryAbove
+                      : l10n.orSelectMainCategory,
                   style: TextStyle(
                       color: theme.inactive.withOpacity(0.7), fontSize: 14),
                 ),
@@ -241,7 +229,7 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
               isExpanded: true,
               dropdownColor: theme.background,
               style: TextStyle(color: theme.inactive, fontSize: 16),
-              decoration: styledInputDecoration('Select Category')
+              decoration: styledInputDecoration(l10n.selectCategory)
                   .copyWith(enabled: !isCustomCategoryEntered),
               items: allCategories.map((categoryInfo) {
                 return DropdownMenuItem(
@@ -259,7 +247,7 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
               validator: (_) {
                 if (isPremium && isCustomCategoryEntered) return null;
                 if (_selectedCategory == null)
-                  return 'Please select a category.';
+                  return l10n.pleaseSelectCategory;
                 return null;
               },
             ),
@@ -268,7 +256,7 @@ class _CreateCustomItemTabState extends ConsumerState<CreateCustomItemTab> {
               width: double.infinity,
               child: FilledButton.icon(
                 icon: const Icon(Icons.check),
-                label: Text(_isEditing ? 'SAVE CHANGES' : 'CREATE & ADD ITEM'),
+                label: Text(_isEditing ? l10n.saveChanges : l10n.createAndAddItem),
                 onPressed: _submitForm,
                 style: FilledButton.styleFrom(
                   backgroundColor: theme.secondary,

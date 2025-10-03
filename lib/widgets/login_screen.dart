@@ -4,20 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-// --- The main widget is now just a wrapper for the DefaultTabController ---
 class LoginScreen extends ConsumerWidget {
   static const routeName = '/login';
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We create the DefaultTabController here...
     return const DefaultTabController(
       length: 2,
-      // ...and its child is the new _LoginView widget, which will handle all the UI.
       child: _LoginView(),
     );
   }
@@ -31,13 +31,9 @@ class _LoginView extends ConsumerStatefulWidget {
 }
 
 class _LoginViewState extends ConsumerState<_LoginView> {
-  // --- CHANGE 1: Create a separate GlobalKey for each form ---
-  // A single key cannot be used on two widgets (Login Form and Sign Up Form)
-  // that exist in the widget tree at the same time.
   final _loginFormKey = GlobalKey<FormState>();
   final _signUpFormKey = GlobalKey<FormState>();
 
-  // These controllers can still be shared since the UI is visually separated by tabs.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _keepLoggedIn = true;
@@ -51,11 +47,8 @@ class _LoginViewState extends ConsumerState<_LoginView> {
 
   Future<void> _submitForm() async {
     final isLogin = DefaultTabController.of(context).index == 0;
-
-    // --- CHANGE 2: Select the correct form key based on the active tab ---
     final currentFormKey = isLogin ? _loginFormKey : _signUpFormKey;
 
-    // Validate using the key for the currently visible form.
     if (!currentFormKey.currentState!.validate()) {
       return;
     }
@@ -70,8 +63,6 @@ class _LoginViewState extends ConsumerState<_LoginView> {
       await authNotifier.signUpWithEmail(email, password);
     }
   }
-
-  // --- All helper methods below are unchanged and work correctly ---
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -104,6 +95,9 @@ class _LoginViewState extends ConsumerState<_LoginView> {
     final dialogEmailController =
     TextEditingController(text: _emailController.text);
 
+    // 2. GET LOCALIZATIONS FOR THE DIALOG
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -113,14 +107,13 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             backgroundColor: theme.background,
             shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Text('Reset Password',
+            title: Text(l10n.resetPassword, // <-- LOCALIZED
                 style: TextStyle(
                     fontWeight: FontWeight.bold, color: theme.secondary)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                    'Enter your email address and we will send you a link to reset your password.',
+                Text(l10n.resetPasswordInstructions, // <-- LOCALIZED
                     style: TextStyle(color: theme.inactive)),
                 const SizedBox(height: 16),
                 TextField(
@@ -129,7 +122,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
                   autofocus: true,
                   style: TextStyle(color: theme.inactive),
                   decoration: InputDecoration(
-                    labelText: 'Email Address',
+                    labelText: l10n.emailAddress, // <-- LOCALIZED
                     labelStyle: TextStyle(color: theme.inactive),
                   ),
                 ),
@@ -138,28 +131,29 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             actions: [
               TextButton(
                   child:
-                  Text('Cancel', style: TextStyle(color: theme.inactive)),
+                  Text(l10n.cancel, style: TextStyle(color: theme.inactive)), // <-- LOCALIZED
                   onPressed: () => Navigator.of(dialogContext).pop()),
               authState.isLoading
                   ? const CircularProgressIndicator()
                   : FilledButton(
                 style: FilledButton.styleFrom(
                     backgroundColor: theme.secondary),
-                child: const Text('Send Email'),
+                child: Text(l10n.sendEmail), // <-- LOCALIZED
                 onPressed: () async {
                   final email = dialogEmailController.text.trim();
                   if (email.isEmpty) {
-                    _showErrorSnackBar("Please enter an email address.");
+                    _showErrorSnackBar(l10n.pleaseEnterEmail); // <-- LOCALIZED
                     return;
                   }
                   final success = await ref
                       .read(authControllerProvider.notifier)
                       .sendPasswordResetEmail(email);
-                  if (dialogContext.mounted)
+                  if (dialogContext.mounted) {
                     Navigator.of(dialogContext).pop();
+                  }
                   if (success && mounted) {
                     _showSuccessSnackBar(
-                        "Password reset email sent to $email");
+                        l10n.passwordResetEmailSent(email)); // <-- LOCALIZED
                   }
                 },
               ),
@@ -177,6 +171,9 @@ class _LoginViewState extends ConsumerState<_LoginView> {
     final appTheme = ref.watch(themeProvider);
     final isLoading = authState.isLoading;
 
+    // 3. GET LOCALIZATIONS FOR THE MAIN BUILD METHOD
+    final l10n = AppLocalizations.of(context)!;
+
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       next.whenOrNull(
         error: (e, _) => _showErrorSnackBar(e.toString()),
@@ -191,7 +188,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Welcome to SalesSeekr',
+          l10n.welcomeToAppName(l10n.appName), // <-- LOCALIZED (Nested)
           style: materialTheme.textTheme.headlineMedium?.copyWith(
             color: appTheme.secondary,
             fontWeight: FontWeight.bold,
@@ -205,9 +202,9 @@ class _LoginViewState extends ConsumerState<_LoginView> {
           labelStyle:
           const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontSize: 16),
-          tabs: const [
-            Tab(text: 'Login'),
-            Tab(text: 'Sign Up'),
+          tabs: [
+            Tab(text: l10n.login), // <-- LOCALIZED
+            Tab(text: l10n.signUp), // <-- LOCALIZED
           ],
         ),
       ),
@@ -215,22 +212,20 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         child: TabBarView(
           physics: const BouncingScrollPhysics(),
           children: [
-            // --- CHANGE 3: Pass the correct, unique key to each form ---
             _buildForm(
-                key: _loginFormKey, isLogin: true, isLoading: isLoading),
+                key: _loginFormKey, isLogin: true, isLoading: isLoading, l10n: l10n),
             _buildForm(
-                key: _signUpFormKey, isLogin: false, isLoading: isLoading),
+                key: _signUpFormKey, isLogin: false, isLoading: isLoading, l10n: l10n),
           ],
         ),
       ),
     );
   }
 
-  // --- CHANGE 4: Modify the _buildForm signature to accept the key ---
+  // 4. PASS THE l10n OBJECT TO HELPER METHODS
   Widget _buildForm(
-      {required Key key, required bool isLogin, required bool isLoading}) {
+      {required Key key, required bool isLogin, required bool isLoading, required AppLocalizations l10n}) {
     return Center(
-      // --- CHANGE 5: Use the passed-in key for the Form widget ---
       child: Form(
         key: key,
         child: SingleChildScrollView(
@@ -240,12 +235,12 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              _buildEmailField(),
+              _buildEmailField(l10n),
               const SizedBox(height: 16),
-              _buildPasswordField(),
+              _buildPasswordField(l10n),
               if (isLogin) ...[
                 const SizedBox(height: 8),
-                _buildLoginOptions(),
+                _buildLoginOptions(l10n),
               ],
               SizedBox(height: isLogin ? 24 : 40),
               if (isLoading)
@@ -253,7 +248,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
                     child: CircularProgressIndicator(
                         color: ref.watch(themeProvider).secondary))
               else
-                _buildAuthActions(isLoading: isLoading),
+                _buildAuthActions(isLoading: isLoading, isLogin: isLogin, l10n: l10n),
             ],
           ),
         ),
@@ -261,14 +256,14 @@ class _LoginViewState extends ConsumerState<_LoginView> {
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(AppLocalizations l10n) {
     final appTheme = ref.watch(themeProvider);
     return TextFormField(
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       style: TextStyle(color: appTheme.inactive),
       decoration: InputDecoration(
-        labelText: 'Email Address',
+        labelText: l10n.emailAddress, // <-- LOCALIZED
         labelStyle: TextStyle(color: appTheme.inactive),
         prefixIcon: Icon(Icons.email_outlined, color: appTheme.inactive),
         filled: true,
@@ -284,17 +279,17 @@ class _LoginViewState extends ConsumerState<_LoginView> {
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Please enter your email address.';
+          return l10n.pleaseEnterEmail; // <-- LOCALIZED
         }
         if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-          return 'Please enter a valid email address.';
+          return l10n.pleaseEnterValidEmail; // <-- LOCALIZED
         }
         return null;
       },
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(AppLocalizations l10n) {
     final appTheme = ref.watch(themeProvider);
     return TextFormField(
       controller: _passwordController,
@@ -302,7 +297,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
       keyboardType: TextInputType.visiblePassword,
       style: TextStyle(color: appTheme.inactive),
       decoration: InputDecoration(
-        labelText: 'Password',
+        labelText: l10n.password, // <-- LOCALIZED
         labelStyle: TextStyle(color: appTheme.inactive),
         prefixIcon: Icon(Icons.lock_outline, color: appTheme.inactive),
         filled: true,
@@ -318,22 +313,27 @@ class _LoginViewState extends ConsumerState<_LoginView> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your password.';
+          return l10n.pleaseEnterPassword; // <-- LOCALIZED
         }
         if (value.length < 6) {
-          return 'Password must be at least 6 characters long.';
+          return l10n.passwordTooShort(6); // <-- LOCALIZED
         }
         return null;
       },
     );
   }
 
-  Widget _buildLoginOptions() {
+  Widget _buildLoginOptions(AppLocalizations l10n) {
     final appTheme = ref.watch(themeProvider);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+    // Replace Row with Wrap
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween, // Pushes items to the ends
+      crossAxisAlignment: WrapCrossAlignment.center, // Vertically aligns items
       children: [
+        // This child stays the same
         Row(
+          mainAxisSize: MainAxisSize.min, // Important: Makes the inner Row only as wide as it needs to be
           children: [
             Checkbox(
               value: _keepLoggedIn,
@@ -348,14 +348,15 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             GestureDetector(
               onTap: () => setState(() => _keepLoggedIn = !_keepLoggedIn),
               child:
-              Text("Remember me", style: TextStyle(color: appTheme.inactive)),
+              Text(l10n.rememberMe, style: TextStyle(color: appTheme.inactive)),
             ),
           ],
         ),
+        // This child stays the same
         TextButton(
           onPressed: _showForgotPasswordDialog,
           child: Text(
-            'Forgot Password?',
+            l10n.forgotPassword,
             style: TextStyle(
                 color: appTheme.secondary, fontWeight: FontWeight.w600),
           ),
@@ -364,7 +365,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
     );
   }
 
-  Widget _buildAuthActions({required bool isLoading}) {
+  Widget _buildAuthActions({required bool isLoading, required bool isLogin, required AppLocalizations l10n}) {
     final appTheme = ref.watch(themeProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -381,9 +382,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           onPressed: isLoading ? null : _submitForm,
-          child: Text(DefaultTabController.of(context).index == 0
-              ? 'Login'
-              : 'Create Account'),
+          child: Text(isLogin ? l10n.login : l10n.createAccount), // <-- LOCALIZED
         ),
         const SizedBox(height: 20),
         Row(
@@ -392,7 +391,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
                 child: Divider(color: appTheme.inactive.withOpacity(0.3))),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text("OR", style: TextStyle(color: appTheme.inactive)),
+              child: Text(l10n.or, style: TextStyle(color: appTheme.inactive)), // <-- LOCALIZED
             ),
             Expanded(
                 child: Divider(color: appTheme.inactive.withOpacity(0.3))),
@@ -401,7 +400,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         const SizedBox(height: 20),
         ElevatedButton.icon(
           icon: SvgPicture.asset('assets/icons/google.svg', height: 22),
-          label: const Text('Continue with Google'),
+          label: Text(l10n.continueWithGoogle), // <-- LOCALIZED
           onPressed: isLoading
               ? null
               : () =>

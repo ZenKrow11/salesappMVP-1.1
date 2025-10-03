@@ -2,7 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/pages/shopping_mode_screen.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
@@ -18,6 +23,8 @@ class ShoppingSummaryBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     final double totalCost = products.fold(0, (sum, item) => sum + item.currentPrice);
     final double totalSavings = products.fold(0, (sum, item) => sum + (item.normalPrice - item.currentPrice));
@@ -26,48 +33,70 @@ class ShoppingSummaryBar extends ConsumerWidget {
     final itemLimit = isPremium ? 60 : 30;
 
     return Container(
-      // ===== FIX #3: Reduce vertical padding =====
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), // Adjusted to 8 for better balance, 2 was very tight
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: theme.pageBackground,
         border: Border(
           top: BorderSide(color: theme.background, width: 1.0),
         ),
       ),
-      // ===== FIX #2: Use spaceBetween for even distribution =====
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start, // Aligns the top of each column
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ===== FIX #1: Added a new helper for the item count with a title =====
-          _buildItemCountSummary(products.length, itemLimit),
-
-          _buildSummaryItem(
-            'Saved',
-            '${totalSavings.toStringAsFixed(2)} Fr.',
-            theme.savingsColor,
-            CrossAxisAlignment.center, // Center-align the middle element
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 3. PASS l10n TO HELPER METHODS
+              _buildItemCountSummary(products.length, itemLimit, l10n),
+              const SizedBox(width: 20),
+              // 4. REPLACE HARDCODED TEXT
+              _buildSummaryItem(
+                l10n.saved,
+                '${totalSavings.toStringAsFixed(2)} ${l10n.currencyFrancs}',
+                theme.savingsColor,
+                CrossAxisAlignment.start,
+              ),
+              const SizedBox(width: 20),
+              _buildSummaryItem(
+                l10n.total,
+                '${totalCost.toStringAsFixed(2)} ${l10n.currencyFrancs}',
+                theme.secondary,
+                CrossAxisAlignment.start,
+              ),
+            ],
           ),
 
-          _buildSummaryItem(
-            'Total',
-            '${totalCost.toStringAsFixed(2)} Fr.',
-            theme.secondary,
-            CrossAxisAlignment.end, // Right-align the last element
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ShoppingModeScreen()),
+              );
+            },
+            icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 20),
+            label: Text(l10n.shop),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.secondary,
+              foregroundColor: theme.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ===== NEW HELPER WIDGET =====
-  // This gives the item count a title, consistent with the other summary items.
-  Widget _buildItemCountSummary(int filtered, int total) {
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildItemCountSummary(int filtered, int total, AppLocalizations l10n) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // Left-align this block
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Items',
+          l10n.itemsLabel, // <-- LOCALIZED
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
             fontSize: 12,
@@ -83,8 +112,7 @@ class ShoppingSummaryBar extends ConsumerWidget {
     );
   }
 
-  // --- MODIFIED HELPER WIDGET ---
-  // Added an alignment parameter for more flexibility
+  // No changes needed here, as it receives a localized label
   Widget _buildSummaryItem(String label, String value, Color valueColor, CrossAxisAlignment alignment) {
     return Column(
       crossAxisAlignment: alignment,

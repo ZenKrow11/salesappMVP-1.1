@@ -1,5 +1,11 @@
+// lib/components/filter_action_bar.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 class FilterActionBar extends ConsumerWidget {
@@ -17,6 +23,8 @@ class FilterActionBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -32,8 +40,9 @@ class FilterActionBar extends ConsumerWidget {
                 ),
               ),
               onPressed: onReset,
+              // 3. REPLACE HARDCODED TEXT
               child: Text(
-                'RESET',
+                l10n.reset,
                 style: TextStyle(
                   color: theme.inactive,
                   fontWeight: FontWeight.bold,
@@ -53,7 +62,7 @@ class FilterActionBar extends ConsumerWidget {
               ),
               onPressed: isLoading ? null : onApply,
               child: Text(
-                'APPLY',
+                l10n.apply,
                 style: TextStyle(
                   color: theme.primary,
                   fontWeight: FontWeight.bold,

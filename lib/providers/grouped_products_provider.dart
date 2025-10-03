@@ -3,6 +3,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sales_app_mvp/generated/app_localizations.dart'; // Import this
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
@@ -11,34 +12,28 @@ import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 
-/// Group model returned to UI (contains plain product objects).
+// 1. UPDATED PRODUCT GROUP MODEL
 class ProductGroup {
+  final String firestoreName;
   final CategoryStyle style;
   final List<PlainProduct> products;
-  ProductGroup({required this.style, required this.products});
+  ProductGroup({required this.firestoreName, required this.style, required this.products});
 }
 
-/// Input object passed to compute() - NOTE: contains only sendable data
 class _FilterAndGroupInput {
   final List<PlainProduct> allProducts;
   final FilterState filter;
   _FilterAndGroupInput({required this.allProducts, required this.filter});
 }
 
-/// This function runs inside the isolate. It MUST only handle sendable objects
-List<ProductGroup> _processProductDataInBackground(_FilterAndGroupInput input) {
+// 2. ISOLATE FUNCTION (GROUPS BY RAW, NON-TRANSLATED ID)
+Map<String, List<PlainProduct>> _processProductDataInBackground(_FilterAndGroupInput input) {
   debugPrint("[ISOLATE] Starting background processing task...");
-
   final plainProducts = input.allProducts;
-  debugPrint("[ISOLATE] Received ${plainProducts.length} plain products.");
-
   final filter = input.filter;
 
-  // Filtering
   List<PlainProduct> filteredProducts;
-  if (filter.isDefault) {
-    filteredProducts = plainProducts;
-  } else {
+  if (filter.isSearchActive || filter.isFilterActive) {
     filteredProducts = plainProducts.where((product) {
       if (filter.selectedStores.isNotEmpty && !filter.selectedStores.contains(product.store)) return false;
       if (filter.selectedCategories.isNotEmpty && !filter.selectedCategories.contains(product.category)) return false;
@@ -51,56 +46,45 @@ List<ProductGroup> _processProductDataInBackground(_FilterAndGroupInput input) {
       }
       return true;
     }).toList();
+  } else {
+    filteredProducts = plainProducts;
   }
   debugPrint("[ISOLATE] Filtering complete. ${filteredProducts.length} products remaining.");
 
-  if (filteredProducts.isEmpty) {
-    return [];
-  }
+  if (filteredProducts.isEmpty) return {};
 
-  final groupedByDisplayName = groupBy<PlainProduct, String>(
-    filteredProducts,
-        (PlainProduct product) => CategoryService.getGroupingDisplayNameForProduct(product),
+  // Group by the raw 'category' field (the firestoreName). This is stable and non-localized.
+  final groupedByFirestoreName = groupBy<PlainProduct, String>(
+    filteredProducts, (p) => p.category,
   );
 
-  final categoryGroups = <ProductGroup>[];
-  for (final displayName in categoryDisplayOrder) {
-    if (groupedByDisplayName.containsKey(displayName)) {
-      final productList = groupedByDisplayName[displayName]!;
-      final style = CategoryService.getStyleForGroupingName(displayName);
-      categoryGroups.add(ProductGroup(style: style, products: productList));
-    }
-  }
-
-  // Sorting within groups
-  for (final group in categoryGroups) {
-    group.products.sort((a, b) {
+  for (final productList in groupedByFirestoreName.values) {
+    productList.sort((a, b) {
       switch (filter.sortOption) {
-        case SortOption.storeAlphabetical:
-          return a.store.toLowerCase().compareTo(b.store.toLowerCase());
-        case SortOption.productAlphabetical:
-          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        case SortOption.priceHighToLow:
-          return b.currentPrice.compareTo(a.currentPrice);
-        case SortOption.priceLowToHigh:
-          return a.currentPrice.compareTo(b.currentPrice);
-        case SortOption.discountHighToLow:
-          return b.discountRate.compareTo(a.discountRate);
-        case SortOption.discountLowToHigh:
-          return a.discountRate.compareTo(b.discountRate);
+        case SortOption.storeAlphabetical: return a.store.toLowerCase().compareTo(b.store.toLowerCase());
+        case SortOption.productAlphabetical: return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case SortOption.priceHighToLow: return b.currentPrice.compareTo(a.currentPrice);
+        case SortOption.priceLowToHigh: return a.currentPrice.compareTo(b.currentPrice);
+        case SortOption.discountHighToLow: return b.discountRate.compareTo(a.discountRate);
+        case SortOption.discountLowToHigh: return a.discountRate.compareTo(b.discountRate);
       }
-      return 0;
     });
   }
 
-  debugPrint("[ISOLATE] Task complete. Returning ${categoryGroups.length} groups.");
-  return categoryGroups;
+  debugPrint("[ISOLATE] Task complete. Returning ${groupedByFirestoreName.length} groups keyed by firestoreName.");
+  return groupedByFirestoreName;
 }
 
+// 3. PROVIDER TO EXPOSE LOCALIZATIONS TO OTHER PROVIDERS
+final localizationProvider = Provider<AppLocalizations>((ref) {
+  throw UnimplementedError();
+});
+
 /// Provider that returns grouped products for the home page.
-/// IMPORTANT: convert Hive Product -> PlainProduct BEFORE calling compute().
 final homePageProductsProvider =
 FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
+
+  final l10n = ref.watch(localizationProvider);
   final appData = ref.watch(appDataProvider);
   final filter = ref.watch(filterStateProvider);
 
@@ -108,11 +92,34 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
     return [];
   }
 
-  // Convert the Hive-backed Product objects into plain, sendable PlainProduct objects BEFORE compute.
   final plainList = appData.allProducts.map((p) => p.toPlainObject()).toList();
-
   final input = _FilterAndGroupInput(allProducts: plainList, filter: filter);
 
-  // Run background processing on sendable data only.
-  return await compute(_processProductDataInBackground, input);
-});
+  final Map<String, List<PlainProduct>> groupedByFirestoreName = await compute(_processProductDataInBackground, input);
+
+  if (groupedByFirestoreName.isEmpty) {
+    return [];
+  }
+
+  final categoryGroups = <ProductGroup>[];
+  for (final firestoreName in categoryDisplayOrder) {
+    if (groupedByFirestoreName.containsKey(firestoreName)) {
+      final productList = groupedByFirestoreName[firestoreName]!;
+      final style = CategoryService.getLocalizedStyleForGroupingName(firestoreName, l10n);
+
+      categoryGroups.add(ProductGroup(
+        firestoreName: firestoreName,
+        style: style,
+        products: productList,
+      ));
+    }
+  }
+
+  return categoryGroups;
+},
+// --- THIS IS THE FIX ---
+// This explicitly tells Riverpod that this provider depends on localizationProvider.
+// Now, when localizationProvider is overridden, Riverpod knows to re-evaluate this provider too.
+  dependencies: [localizationProvider],
+// -----------------------
+);

@@ -13,4 +13,17 @@ class CategoryStyle {
     required this.color,
     required this.iconAssetPath,
   });
+
+  CategoryStyle copyWith({
+    String? displayName,
+    Color? color,
+    String? iconAssetPath,
+  }) {
+    return CategoryStyle(
+      displayName: displayName ?? this.displayName,
+      color: color ?? this.color,
+      iconAssetPath: iconAssetPath ?? this.iconAssetPath,
+    );
+  }
+
 }

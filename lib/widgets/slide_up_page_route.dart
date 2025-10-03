@@ -1,4 +1,4 @@
-//lib/widgets/slide_up_page_route.dart
+// lib/widgets/slide_up_page_route.dart
 
 import 'package:flutter/material.dart';
 
@@ -8,19 +8,16 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
 
   SlideUpPageRoute({required this.page})
       : super(
-    // Set the duration of the animation.
-    transitionDuration: const Duration(milliseconds: 400),
-    reverseTransitionDuration: const Duration(milliseconds: 400),
+    // --- CHANGE: Reduced duration for a faster transition ---
+    transitionDuration: const Duration(milliseconds: 300),
+    reverseTransitionDuration: const Duration(milliseconds: 300),
 
-    // --- KEY CHANGE 1: Make the route non-opaque ---
     // This is the crucial property. Setting it to false tells Flutter to
     // keep drawing the previous route (the homepage) underneath this one.
     opaque: false,
 
-    // --- KEY CHANGE 2: Remove the default modal barrier color ---
     // By default, non-opaque routes have a semi-transparent black barrier.
-    // Setting this to transparent removes that shadow, so you only see
-    // your own fading background.
+    // Setting this to transparent removes that shadow.
     barrierColor: Colors.transparent,
 
     // The pageBuilder simply returns the widget that should be displayed.
@@ -41,11 +38,9 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
         Widget child,
         ) {
       // Define the "from" and "to" positions for our slide animation.
-      // Offset(0.0, 1.0) is the bottom of the screen.
-      // Offset.zero is the center of the screen (final position).
       final tween = Tween<Offset>(
-        begin: const Offset(0.0, 1.0),
-        end: Offset.zero,
+        begin: const Offset(0.0, 1.0), // from bottom of the screen
+        end: Offset.zero,             // to center
       );
 
       // Add a curve to make the animation feel more natural.
@@ -57,7 +52,6 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
       // Use SlideTransition to animate the child's position.
       return SlideTransition(
         position: tween.animate(curvedAnimation),
-        // The `child` here is the `ProductSwiperScreen` returned from pageBuilder.
         child: child,
       );
     },

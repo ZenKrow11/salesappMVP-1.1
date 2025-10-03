@@ -19,6 +19,9 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+import 'generated/app_localizations_en.dart';
+
 import 'generated/app_localizations.dart';
 //import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -27,26 +30,19 @@ import 'generated/app_localizations.dart';
 //============================================================================
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize all external services here, in the correct order.
   await initializeDateFormatting('de_DE', null);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
 
-
   // START: Block to connect to Firebase Emulators in debug mode
-
   if (kDebugMode) {
     try {
-
       //local emulator
       //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
-
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
       final host = '192.168.1.116';
-
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
     } catch (e) {
@@ -55,13 +51,12 @@ Future<void> main() async {
   }
   // END: Emulator connection block
 
-
   // firebase emulators:start --only firestore,auth
 
   // Initialize Hive for Flutter.
   await Hive.initFlutter();
 
-  // Run the app.
+  // Run the app with a single, simple ProviderScope.
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -78,15 +73,29 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sales App',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
 
-      // --- AuthGate is the single entry point of your app's UI. ---
-      home: const AuthGate(),
+      // The builder provides a context that is *inside* the MaterialApp,
+      // so AppLocalizations.of(context) will work correctly here.
+      builder: (context, child) {
+        return ProviderScope(
+          parent: ProviderScope.containerOf(context), // Link to the root scope
+          overrides: [
+            // This is now safe because the context is valid.
+            localizationProvider.overrideWithValue(AppLocalizations.of(context)!),
+          ],
+          // The 'child' is the widget tree defined by 'home' or 'routes'.
+          child: child!,
+        );
+      },
 
+      home: const AuthGate(),
       routes: {
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),

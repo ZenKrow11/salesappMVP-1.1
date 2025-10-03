@@ -114,6 +114,18 @@ abstract class AppLocalizations {
   /// **'Ad Placeholder\n300 x 250'**
   String get adPlaceholder;
 
+  /// Button text to add an item to a list.
+  ///
+  /// In en, this message translates to:
+  /// **'ADD'**
+  String get add;
+
+  /// Button text indicating an item has already been added to a list.
+  ///
+  /// In en, this message translates to:
+  /// **'ADDED'**
+  String get added;
+
   /// Notification message when an item is added to the default active list.
   ///
   /// In en, this message translates to:
@@ -162,257 +174,257 @@ abstract class AppLocalizations {
   /// **'Categories'**
   String get categories;
 
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Alcoholic Beverages'**
-  String get categoryAlcoholicBeverages;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Baking Ingredients'**
-  String get categoryBakingIngredients;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Beef & Veal'**
-  String get categoryBeefVeal;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Beer'**
-  String get categoryBeer;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Bread'**
-  String get categoryBread;
-
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Bread & Bakery'**
-  String get categoryBreadBakery;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Butter & Eggs'**
-  String get categoryButterEggs;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Cans, Oils, Sauces & Spices'**
-  String get categoryCannedGoodsOilsSaucesSpices;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Cereals & Grains'**
-  String get categoryCerealsGrains;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Cheese'**
-  String get categoryCheese;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Chips & Nuts'**
-  String get categoryChipsNuts;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Chocolate & Cookies'**
-  String get categoryChocolateCookies;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Coffee, Tea & Cocoa'**
-  String get categoryCoffeeTeaCocoa;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Convenience & Ready Meals'**
-  String get categoryConvenienceReadyMeals;
-
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Dairy & Eggs'**
-  String get categoryDairyEggs;
-
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Fish & Meat'**
-  String get categoryFishMeat;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Fish & Seafood'**
-  String get categoryFishSeafood;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Fruits'**
-  String get categoryFruits;
-
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Fruits & Vegetables'**
-  String get categoryFruitsVegetables;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Frozen Products & Soups'**
-  String get categoryFrozenProductsSoups;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Honey, Jam & Spreads'**
-  String get categoryHoneyJamSpreads;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Ice Cream & Sweets'**
-  String get categoryIceCreamSweets;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Meat Mixes & Assorted'**
-  String get categoryMeatMixesAssorted;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Milk & Dairy Products'**
-  String get categoryMilkDairyProducts;
-
-  /// Main category name
+  /// No description provided for @categoryNonAlcoholicBeverages.
   ///
   /// In en, this message translates to:
   /// **'Non-Alcoholic Beverages'**
   String get categoryNonAlcoholicBeverages;
 
-  /// Main category name for miscellaneous items
+  /// No description provided for @categoryCoffeeTeaCocoa.
   ///
   /// In en, this message translates to:
-  /// **'Other'**
-  String get categoryOther;
+  /// **'Coffee, Tea & Cocoa'**
+  String get categoryCoffeeTeaCocoa;
 
-  /// Main category name for pantry staples
-  ///
-  /// In en, this message translates to:
-  /// **'Pantry'**
-  String get categoryPantry;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Pastries & Desserts'**
-  String get categoryPastriesDesserts;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Pork'**
-  String get categoryPork;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Poultry'**
-  String get categoryPoultry;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Rice & Pasta'**
-  String get categoryRicePasta;
-
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Salty Snacks & Sweets'**
-  String get categorySaltySnacksSweets;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Sausages & Cold Cuts'**
-  String get categorySausagesColdCuts;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Snacks & Appetizers'**
-  String get categorySnacksAppetizers;
-
-  /// Sub-category name
+  /// No description provided for @categorySoftDrinksEnergyDrinks.
   ///
   /// In en, this message translates to:
   /// **'Soft Drinks & Energy Drinks'**
   String get categorySoftDrinksEnergyDrinks;
 
-  /// Main category name
-  ///
-  /// In en, this message translates to:
-  /// **'Special Diet'**
-  String get categorySpecialDiet;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Spirits & Assorted'**
-  String get categorySpiritsAssorted;
-
-  /// Sub-category for uncategorized items
-  ///
-  /// In en, this message translates to:
-  /// **'Uncategorized'**
-  String get categoryUncategorized;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Vegan Products'**
-  String get categoryVeganProducts;
-
-  /// Sub-category name
-  ///
-  /// In en, this message translates to:
-  /// **'Vegetables'**
-  String get categoryVegetables;
-
-  /// Sub-category name
+  /// No description provided for @categoryWaterJuices.
   ///
   /// In en, this message translates to:
   /// **'Water & Juices'**
   String get categoryWaterJuices;
 
-  /// Sub-category name
+  /// No description provided for @categoryAlcoholicBeverages.
+  ///
+  /// In en, this message translates to:
+  /// **'Alcoholic Beverages'**
+  String get categoryAlcoholicBeverages;
+
+  /// No description provided for @categoryBeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Beer'**
+  String get categoryBeer;
+
+  /// No description provided for @categorySpiritsAssorted.
+  ///
+  /// In en, this message translates to:
+  /// **'Spirits & Assorted'**
+  String get categorySpiritsAssorted;
+
+  /// No description provided for @categoryWinesSparklingWines.
   ///
   /// In en, this message translates to:
   /// **'Wines & Sparkling Wines'**
   String get categoryWinesSparklingWines;
+
+  /// No description provided for @categoryBreadBakery.
+  ///
+  /// In en, this message translates to:
+  /// **'Bread & Bakery'**
+  String get categoryBreadBakery;
+
+  /// No description provided for @categoryBakingIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Baking Ingredients'**
+  String get categoryBakingIngredients;
+
+  /// No description provided for @categoryBread.
+  ///
+  /// In en, this message translates to:
+  /// **'Bread'**
+  String get categoryBread;
+
+  /// No description provided for @categoryPastriesDesserts.
+  ///
+  /// In en, this message translates to:
+  /// **'Pastries & Desserts'**
+  String get categoryPastriesDesserts;
+
+  /// No description provided for @categoryFishMeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Fish & Meat'**
+  String get categoryFishMeat;
+
+  /// No description provided for @categoryMeatMixesAssorted.
+  ///
+  /// In en, this message translates to:
+  /// **'Meat Mixes & Assorted'**
+  String get categoryMeatMixesAssorted;
+
+  /// No description provided for @categoryFishSeafood.
+  ///
+  /// In en, this message translates to:
+  /// **'Fish & Seafood'**
+  String get categoryFishSeafood;
+
+  /// No description provided for @categoryPoultry.
+  ///
+  /// In en, this message translates to:
+  /// **'Poultry'**
+  String get categoryPoultry;
+
+  /// No description provided for @categoryBeefVeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Beef & Veal'**
+  String get categoryBeefVeal;
+
+  /// No description provided for @categoryPork.
+  ///
+  /// In en, this message translates to:
+  /// **'Pork'**
+  String get categoryPork;
+
+  /// No description provided for @categorySausagesColdCuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Sausages & Cold Cuts'**
+  String get categorySausagesColdCuts;
+
+  /// No description provided for @categoryFruitsVegetables.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruits & Vegetables'**
+  String get categoryFruitsVegetables;
+
+  /// No description provided for @categoryFruits.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruits'**
+  String get categoryFruits;
+
+  /// No description provided for @categoryVegetables.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get categoryVegetables;
+
+  /// No description provided for @categoryDairyEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy & Eggs'**
+  String get categoryDairyEggs;
+
+  /// No description provided for @categoryButterEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'Butter & Eggs'**
+  String get categoryButterEggs;
+
+  /// No description provided for @categoryCheese.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheese'**
+  String get categoryCheese;
+
+  /// No description provided for @categoryMilkDairyProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Milk & Dairy Products'**
+  String get categoryMilkDairyProducts;
+
+  /// No description provided for @categorySaltySnacksSweets.
+  ///
+  /// In en, this message translates to:
+  /// **'Salty Snacks & Sweets'**
+  String get categorySaltySnacksSweets;
+
+  /// No description provided for @categorySnacksAppetizers.
+  ///
+  /// In en, this message translates to:
+  /// **'Snacks & Appetizers'**
+  String get categorySnacksAppetizers;
+
+  /// No description provided for @categoryChipsNuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Chips & Nuts'**
+  String get categoryChipsNuts;
+
+  /// No description provided for @categoryIceCreamSweets.
+  ///
+  /// In en, this message translates to:
+  /// **'Ice Cream & Sweets'**
+  String get categoryIceCreamSweets;
+
+  /// No description provided for @categoryChocolateCookies.
+  ///
+  /// In en, this message translates to:
+  /// **'Chocolate & Cookies'**
+  String get categoryChocolateCookies;
+
+  /// No description provided for @categorySpecialDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Diet'**
+  String get categorySpecialDiet;
+
+  /// No description provided for @categoryConvenienceReadyMeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Convenience & Ready Meals'**
+  String get categoryConvenienceReadyMeals;
+
+  /// No description provided for @categoryVeganProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegan Products'**
+  String get categoryVeganProducts;
+
+  /// No description provided for @categoryPantry.
+  ///
+  /// In en, this message translates to:
+  /// **'Pantry'**
+  String get categoryPantry;
+
+  /// No description provided for @categoryCerealsGrains.
+  ///
+  /// In en, this message translates to:
+  /// **'Cereals & Grains'**
+  String get categoryCerealsGrains;
+
+  /// No description provided for @categoryCannedGoodsOilsSaucesSpices.
+  ///
+  /// In en, this message translates to:
+  /// **'Cans, Oils, Sauces & Spices'**
+  String get categoryCannedGoodsOilsSaucesSpices;
+
+  /// No description provided for @categoryHoneyJamSpreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Honey, Jam & Spreads'**
+  String get categoryHoneyJamSpreads;
+
+  /// No description provided for @categoryRicePasta.
+  ///
+  /// In en, this message translates to:
+  /// **'Rice & Pasta'**
+  String get categoryRicePasta;
+
+  /// No description provided for @categoryFrozenProductsSoups.
+  ///
+  /// In en, this message translates to:
+  /// **'Frozen Products & Soups'**
+  String get categoryFrozenProductsSoups;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get categoryOther;
+
+  /// No description provided for @categoryUncategorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncategorized'**
+  String get categoryUncategorized;
 
   /// Title for the change password page and button.
   ///
@@ -425,6 +437,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check item'**
   String get checkItem;
+
+  /// Button text to close a dialog or screen.
+  ///
+  /// In en, this message translates to:
+  /// **'CLOSE'**
+  String get close;
 
   /// Button text for signing in with a Google account.
   ///
@@ -456,6 +474,12 @@ abstract class AppLocalizations {
   /// **'CREATE AND SELECT'**
   String get createAndSelect;
 
+  /// Success message shown after creating a new shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Created and selected list \"{listName}\"'**
+  String createdAndSelectedList(String listName);
+
   /// AppBar title for the page where users create a new custom item.
   ///
   /// In en, this message translates to:
@@ -480,7 +504,7 @@ abstract class AppLocalizations {
   /// **'Create New'**
   String get createNew;
 
-  /// Abbreviation for the currency Swiss Francs. See notes about number formatting.
+  /// Abbreviation for the currency Swiss Francs.
   ///
   /// In en, this message translates to:
   /// **'Fr.'**
@@ -503,6 +527,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have reached your limit of {count} custom items.'**
   String customItemLimitReached(int count);
+
+  /// Label for the button or section related to user-created custom items.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Items'**
+  String get customItems;
 
   /// Section header on the account page for destructive actions.
   ///
@@ -683,6 +713,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Initializing...'**
   String get initializing;
+
+  /// Label for a counter showing the number of items.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get itemsLabel;
 
   /// Success message shown after an item is saved.
   ///
@@ -1032,13 +1068,19 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// Short button text to begin a shopping session.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get shop;
+
   /// Message shown in shopping mode when the list has no items.
   ///
   /// In en, this message translates to:
   /// **'Your shopping list is empty.'**
   String get shoppingListEmpty;
 
-  /// Title for the shopping mode screen and button.
+  /// Title for the screen where users check off items from their list.
   ///
   /// In en, this message translates to:
   /// **'Shopping Mode'**
@@ -1121,6 +1163,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Theme'**
   String get theme;
+
+  /// Tooltip for the button to switch to list view.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as list'**
+  String get tooltipShowAsList;
+
+  /// Tooltip for the button to switch to grid view.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as grid'**
+  String get tooltipShowAsGrid;
 
   /// Label for the total cost of items in the shopping summary bar.
   ///

@@ -15,6 +15,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adPlaceholder => 'Ad Placeholder\n300 x 250';
 
   @override
+  String get add => 'ADD';
+
+  @override
+  String get added => 'ADDED';
+
+  @override
   String get addedToActiveList => 'Added to active list';
 
   @override
@@ -41,137 +47,140 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categories => 'Categories';
 
   @override
+  String get categoryNonAlcoholicBeverages => 'Non-Alcoholic Beverages';
+
+  @override
+  String get categoryCoffeeTeaCocoa => 'Coffee, Tea & Cocoa';
+
+  @override
+  String get categorySoftDrinksEnergyDrinks => 'Soft Drinks & Energy Drinks';
+
+  @override
+  String get categoryWaterJuices => 'Water & Juices';
+
+  @override
   String get categoryAlcoholicBeverages => 'Alcoholic Beverages';
-
-  @override
-  String get categoryBakingIngredients => 'Baking Ingredients';
-
-  @override
-  String get categoryBeefVeal => 'Beef & Veal';
 
   @override
   String get categoryBeer => 'Beer';
 
   @override
-  String get categoryBread => 'Bread';
+  String get categorySpiritsAssorted => 'Spirits & Assorted';
+
+  @override
+  String get categoryWinesSparklingWines => 'Wines & Sparkling Wines';
 
   @override
   String get categoryBreadBakery => 'Bread & Bakery';
 
   @override
+  String get categoryBakingIngredients => 'Baking Ingredients';
+
+  @override
+  String get categoryBread => 'Bread';
+
+  @override
+  String get categoryPastriesDesserts => 'Pastries & Desserts';
+
+  @override
+  String get categoryFishMeat => 'Fish & Meat';
+
+  @override
+  String get categoryMeatMixesAssorted => 'Meat Mixes & Assorted';
+
+  @override
+  String get categoryFishSeafood => 'Fish & Seafood';
+
+  @override
+  String get categoryPoultry => 'Poultry';
+
+  @override
+  String get categoryBeefVeal => 'Beef & Veal';
+
+  @override
+  String get categoryPork => 'Pork';
+
+  @override
+  String get categorySausagesColdCuts => 'Sausages & Cold Cuts';
+
+  @override
+  String get categoryFruitsVegetables => 'Fruits & Vegetables';
+
+  @override
+  String get categoryFruits => 'Fruits';
+
+  @override
+  String get categoryVegetables => 'Vegetables';
+
+  @override
+  String get categoryDairyEggs => 'Dairy & Eggs';
+
+  @override
   String get categoryButterEggs => 'Butter & Eggs';
+
+  @override
+  String get categoryCheese => 'Cheese';
+
+  @override
+  String get categoryMilkDairyProducts => 'Milk & Dairy Products';
+
+  @override
+  String get categorySaltySnacksSweets => 'Salty Snacks & Sweets';
+
+  @override
+  String get categorySnacksAppetizers => 'Snacks & Appetizers';
+
+  @override
+  String get categoryChipsNuts => 'Chips & Nuts';
+
+  @override
+  String get categoryIceCreamSweets => 'Ice Cream & Sweets';
+
+  @override
+  String get categoryChocolateCookies => 'Chocolate & Cookies';
+
+  @override
+  String get categorySpecialDiet => 'Special Diet';
+
+  @override
+  String get categoryConvenienceReadyMeals => 'Convenience & Ready Meals';
+
+  @override
+  String get categoryVeganProducts => 'Vegan Products';
+
+  @override
+  String get categoryPantry => 'Pantry';
+
+  @override
+  String get categoryCerealsGrains => 'Cereals & Grains';
 
   @override
   String get categoryCannedGoodsOilsSaucesSpices =>
       'Cans, Oils, Sauces & Spices';
 
   @override
-  String get categoryCerealsGrains => 'Cereals & Grains';
-
-  @override
-  String get categoryCheese => 'Cheese';
-
-  @override
-  String get categoryChipsNuts => 'Chips & Nuts';
-
-  @override
-  String get categoryChocolateCookies => 'Chocolate & Cookies';
-
-  @override
-  String get categoryCoffeeTeaCocoa => 'Coffee, Tea & Cocoa';
-
-  @override
-  String get categoryConvenienceReadyMeals => 'Convenience & Ready Meals';
-
-  @override
-  String get categoryDairyEggs => 'Dairy & Eggs';
-
-  @override
-  String get categoryFishMeat => 'Fish & Meat';
-
-  @override
-  String get categoryFishSeafood => 'Fish & Seafood';
-
-  @override
-  String get categoryFruits => 'Fruits';
-
-  @override
-  String get categoryFruitsVegetables => 'Fruits & Vegetables';
-
-  @override
-  String get categoryFrozenProductsSoups => 'Frozen Products & Soups';
-
-  @override
   String get categoryHoneyJamSpreads => 'Honey, Jam & Spreads';
-
-  @override
-  String get categoryIceCreamSweets => 'Ice Cream & Sweets';
-
-  @override
-  String get categoryMeatMixesAssorted => 'Meat Mixes & Assorted';
-
-  @override
-  String get categoryMilkDairyProducts => 'Milk & Dairy Products';
-
-  @override
-  String get categoryNonAlcoholicBeverages => 'Non-Alcoholic Beverages';
-
-  @override
-  String get categoryOther => 'Other';
-
-  @override
-  String get categoryPantry => 'Pantry';
-
-  @override
-  String get categoryPastriesDesserts => 'Pastries & Desserts';
-
-  @override
-  String get categoryPork => 'Pork';
-
-  @override
-  String get categoryPoultry => 'Poultry';
 
   @override
   String get categoryRicePasta => 'Rice & Pasta';
 
   @override
-  String get categorySaltySnacksSweets => 'Salty Snacks & Sweets';
+  String get categoryFrozenProductsSoups => 'Frozen Products & Soups';
 
   @override
-  String get categorySausagesColdCuts => 'Sausages & Cold Cuts';
-
-  @override
-  String get categorySnacksAppetizers => 'Snacks & Appetizers';
-
-  @override
-  String get categorySoftDrinksEnergyDrinks => 'Soft Drinks & Energy Drinks';
-
-  @override
-  String get categorySpecialDiet => 'Special Diet';
-
-  @override
-  String get categorySpiritsAssorted => 'Spirits & Assorted';
+  String get categoryOther => 'Other';
 
   @override
   String get categoryUncategorized => 'Uncategorized';
-
-  @override
-  String get categoryVeganProducts => 'Vegan Products';
-
-  @override
-  String get categoryVegetables => 'Vegetables';
-
-  @override
-  String get categoryWaterJuices => 'Water & Juices';
-
-  @override
-  String get categoryWinesSparklingWines => 'Wines & Sparkling Wines';
 
   @override
   String get changePassword => 'Change Password';
 
   @override
   String get checkItem => 'Check item';
+
+  @override
+  String get close => 'CLOSE';
 
   @override
   String get continueWithGoogle => 'Continue with Google';
@@ -187,6 +196,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createAndSelect => 'CREATE AND SELECT';
+
+  @override
+  String createdAndSelectedList(String listName) {
+    return 'Created and selected list \"$listName\"';
+  }
 
   @override
   String get createCustomItem => 'Create Custom Item';
@@ -215,6 +229,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String customItemLimitReached(int count) {
     return 'You have reached your limit of $count custom items.';
   }
+
+  @override
+  String get customItems => 'Custom Items';
 
   @override
   String get dangerZone => 'Danger Zone';
@@ -321,6 +338,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get initializing => 'Initializing...';
+
+  @override
+  String get itemsLabel => 'Items';
 
   @override
   String itemSavedSuccessfully(String itemName) {
@@ -513,6 +533,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get shop => 'Shop';
+
+  @override
   String get shoppingListEmpty => 'Your shopping list is empty.';
 
   @override
@@ -558,6 +581,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get theme => 'Theme';
+
+  @override
+  String get tooltipShowAsList => 'Show as list';
+
+  @override
+  String get tooltipShowAsGrid => 'Show as grid';
 
   @override
   String get total => 'Total';

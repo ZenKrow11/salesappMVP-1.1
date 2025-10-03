@@ -1,5 +1,10 @@
+// lib/components/filter_bottom_sheet.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
@@ -66,6 +71,8 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     final theme = ref.watch(themeProvider);
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
     final filterNotifier = ref.read(filterStateProvider.notifier);
+    // 2. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       constraints: BoxConstraints(
@@ -79,8 +86,9 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
       ),
       child: Column(
         children: [
-          _buildHeader(theme),
-          _buildTabBar(theme),
+          // 3. PASS THE l10n OBJECT TO HELPER METHODS
+          _buildHeader(theme, l10n),
+          _buildTabBar(theme, l10n),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -159,14 +167,16 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     );
   }
 
-  Widget _buildHeader(AppThemeData theme) {
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildHeader(AppThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 12, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // 4. REPLACE HARDCODED TEXT
           Text(
-            'Filter Products',
+            l10n.filterProducts,
             style: TextStyle(
               fontSize: 20,
               color: theme.secondary,
@@ -182,17 +192,19 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     );
   }
 
-  Widget _buildTabBar(AppThemeData theme) {
+  // UPDATE SIGNATURE TO ACCEPT l10n
+  Widget _buildTabBar(AppThemeData theme, AppLocalizations l10n) {
     return TabBar(
       controller: _tabController,
       labelColor: theme.secondary,
       unselectedLabelColor: theme.inactive,
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
-      tabs: const [
-        Tab(text: 'Stores'),
-        Tab(text: 'Categories'),
-        Tab(text: 'Subcategories'),
+      // REMOVE CONST AND REPLACE TEXT
+      tabs: [
+        Tab(text: l10n.stores),
+        Tab(text: l10n.categories),
+        Tab(text: l10n.subcategories),
       ],
     );
   }
