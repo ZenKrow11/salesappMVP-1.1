@@ -2,9 +2,36 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 import 'package:sales_app_mvp/pages/main_app_screen.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+
+// 2. ADD THE TRANSLATION HELPER FUNCTION
+/// A helper function to translate the loading message key from the state.
+String _getTranslatedMessage(String key, AppLocalizations l10n) {
+  switch (key) {
+    case 'loadingInitializing':
+      return l10n.loadingInitializing;
+    case 'loadingPreparingStorage':
+      return l10n.loadingPreparingStorage;
+    case 'loadingCheckingUpdates':
+      return l10n.loadingCheckingUpdates;
+    case 'loadingDownloadingDeals':
+      return l10n.loadingDownloadingDeals;
+    case 'loadingFromCache':
+      return l10n.loadingFromCache;
+    case 'loadingAllSet':
+      return l10n.loadingAllSet;
+    case 'errorCouldNotLoadData':
+      return l10n.errorCouldNotLoadData;
+    default:
+      return l10n.loadingInitializing; // Fallback
+  }
+}
 
 class LoadingGate extends ConsumerStatefulWidget {
   const LoadingGate({super.key});
@@ -22,24 +49,26 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
     });
   }
 
+  // 3. LISTEN TO NAVIGATE AWAY (REMOVED FROM BUILD METHOD)
   @override
   Widget build(BuildContext context) {
+    ref.listen<AppDataState>(appDataProvider, (previous, next) {
+      if (next.status == InitializationStatus.loaded) {
+        // Use pushReplacementNamed to prevent the user from navigating back to the loading screen.
+        Navigator.of(context).pushReplacementNamed(MainAppScreen.routeName);
+      }
+    });
+
     final appDataState = ref.watch(appDataProvider);
 
-    switch (appDataState.status) {
-      case InitializationStatus.loaded:
-        return const MainAppScreen();
-      case InitializationStatus.uninitialized:
-      case InitializationStatus.loading:
-        return _buildLoadingScreen(appDataState);
-      case InitializationStatus.error:
-        return _buildLoadingScreen(appDataState, hasError: true);
-    }
+    // This logic is cleaner than returning MainAppScreen directly from here.
+    return _buildLoadingScreen(appDataState, hasError: appDataState.status == InitializationStatus.error);
   }
 
-  /// Builds the styled loading/error screen.
   Widget _buildLoadingScreen(AppDataState state, {bool hasError = false}) {
     final theme = ref.watch(themeProvider);
+    // 4. GET THE LOCALIZATIONS OBJECT
+    final l10n = AppLocalizations.of(context)!;
 
     final Color iconColor = hasError ? Colors.red : theme.secondary;
     final Color textColor = hasError ? Colors.red : theme.inactive;
@@ -49,29 +78,21 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
-      // CHANGE 1: Wrapped the body in a LayoutBuilder and SingleChildScrollView
-      // This prevents content from overflowing on small screens.
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight( // Ensures the Column tries to be as tall as its parent
+              child: IntrinsicHeight(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Spacer(flex: 3), // Pushes content down from the top
-
-                      // CHANGE 2: Ad placeholder is now wrapped in Flexible
-                      // This allows it to shrink if needed.
+                      const Spacer(flex: 3),
                       Flexible(
-                        flex: 5, // Gives it proportional space
+                        flex: 5,
                         child: ConstrainedBox(
-                          // It can be UP TO 250px tall, but can be smaller.
-                          constraints: const BoxConstraints(
-                            maxHeight: 250,
-                          ),
+                          constraints: const BoxConstraints(maxHeight: 250),
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 24),
                             width: double.infinity,
@@ -82,7 +103,8 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                             ),
                             child: Center(
                               child: Text(
-                                'Ad Placeholder\n300 x 250',
+                                // 5. LOCALIZE THE AD PLACEHOLDER TEXT
+                                l10n.adPlaceholder,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: theme.inactive, fontSize: 18),
                               ),
@@ -90,10 +112,7 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                           ),
                         ),
                       ),
-
-                      const Spacer(flex: 2), // Space between ad and loading info
-
-                      // This section is now the focal point
+                      const Spacer(flex: 2),
                       Icon(
                         hasError ? Icons.error_outline : Icons.shopping_cart_checkout,
                         size: 60,
@@ -103,7 +122,8 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: Text(
-                          state.loadingMessage,
+                          // 6. TRANSLATE THE KEY FROM THE STATE
+                          _getTranslatedMessage(state.loadingMessage, l10n),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
@@ -116,7 +136,7 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 60.0),
                         child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: state.loadingProgress ?? 0.0),
+                          tween: Tween(begin: 0.0, end: state.loadingProgress),
                           duration: const Duration(milliseconds: 300),
                           builder: (context, value, child) {
                             return LinearProgressIndicator(
@@ -129,8 +149,7 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                           },
                         ),
                       ),
-
-                      const Spacer(flex: 4), // More space at the bottom to push everything up
+                      const Spacer(flex: 4),
                     ],
                   ),
                 ),

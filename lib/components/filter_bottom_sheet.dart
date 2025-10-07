@@ -3,15 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
+// (imports are the same)
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
-
 import 'stores_filter_tab.dart';
 import 'categories_filter_tab.dart';
 import 'subcategories_filter_tab.dart';
@@ -26,23 +24,20 @@ class FilterBottomSheet extends ConsumerStatefulWidget {
 
 class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     with SingleTickerProviderStateMixin {
+  // ... (initState, dispose, and other methods are the same)
   late FilterState _localFilterState;
   late TabController _tabController;
-
   bool _isIncludeMode = true;
   Set<String> _tappedStores = {};
-
   final Map<String, Color> _subCategoryColorMap = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-
     final initialGlobalState = ref.read(filterStateProvider);
     _localFilterState = initialGlobalState;
     _tappedStores = Set<String>.from(initialGlobalState.selectedStores);
-
     for (var mainCat in allCategories) {
       for (var subCat in mainCat.subcategories) {
         _subCategoryColorMap[subCat.name] = mainCat.style.color;
@@ -66,12 +61,12 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
     final filterNotifier = ref.read(filterStateProvider.notifier);
-    // 2. GET THE LOCALIZATIONS OBJECT
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
@@ -84,97 +79,101 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
           topRight: Radius.circular(24),
         ),
       ),
-      child: Column(
-        children: [
-          // 3. PASS THE l10n OBJECT TO HELPER METHODS
-          _buildHeader(theme, l10n),
-          _buildTabBar(theme, l10n),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                StoresFilterTab(
-                  isIncludeMode: _isIncludeMode,
-                  tappedStores: _tappedStores,
-                  onToggleStore: (store) => _toggleSetOption(_tappedStores, store),
-                  onToggleMode: () => setState(() {
-                    _isIncludeMode = !_isIncludeMode;
-                    _tappedStores.clear();
-                  }),
-                ),
-                CategoriesFilterTab(
-                  selectedCategories: _localFilterState.selectedCategories,
-                  onToggleCategory: (category) {
-                    setState(() {
-                      final current = _localFilterState.selectedCategories.toSet();
-                      if (current.contains(category)) {
-                        current.remove(category);
-                      } else {
-                        current.add(category);
-                      }
-                      _localFilterState = _localFilterState.copyWith(
-                        selectedCategories: current.toList(),
-                        selectedSubcategories: [],
-                      );
-                    });
-                  },
-                ),
-                SubcategoriesFilterTab(
-                  localFilterState: _localFilterState,
-                  subCategoryColorMap: _subCategoryColorMap,
-                  onToggleSubcategory: (subcategory) {
-                    setState(() {
-                      final current = _localFilterState.selectedSubcategories.toSet();
-                      if (current.contains(subcategory)) {
-                        current.remove(subcategory);
-                      } else {
-                        current.add(subcategory);
-                      }
-                      _localFilterState = _localFilterState.copyWith(
-                        selectedSubcategories: current.toList(),
-                      );
-                    });
-                  },
-                ),
-              ],
+      // --- THIS IS THE FIX ---
+      // Wrap the main Column in a SafeArea to prevent overlapping
+      // with the system navigation bar at the bottom.
+      child: SafeArea(
+        top: false, // Not needed for a bottom sheet
+        bottom: true,
+        child: Column(
+          children: [
+            _buildHeader(theme, l10n),
+            _buildTabBar(theme, l10n),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  StoresFilterTab(
+                    isIncludeMode: _isIncludeMode,
+                    tappedStores: _tappedStores,
+                    onToggleStore: (store) => _toggleSetOption(_tappedStores, store),
+                    onToggleMode: () => setState(() {
+                      _isIncludeMode = !_isIncludeMode;
+                      _tappedStores.clear();
+                    }),
+                  ),
+                  CategoriesFilterTab(
+                    selectedCategories: _localFilterState.selectedCategories,
+                    onToggleCategory: (category) {
+                      setState(() {
+                        final current = _localFilterState.selectedCategories.toSet();
+                        if (current.contains(category)) {
+                          current.remove(category);
+                        } else {
+                          current.add(category);
+                        }
+                        _localFilterState = _localFilterState.copyWith(
+                          selectedCategories: current.toList(),
+                          selectedSubcategories: [],
+                        );
+                      });
+                    },
+                  ),
+                  SubcategoriesFilterTab(
+                    localFilterState: _localFilterState,
+                    subCategoryColorMap: _subCategoryColorMap,
+                    onToggleSubcategory: (subcategory) {
+                      setState(() {
+                        final current = _localFilterState.selectedSubcategories.toSet();
+                        if (current.contains(subcategory)) {
+                          current.remove(subcategory);
+                        } else {
+                          current.add(subcategory);
+                        }
+                        _localFilterState = _localFilterState.copyWith(
+                          selectedSubcategories: current.toList(),
+                        );
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          FilterActionBar(
-            onReset: () => setState(() {
-              _isIncludeMode = true;
-              _tappedStores.clear();
-              _localFilterState = const FilterState();
-            }),
-            onApply: () {
-              final allStores = asyncStoreOptions.value ?? [];
-              final finalSelectedStores = _isIncludeMode
-                  ? _tappedStores.toList()
-                  : Set<String>.from(allStores)
-                  .difference(_tappedStores)
-                  .toList();
+            FilterActionBar(
+              onReset: () => setState(() {
+                _isIncludeMode = true;
+                _tappedStores.clear();
+                _localFilterState = const FilterState();
+              }),
+              onApply: () {
+                final allStores = asyncStoreOptions.value ?? [];
+                final finalSelectedStores = _isIncludeMode
+                    ? _tappedStores.toList()
+                    : Set<String>.from(allStores)
+                    .difference(_tappedStores)
+                    .toList();
 
-              _localFilterState = _localFilterState.copyWith(
-                selectedStores: finalSelectedStores,
-              );
+                _localFilterState = _localFilterState.copyWith(
+                  selectedStores: finalSelectedStores,
+                );
 
-              filterNotifier.state = _localFilterState;
-              Navigator.pop(context);
-            },
-            isLoading: asyncStoreOptions.isLoading,
-          ),
-        ],
+                filterNotifier.state = _localFilterState;
+                Navigator.pop(context);
+              },
+              isLoading: asyncStoreOptions.isLoading,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // UPDATE SIGNATURE TO ACCEPT l10n
   Widget _buildHeader(AppThemeData theme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 12, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 4. REPLACE HARDCODED TEXT
           Text(
             l10n.filterProducts,
             style: TextStyle(
@@ -192,7 +191,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
     );
   }
 
-  // UPDATE SIGNATURE TO ACCEPT l10n
   Widget _buildTabBar(AppThemeData theme, AppLocalizations l10n) {
     return TabBar(
       controller: _tabController,
@@ -200,7 +198,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet>
       unselectedLabelColor: theme.inactive,
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
-      // REMOVE CONST AND REPLACE TEXT
       tabs: [
         Tab(text: l10n.stores),
         Tab(text: l10n.categories),

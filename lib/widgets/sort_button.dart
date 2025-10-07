@@ -5,16 +5,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/components/sort_bottom_sheet.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+// --- ADDED IMPORT ---
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 class SortButton extends ConsumerWidget {
   const SortButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // --- GET LOCALIZATIONS ---
+    final l10n = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
 
     return ElevatedButton.icon(
       icon: Icon(Icons.sort, color: theme.secondary, size: 22.0),
-      label: Text('Sort', style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
+      // --- USE LOCALIZED STRING ---
+      label: Text(l10n.sort, style: TextStyle(color: theme.inactive), overflow: TextOverflow.ellipsis),
       onPressed: () {
         showModalBottomSheet(
           context: context,

@@ -17,7 +17,7 @@ class PlainProduct implements Categorizable {
   final String imageUrl;
   final List<String> nameTokens;
   final DateTime? dealStart;
-  final String? sonderkondition;
+  final String? specialCondition; // <-- RENAMED from sonderkondition
   final DateTime? dealEnd;
   final bool isCustom;
   final bool isOnSale;
@@ -35,7 +35,7 @@ class PlainProduct implements Categorizable {
     required this.imageUrl,
     required this.nameTokens,
     this.dealStart,
-    this.sonderkondition,
+    this.specialCondition, // <-- RENAMED from sonderkondition
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,

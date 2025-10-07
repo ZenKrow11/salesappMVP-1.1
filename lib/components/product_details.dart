@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 import 'package:sales_app_mvp/components/category_chip.dart';
@@ -34,26 +33,27 @@ class ProductDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onDoubleTap: () => _toggleItemInList(context, ref),
-      onLongPress: () {
-        final theme = ref.read(themeProvider);
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          useRootNavigator: true,
-          backgroundColor: theme.background,
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (ctx) => const ShoppingListBottomSheet(),
-        );
-      },
-      child: _buildCardContent(context, ref),
+    return SafeArea(
+      child: GestureDetector(
+        onDoubleTap: () => _toggleItemInList(context, ref),
+        onLongPress: () {
+          final theme = ref.read(themeProvider);
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            useRootNavigator: true,
+            backgroundColor: theme.background,
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            builder: (ctx) => const ShoppingListBottomSheet(),
+          );
+        },
+        child: _buildCardContent(context, ref),
+      ),
     );
   }
 
   void _toggleItemInList(BuildContext context, WidgetRef ref) {
-    // 2. GET LOCALIZATIONS FOR NOTIFICATIONS
     final l10n = AppLocalizations.of(context)!;
     final activeList = ref.read(activeShoppingListProvider);
 
@@ -72,7 +72,7 @@ class ProductDetails extends ConsumerWidget {
         imageUrl: product.imageUrl,
         nameTokens: product.nameTokens,
         dealStart: product.dealStart,
-        sonderkondition: product.sonderkondition,
+        specialCondition: product.specialCondition, // <-- UPDATED
         dealEnd: product.dealEnd,
         isCustom: product.isCustom,
         isOnSale: product.isOnSale);
@@ -82,7 +82,6 @@ class ProductDetails extends ConsumerWidget {
     shoppingListProducts.any((item) => item.id == product.id);
     if (isItemInList) {
       notifier.removeItemFromList(hiveProduct);
-      // 3. USE LOCALIZED, PARAMETERIZED NOTIFICATION MESSAGES
       showTopNotification(context, message: l10n.removedFrom(activeList), theme: theme);
     } else {
       notifier.addToList(hiveProduct);
@@ -93,7 +92,7 @@ class ProductDetails extends ConsumerWidget {
   void _launchURL(BuildContext context, WidgetRef ref, String url) async {
     final uri = Uri.parse(url);
     final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!; // GET LOCALIZATIONS
+    final l10n = AppLocalizations.of(context)!;
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $url';
@@ -103,7 +102,7 @@ class ProductDetails extends ConsumerWidget {
       if (context.mounted) {
         showTopNotification(
           context,
-          message: l10n.couldNotOpenProductLink, // USE LOCALIZED MESSAGE
+          message: l10n.couldNotOpenProductLink,
           theme: theme,
         );
       }
@@ -119,7 +118,7 @@ class ProductDetails extends ConsumerWidget {
 
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.0),
         decoration: BoxDecoration(
             color: theme.primary,
             borderRadius: BorderRadius.circular(20.0),
@@ -146,13 +145,12 @@ class ProductDetails extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
-                      _buildSonderkonditionInfo(theme),
+                      _buildSpecialConditionInfo(theme), // <-- RENAMED method call
                       const SizedBox(height: 8),
                       _buildImageContainer(
                           context, ref, theme, isInShoppingList),
                       const SizedBox(height: 12),
                       _buildPriceRow(ref),
-                      // 4. PASS CONTEXT TO HELPER TO GET LOCALIZATIONS
                       _buildAvailabilityInfo(context, theme),
                       const Spacer(),
                       _buildActionRow(context, ref, theme, isInShoppingList),
@@ -167,7 +165,6 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildActionRow(BuildContext context, WidgetRef ref, AppThemeData theme,
       bool isInShoppingList) {
-    // GET LOCALIZATIONS FOR THIS WIDGET
     final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -195,7 +192,7 @@ class ProductDetails extends ConsumerWidget {
       onPressed: () => Navigator.of(context).pop(),
       icon: Icon(Icons.close, color: theme.accent),
       label: Text(
-        l10n.close, // <-- LOCALIZED
+        l10n.close,
         style: TextStyle(
           color: theme.accent,
           fontWeight: FontWeight.bold,
@@ -218,7 +215,7 @@ class ProductDetails extends ConsumerWidget {
         onPressed: () => _toggleItemInList(context, ref),
         icon: Icon(Icons.check, color: theme.primary),
         label: Text(
-          l10n.added, // <-- LOCALIZED
+          l10n.added,
           style: TextStyle(
             color: theme.primary,
             fontWeight: FontWeight.bold,
@@ -237,7 +234,7 @@ class ProductDetails extends ConsumerWidget {
         onPressed: () => _toggleItemInList(context, ref),
         icon: Icon(Icons.add, color: theme.secondary),
         label: Text(
-          l10n.add, // <-- LOCALIZED
+          l10n.add,
           style: TextStyle(
             color: theme.secondary,
             fontWeight: FontWeight.bold,
@@ -315,19 +312,16 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // UPDATE SIGNATURE TO ACCEPT CONTEXT
   Widget _buildAvailabilityInfo(BuildContext context, AppThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
     String formatDate(DateTime? date) {
       if (date == null) return '';
-      // This will use the locale set in main.dart ('de_DE') for formatting.
       return DateFormat.yMd(Localizations.localeOf(context).toString()).format(date);
     }
 
     final fromDate = formatDate(product.dealStart);
     final toDate = formatDate(product.dealEnd);
     String availabilityText;
-    // 5. USE LOCALIZED, PARAMETERIZED STRINGS FOR DATES
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       availabilityText = l10n.validFromTo(fromDate, toDate);
     } else if (fromDate.isNotEmpty) {
@@ -354,7 +348,6 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // NOTE: Price row now uses the currency Francs key for consistency
   Widget _buildPriceRow(WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(ref.context)!;
@@ -392,9 +385,7 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // No changes needed in the remaining methods
   Widget _buildHeader(BuildContext context, WidgetRef ref, AppThemeData theme) {
-    // ...
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
@@ -415,7 +406,6 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildCategoryRow() {
-    // ...
     return Row(
       children: [
         Expanded(
@@ -433,7 +423,6 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildSelectListButton(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
-    // ...
     final activeList = ref.watch(activeShoppingListProvider);
     final buttonText = activeList;
     return InkWell(
@@ -465,7 +454,6 @@ class ProductDetails extends ConsumerWidget {
   }
 
   Widget _buildProductName(AppThemeData theme) {
-    // ...
     return AutoSizeText(
       product.name,
       style: TextStyle(
@@ -476,15 +464,15 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  Widget _buildSonderkonditionInfo(AppThemeData theme) {
-    // ...
-    if (product.sonderkondition == null) return const SizedBox.shrink();
+  // --- RENAMED & UPDATED METHOD ---
+  Widget _buildSpecialConditionInfo(AppThemeData theme) {
+    if (product.specialCondition == null) return const SizedBox.shrink(); // <-- UPDATED
     return Row(children: [
       Icon(Icons.star, color: theme.secondary, size: 26),
       const SizedBox(width: 8),
       Expanded(
         child: AutoSizeText(
-          product.sonderkondition!,
+          product.specialCondition!, // <-- UPDATED
           style: TextStyle(
               color: theme.inactive, fontSize: 18, fontWeight: FontWeight.w500),
           maxLines: 2,

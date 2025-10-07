@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
@@ -38,7 +37,6 @@ class ProductTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 2. GET THE LOCALIZATIONS OBJECT
     final l10n = AppLocalizations.of(context)!;
 
     final categorizableProduct = product as Categorizable;
@@ -55,7 +53,8 @@ class ProductTile extends ConsumerWidget {
           discountPercentage: product.discountPercentage, category: product.category,
           subcategory: product.subcategory, url: product.url, imageUrl: product.imageUrl,
           nameTokens: product.nameTokens, dealStart: product.dealStart,
-          sonderkondition: product.sonderkondition, dealEnd: product.dealEnd,
+          specialCondition: product.specialCondition, // <-- UPDATED
+          dealEnd: product.dealEnd,
           isCustom: product.isCustom, isOnSale: product.isOnSale
       );
     }
@@ -69,7 +68,6 @@ class ProductTile extends ConsumerWidget {
 
         if (isInShoppingList) {
           notifier.removeItemFromList(hiveProduct);
-          // 3. REPLACE HARDCODED NOTIFICATION TEXT
           showTopNotification(context, message: l10n.removedFromList, theme: theme);
         } else {
           notifier.addToList(hiveProduct);
@@ -94,7 +92,6 @@ class ProductTile extends ConsumerWidget {
                 Navigator.of(ctx).pop();
                 showTopNotification(
                   context,
-                  // USE PARAMETERIZED STRING
                   message: l10n.addedTo(selectedListId),
                   theme: theme,
                 );
@@ -124,7 +121,6 @@ class ProductTile extends ConsumerWidget {
               borderRadius: BorderRadius.circular(10.0),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                // 4. PASS l10n OBJECT TO HELPER
                 child: _buildContent(context, ref, l10n),
               ),
             ),
@@ -156,7 +152,6 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  // UPDATE SIGNATURE TO ACCEPT l10n
   Widget _buildContent(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -178,7 +173,7 @@ class ProductTile extends ConsumerWidget {
                   maxWidth: double.infinity,
                   fit: BoxFit.contain,
                 ),
-                if (product.sonderkondition != null)
+                if (product.specialCondition != null) // <-- UPDATED
                   Positioned(
                     top: 0,
                     left: 6,
@@ -210,7 +205,6 @@ class ProductTile extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        // PASS l10n OBJECT TO HELPER
         _buildPriceRow(context, ref, l10n),
       ],
     );
@@ -246,7 +240,6 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  // UPDATE SIGNATURE TO ACCEPT l10n
   Widget _buildPriceRow(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     return Row(
@@ -264,7 +257,6 @@ class ProductTile extends ConsumerWidget {
         const SizedBox(width: 8),
         Expanded(
           child: AutoSizeText(
-            // 5. USE LOCALIZED CURRENCY SYMBOL
             '${product.currentPrice.toStringAsFixed(2)} ${l10n.currencyFrancs}',
             style: GoogleFonts.montserrat(
               fontSize: 24,

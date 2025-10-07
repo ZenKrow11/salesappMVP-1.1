@@ -6,11 +6,16 @@ import 'package:sales_app_mvp/components/filter_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+// --- ADDED IMPORT ---
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+
 class FilterButton extends ConsumerWidget {
   const FilterButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // --- GET LOCALIZATIONS ---
+    final l10n = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
     final isFilterActive = ref.watch(filterStateProvider.select((f) => f.isFilterActive));
 
@@ -20,7 +25,8 @@ class FilterButton extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
-              'Filter',
+              // --- USE LOCALIZED STRING ---
+              l10n.filter,
               style: TextStyle(color: theme.inactive),
               overflow: TextOverflow.ellipsis,
             ),
@@ -59,7 +65,7 @@ class FilterButton extends ConsumerWidget {
   }
 }
 
-// Helper widget for the clear button
+// Helper widget for the clear button (No text, so no changes needed)
 class _ClearButton extends ConsumerWidget {
   final VoidCallback onPressed;
   const _ClearButton({required this.onPressed});

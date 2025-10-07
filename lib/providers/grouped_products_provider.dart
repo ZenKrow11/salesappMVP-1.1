@@ -55,7 +55,7 @@ Map<String, List<PlainProduct>> _processProductDataInBackground(_FilterAndGroupI
 
   // Group by the raw 'category' field (the firestoreName). This is stable and non-localized.
   final groupedByFirestoreName = groupBy<PlainProduct, String>(
-    filteredProducts, (p) => p.category,
+    filteredProducts, (p) => (p.category == null || p.category.isEmpty) ? 'Sonstige' : p.category,
   );
 
   for (final productList in groupedByFirestoreName.values) {
@@ -96,6 +96,7 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   final input = _FilterAndGroupInput(allProducts: plainList, filter: filter);
 
   final Map<String, List<PlainProduct>> groupedByFirestoreName = await compute(_processProductDataInBackground, input);
+  print('[DEBUG] Categories FOUND in data: ${groupedByFirestoreName.keys.toList()}');
 
   if (groupedByFirestoreName.isEmpty) {
     return [];

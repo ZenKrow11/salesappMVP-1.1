@@ -1247,6 +1247,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome to {appName}'**
   String welcomeToAppName(String appName);
+
+  /// Initial loading message.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing...'**
+  String get loadingInitializing;
+
+  /// Loading message when setting up Hive/local database.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing local storage...'**
+  String get loadingPreparingStorage;
+
+  /// Loading message when checking if a sync from Firestore is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates...'**
+  String get loadingCheckingUpdates;
+
+  /// Loading message during a sync from Firestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading latest deals...'**
+  String get loadingDownloadingDeals;
+
+  /// Loading message when using local data instead of syncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading from local cache...'**
+  String get loadingFromCache;
+
+  /// Final success message before entering the app.
+  ///
+  /// In en, this message translates to:
+  /// **'All set!'**
+  String get loadingAllSet;
+
+  /// Error message shown on the loading screen if initialization fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: Could not load data.'**
+  String get errorCouldNotLoadData;
 }
 
 class _AppLocalizationsDelegate

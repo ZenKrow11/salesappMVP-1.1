@@ -15,10 +15,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adPlaceholder => 'Werbeplatzhalter\n300 x 250';
 
   @override
-  String get add => 'ADD';
+  String get add => 'HINZUFÜGEN';
 
   @override
-  String get added => 'ADDED';
+  String get added => 'HINZUGEFÜGT';
 
   @override
   String get addedToActiveList => 'Zur aktiven Liste hinzugefügt';
@@ -181,7 +181,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkItem => 'Artikel abhaken';
 
   @override
-  String get close => 'CLOSE';
+  String get close => 'SCHLIESSEN';
 
   @override
   String get continueWithGoogle => 'Mit Google fortfahren';
@@ -201,7 +201,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String createdAndSelectedList(String listName) {
-    return 'Created and selected list \"$listName\"';
+    return 'Liste \"$listName\" erstellt und ausgewählt';
   }
 
   @override
@@ -233,7 +233,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get customItems => 'Custom Items';
+  String get customItems => 'Eigene Artikel';
 
   @override
   String get dangerZone => 'Gefahrenzone';
@@ -343,7 +343,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get initializing => 'Initialisiere...';
 
   @override
-  String get itemsLabel => 'Items';
+  String get itemsLabel => 'Artikel';
 
   @override
   String itemSavedSuccessfully(String itemName) {
@@ -540,7 +540,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings => 'Einstellungen';
 
   @override
-  String get shop => 'Shop';
+  String get shop => 'Einkaufen';
 
   @override
   String get shoppingListEmpty => 'Deine Einkaufsliste ist leer.';
@@ -590,10 +590,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get theme => 'Design';
 
   @override
-  String get tooltipShowAsList => 'Show as list';
+  String get tooltipShowAsList => 'Als Liste anzeigen';
 
   @override
-  String get tooltipShowAsGrid => 'Show as grid';
+  String get tooltipShowAsGrid => 'Als Gitter anzeigen';
 
   @override
   String get total => 'Total';
@@ -638,4 +638,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String welcomeToAppName(String appName) {
     return 'Willkommen bei $appName';
   }
+
+  @override
+  String get loadingInitializing => 'Initialisiere...';
+
+  @override
+  String get loadingPreparingStorage => 'Lokaler Speicher wird vorbereitet...';
+
+  @override
+  String get loadingCheckingUpdates => 'Suche nach Updates...';
+
+  @override
+  String get loadingDownloadingDeals =>
+      'Neueste Angebote werden heruntergeladen...';
+
+  @override
+  String get loadingFromCache => 'Lade aus dem lokalen Cache...';
+
+  @override
+  String get loadingAllSet => 'Alles bereit!';
+
+  @override
+  String get errorCouldNotLoadData =>
+      'Fehler: Daten konnten nicht geladen werden.';
 }

@@ -642,4 +642,25 @@ class AppLocalizationsFr extends AppLocalizations {
   String welcomeToAppName(String appName) {
     return 'Bienvenue sur $appName';
   }
+
+  @override
+  String get loadingInitializing => 'Initializing...';
+
+  @override
+  String get loadingPreparingStorage => 'Preparing local storage...';
+
+  @override
+  String get loadingCheckingUpdates => 'Checking for updates...';
+
+  @override
+  String get loadingDownloadingDeals => 'Downloading latest deals...';
+
+  @override
+  String get loadingFromCache => 'Loading from local cache...';
+
+  @override
+  String get loadingAllSet => 'All set!';
+
+  @override
+  String get errorCouldNotLoadData => 'Error: Could not load data.';
 }

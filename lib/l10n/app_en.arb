@@ -552,5 +552,27 @@
   "@welcomeToAppName": {
     "description": "Welcome message on the login screen.",
     "placeholders": { "appName": { "type": "String" } }
-  }
+  },
+
+  "loadingInitializing": "Initializing...",
+  "@loadingInitializing": { "description": "Initial loading message." },
+
+  "loadingPreparingStorage": "Preparing local storage...",
+  "@loadingPreparingStorage": { "description": "Loading message when setting up Hive/local database." },
+
+  "loadingCheckingUpdates": "Checking for updates...",
+  "@loadingCheckingUpdates": { "description": "Loading message when checking if a sync from Firestore is needed." },
+
+  "loadingDownloadingDeals": "Downloading latest deals...",
+  "@loadingDownloadingDeals": { "description": "Loading message during a sync from Firestore." },
+
+  "loadingFromCache": "Loading from local cache...",
+  "@loadingFromCache": { "description": "Loading message when using local data instead of syncing." },
+
+  "loadingAllSet": "All set!",
+  "@loadingAllSet": { "description": "Final success message before entering the app." },
+
+  "errorCouldNotLoadData": "Error: Could not load data.",
+  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."}
 }
+

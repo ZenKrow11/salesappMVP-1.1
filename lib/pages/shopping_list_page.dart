@@ -15,6 +15,7 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
 
+
 class ShoppingListPage extends ConsumerWidget {
   const ShoppingListPage({super.key});
 

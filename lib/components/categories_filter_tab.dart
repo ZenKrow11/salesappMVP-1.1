@@ -1,8 +1,14 @@
+// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\components\categories_filter_tab.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
+
+// 1. ADD THE REQUIRED IMPORTS for localization and your service.
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+import 'package:sales_app_mvp/services/category_service.dart';
 
 class CategoriesFilterTab extends ConsumerWidget {
   final List<String> selectedCategories;
@@ -16,8 +22,10 @@ class CategoriesFilterTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 2. GET THE LOCALIZATIONS OBJECT from the context.
+    final l10n = AppLocalizations.of(context)!;
+
     return GridView.builder(
-      // --- CHANGE: Slightly reduced vertical padding to give more room ---
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -31,9 +39,15 @@ class CategoriesFilterTab extends ConsumerWidget {
         final isSelected =
         selectedCategories.contains(mainCategory.firestoreName);
 
+        // 3. TRANSLATE THE KEY using your CategoryService.
+        final localizedName = CategoryService.getLocalizedCategoryName(
+          mainCategory.style.displayName, // This is the key
+          l10n,
+        );
+
         return _buildCategoryChip(
           ref,
-          name: mainCategory.style.displayName,
+          name: localizedName, // <-- 4. PASS THE TRANSLATED NAME to the chip.
           iconAssetPath: mainCategory.style.iconAssetPath,
           color: mainCategory.style.color,
           isSelected: isSelected,
@@ -59,7 +73,7 @@ class CategoriesFilterTab extends ConsumerWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), // Adjusted padding
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(10),
@@ -71,9 +85,6 @@ class CategoriesFilterTab extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // --- FIX: Replaced fixed-size SizedBox with Expanded ---
-            // This makes the SVG icon flexible. It will now shrink to fit
-            // the available space after the text has been laid out.
             Expanded(
               child: SvgPicture.asset(
                 iconAssetPath,
