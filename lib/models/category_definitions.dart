@@ -5,28 +5,29 @@ import 'package:sales_app_mvp/models/category_style.dart';
 
 const String _iconBasePath = 'assets/images/category_icons/';
 
-// THIS LIST NOW USES THE DATABASE NAMES, NOT DISPLAY NAMES
+// UPDATED: 'non-alcoholic-beverages' is now 'beverages'
 const List<String> categoryDisplayOrder = [
-  'Alkoholfreie Getränke',
-  'Alkoholische Getränke',
-  'Brot und Backwaren',
-  'Fisch und Fleisch',
-  'Früchte und Gemüse',
-  'Milchprodukte und Eier',
-  'Salzige Snacks und Süsswaren',
-  'Spezifische Ernährung',
-  'Vorräte',
-  'Sonstiges',
+  'beverages', // Changed from 'non-alcoholic-beverages'
+  'alcoholic-beverages',
+  'bread-bakery',
+  'fish-meat',
+  'fruits-vegetables',
+  'dairy-eggs',
+  'salty-snacks-sweets',
+  'special-diet',
+  'pantry',
+  'custom',
+  'other',
 ];
 
 class SubCategory {
-  final String name; // This is now a localization KEY
+  final String name;
   final String iconAssetPath;
   const SubCategory({required this.name, required this.iconAssetPath});
 }
 
 class MainCategory {
-  final String firestoreName; // This is the ID from the database
+  final String firestoreName;
   final CategoryStyle style;
   final List<SubCategory> subcategories;
   const MainCategory({
@@ -36,19 +37,24 @@ class MainCategory {
   });
 }
 
-// THE ENTIRE LIST NOW USES LOCALIZATION KEYS FOR USER-FACING TEXT
 final List<MainCategory> allCategories = [
+  // UPDATED: This whole block is changed
   MainCategory(
-    firestoreName: 'Alkoholfreie Getränke',
-    style: const CategoryStyle(displayName: 'categoryNonAlcoholicBeverages', color: Color(0xFF27CBFD), iconAssetPath: '${_iconBasePath}bottle.svg'),
+    firestoreName: 'beverages', // Changed key
+    style: const CategoryStyle(
+        displayName: 'categoryBeverages', // Changed display name key
+        color: Color(0xFF27CBFD),
+        iconAssetPath: '${_iconBasePath}bottle.svg'
+    ),
     subcategories: const [
       SubCategory(name: 'categoryCoffeeTeaCocoa', iconAssetPath: '${_iconBasePath}coffee_cup.svg'),
       SubCategory(name: 'categorySoftDrinksEnergyDrinks', iconAssetPath: '${_iconBasePath}bottle.svg'),
       SubCategory(name: 'categoryWaterJuices', iconAssetPath: '${_iconBasePath}water_bottle.svg'),
     ],
   ),
+  // (The rest of the categories are correct and unchanged)
   MainCategory(
-    firestoreName: 'Alkoholische Getränke',
+    firestoreName: 'alcoholic-beverages',
     style: const CategoryStyle(displayName: 'categoryAlcoholicBeverages', color: Color(0xFF8141FF), iconAssetPath: '${_iconBasePath}alcohol.svg'),
     subcategories: const [
       SubCategory(name: 'categoryBeer', iconAssetPath: '${_iconBasePath}beer_mug.svg'),
@@ -57,7 +63,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Brot und Backwaren',
+    firestoreName: 'bread-bakery',
     style: const CategoryStyle(displayName: 'categoryBreadBakery', color: Color(0xFFFFB347), iconAssetPath: '${_iconBasePath}bread.svg'),
     subcategories: const [
       SubCategory(name: 'categoryBakingIngredients', iconAssetPath: '${_iconBasePath}flour.svg'),
@@ -66,7 +72,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Fisch und Fleisch',
+    firestoreName: 'fish-meat',
     style: const CategoryStyle(displayName: 'categoryFishMeat', color: Color(0xFFF891A8), iconAssetPath: '${_iconBasePath}meat_slice.svg'),
     subcategories: const [
       SubCategory(name: 'categoryMeatMixesAssorted', iconAssetPath: '${_iconBasePath}meat_slice.svg'),
@@ -78,7 +84,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Früchte und Gemüse',
+    firestoreName: 'fruits-vegetables',
     style: const CategoryStyle(displayName: 'categoryFruitsVegetables', color: Color(0xFF63FB63), iconAssetPath: '${_iconBasePath}fruits.svg'),
     subcategories: const [
       SubCategory(name: 'categoryFruits', iconAssetPath: '${_iconBasePath}fruits.svg'),
@@ -86,7 +92,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Milchprodukte und Eier',
+    firestoreName: 'dairy-eggs',
     style: const CategoryStyle(displayName: 'categoryDairyEggs', color: Color(0xFFFFFACD), iconAssetPath: '${_iconBasePath}eggs.svg'),
     subcategories: const [
       SubCategory(name: 'categoryButterEggs', iconAssetPath: '${_iconBasePath}eggs.svg'),
@@ -95,7 +101,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Salzige Snacks und Süsswaren',
+    firestoreName: 'salty-snacks-sweets',
     style: const CategoryStyle(displayName: 'categorySaltySnacksSweets', color: Color(0xFFFF9133), iconAssetPath: '${_iconBasePath}chips_bag.svg'),
     subcategories: const [
       SubCategory(name: 'categorySnacksAppetizers', iconAssetPath: '${_iconBasePath}sandwich.svg'),
@@ -105,7 +111,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Spezifische Ernährung',
+    firestoreName: 'special-diet',
     style: const CategoryStyle(displayName: 'categorySpecialDiet', color: Color(0xFF0A4A0A), iconAssetPath: '${_iconBasePath}fast_food.svg'),
     subcategories: const [
       SubCategory(name: 'categoryConvenienceReadyMeals', iconAssetPath: '${_iconBasePath}pizza_slice.svg'),
@@ -113,7 +119,7 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-    firestoreName: 'Vorräte',
+    firestoreName: 'pantry',
     style: const CategoryStyle(displayName: 'categoryPantry', color: Color(0xFF2A3D43), iconAssetPath: '${_iconBasePath}food_can.svg'),
     subcategories: const [
       SubCategory(name: 'categoryCerealsGrains', iconAssetPath: '${_iconBasePath}cereals.svg'),
@@ -124,7 +130,15 @@ final List<MainCategory> allCategories = [
     ],
   ),
   MainCategory(
-      firestoreName: 'Sonstiges',
+    firestoreName: 'custom',
+    style: const CategoryStyle(
+        displayName: 'categoryCustom', // This will be the key for translation
+        color: Color(0xFF42A5F5), // A distinct blue color
+        iconAssetPath: '${_iconBasePath}edit_icon.svg' // Assuming you have or will create this icon
+    ),
+  ),
+  MainCategory(
+      firestoreName: 'other',
       style: defaultCategoryStyle,
       subcategories: const [
         SubCategory(name: 'categoryUncategorized', iconAssetPath: '${_iconBasePath}default_icon.svg')

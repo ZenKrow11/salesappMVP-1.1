@@ -4,14 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/components/category_chip.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+import 'package:sales_app_mvp/services/category_service.dart'; // IMPORT THE SERVICE
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
@@ -72,7 +71,7 @@ class ProductDetails extends ConsumerWidget {
         imageUrl: product.imageUrl,
         nameTokens: product.nameTokens,
         dealStart: product.dealStart,
-        specialCondition: product.specialCondition, // <-- UPDATED
+        specialCondition: product.specialCondition,
         dealEnd: product.dealEnd,
         isCustom: product.isCustom,
         isOnSale: product.isOnSale);
@@ -82,10 +81,12 @@ class ProductDetails extends ConsumerWidget {
     shoppingListProducts.any((item) => item.id == product.id);
     if (isItemInList) {
       notifier.removeItemFromList(hiveProduct);
-      showTopNotification(context, message: l10n.removedFrom(activeList), theme: theme);
+      showTopNotification(context,
+          message: l10n.removedFrom(activeList), theme: theme);
     } else {
       notifier.addToList(hiveProduct);
-      showTopNotification(context, message: l10n.addedTo(activeList), theme: theme);
+      showTopNotification(context,
+          message: l10n.addedTo(activeList), theme: theme);
     }
   }
 
@@ -141,14 +142,13 @@ class ProductDetails extends ConsumerWidget {
                     children: [
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      _buildCategoryRow(),
+                      _buildCategoryRow(context), // Pass context here
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
-                      _buildSpecialConditionInfo(theme), // <-- RENAMED method call
+                      _buildSpecialConditionInfo(theme),
                       const SizedBox(height: 8),
-                      _buildImageContainer(
-                          context, ref, theme, isInShoppingList),
+                      _buildImageContainer(context, ref, theme, isInShoppingList),
                       const SizedBox(height: 12),
                       _buildPriceRow(ref),
                       _buildAvailabilityInfo(context, theme),
@@ -173,14 +173,15 @@ class ProductDetails extends ConsumerWidget {
           Expanded(child: _buildCloseButton(context, theme, l10n)),
           const SizedBox(width: 16),
           Expanded(
-              child:
-              _buildAddToListButton(context, ref, theme, isInShoppingList, l10n)),
+              child: _buildAddToListButton(
+                  context, ref, theme, isInShoppingList, l10n)),
         ],
       ),
     );
   }
 
-  Widget _buildCloseButton(BuildContext context, AppThemeData theme, AppLocalizations l10n) {
+  Widget _buildCloseButton(
+      BuildContext context, AppThemeData theme, AppLocalizations l10n) {
     return TextButton.icon(
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -316,7 +317,8 @@ class ProductDetails extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     String formatDate(DateTime? date) {
       if (date == null) return '';
-      return DateFormat.yMd(Localizations.localeOf(context).toString()).format(date);
+      return DateFormat.yMd(Localizations.localeOf(context).toString())
+          .format(date);
     }
 
     final fromDate = formatDate(product.dealStart);
@@ -405,16 +407,17 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryRow() {
+  // --- THIS METHOD IS NOW CORRECTED ---
+  Widget _buildCategoryRow(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: CategoryChip(categoryName: product.category),
+          child: CategoryChip(categoryKey: product.category), // Pass the key, e.g., "beverages"
         ),
-        if (product.subcategory.isNotEmpty) ...[
+        if (product.subcategory.isNotEmpty && product.subcategory != 'categoryUncategorized') ...[
           const SizedBox(width: 8),
           Expanded(
-            child: CategoryChip(categoryName: product.subcategory),
+            child: CategoryChip(categoryKey: product.subcategory), // Pass the key
           ),
         ],
       ],
@@ -464,17 +467,18 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- RENAMED & UPDATED METHOD ---
   Widget _buildSpecialConditionInfo(AppThemeData theme) {
-    if (product.specialCondition == null) return const SizedBox.shrink(); // <-- UPDATED
+    if (product.specialCondition == null) return const SizedBox.shrink();
     return Row(children: [
       Icon(Icons.star, color: theme.secondary, size: 26),
       const SizedBox(width: 8),
       Expanded(
         child: AutoSizeText(
-          product.specialCondition!, // <-- UPDATED
+          product.specialCondition!,
           style: TextStyle(
-              color: theme.inactive, fontSize: 18, fontWeight: FontWeight.w500),
+              color: theme.inactive,
+              fontSize: 18,
+              fontWeight: FontWeight.w500),
           maxLines: 2,
           minFontSize: 12,
         ),

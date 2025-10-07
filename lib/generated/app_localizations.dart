@@ -174,11 +174,11 @@ abstract class AppLocalizations {
   /// **'Categories'**
   String get categories;
 
-  /// No description provided for @categoryNonAlcoholicBeverages.
+  /// No description provided for @categoryBeverages.
   ///
   /// In en, this message translates to:
-  /// **'Non-Alcoholic Beverages'**
-  String get categoryNonAlcoholicBeverages;
+  /// **'Beverages'**
+  String get categoryBeverages;
 
   /// No description provided for @categoryCoffeeTeaCocoa.
   ///
@@ -413,6 +413,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Frozen Products & Soups'**
   String get categoryFrozenProductsSoups;
+
+  /// No description provided for @categoryCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'My Items'**
+  String get categoryCustom;
 
   /// No description provided for @categoryOther.
   ///

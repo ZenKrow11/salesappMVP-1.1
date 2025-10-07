@@ -47,7 +47,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get categories => 'Catégories';
 
   @override
-  String get categoryNonAlcoholicBeverages => 'Boissons non alcoolisées';
+  String get categoryBeverages => 'Beverages';
 
   @override
   String get categoryCoffeeTeaCocoa => 'Café, Thé & Cacao';
@@ -166,6 +166,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get categoryFrozenProductsSoups => 'Produits surgelés & Soupes';
+
+  @override
+  String get categoryCustom => 'My Items';
 
   @override
   String get categoryOther => 'Autre';

@@ -95,8 +95,34 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   final plainList = appData.allProducts.map((p) => p.toPlainObject()).toList();
   final input = _FilterAndGroupInput(allProducts: plainList, filter: filter);
 
-  final Map<String, List<PlainProduct>> groupedByFirestoreName = await compute(_processProductDataInBackground, input);
-  print('[DEBUG] Categories FOUND in data: ${groupedByFirestoreName.keys.toList()}');
+  final Map<String, List<PlainProduct>> groupedByFirestoreName =
+  await compute(_processProductDataInBackground, input);
+
+  // ==================== INSERT LOGGING CODE HERE ====================
+  // This code will find and print the details of any products that are being ignored.
+
+  final Set<String> foundCategories = groupedByFirestoreName.keys.toSet();
+  final Set<String> expectedCategories = categoryDisplayOrder.toSet(); // Assumes categoryDisplayOrder is accessible
+  final Set<String> unhandledCategories = foundCategories.difference(expectedCategories);
+
+  if (unhandledCategories.isNotEmpty) {
+    int totalMissingCount = 0;
+
+    print('--- UNHANDLED PRODUCTS DETECTED ---');
+    for (final unhandledCategory in unhandledCategories) {
+      final missingProducts = groupedByFirestoreName[unhandledCategory]!;
+      totalMissingCount += missingProducts.length;
+      print("Category: '$unhandledCategory' (${missingProducts.length} items)");
+      for (final product in missingProducts) {
+        // Log the key details of each missing product
+        print('  -> ID: ${product.id}, Name: ${product.name}, Category: ${product.category}');
+      }
+    }
+    print('Total missing products found in logs: $totalMissingCount');
+    print('--- END OF UNHANDLED PRODUCTS ---');
+  }
+  // ======================== END OF LOGGING CODE ========================
+
 
   if (groupedByFirestoreName.isEmpty) {
     return [];
@@ -118,9 +144,5 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
 
   return categoryGroups;
 },
-// --- THIS IS THE FIX ---
-// This explicitly tells Riverpod that this provider depends on localizationProvider.
-// Now, when localizationProvider is overridden, Riverpod knows to re-evaluate this provider too.
   dependencies: [localizationProvider],
-// -----------------------
 );

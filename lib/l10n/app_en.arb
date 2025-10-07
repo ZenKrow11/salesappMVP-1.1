@@ -40,7 +40,7 @@
   "categories": "Categories",
   "@categories": { "description": "Tab title for categories filter." },
 
-  "categoryNonAlcoholicBeverages": "Non-Alcoholic Beverages",
+  "categoryBeverages": "Beverages",
   "categoryCoffeeTeaCocoa": "Coffee, Tea & Cocoa",
   "categorySoftDrinksEnergyDrinks": "Soft Drinks & Energy Drinks",
   "categoryWaterJuices": "Water & Juices",
@@ -80,6 +80,7 @@
   "categoryHoneyJamSpreads": "Honey, Jam & Spreads",
   "categoryRicePasta": "Rice & Pasta",
   "categoryFrozenProductsSoups": "Frozen Products & Soups",
+  "categoryCustom": "My Items",
   "categoryOther": "Other",
   "categoryUncategorized": "Uncategorized",
 
