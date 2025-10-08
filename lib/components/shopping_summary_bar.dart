@@ -12,6 +12,9 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 
+// --- ADD THIS IMPORT FOR THE CUSTOM PAGE ROUTE ---
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+
 class ShoppingSummaryBar extends ConsumerWidget {
   final List<Product> products;
 
@@ -69,9 +72,11 @@ class ShoppingSummaryBar extends ConsumerWidget {
 
           FilledButton.icon(
             onPressed: () {
+              // --- THIS IS THE CHANGE ---
+              // Replace MaterialPageRoute with SlideUpPageRoute
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ShoppingModeScreen()),
+                SlideUpPageRoute(page: const ShoppingModeScreen()),
               );
             },
             icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 20),

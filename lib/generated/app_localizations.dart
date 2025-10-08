@@ -540,6 +540,12 @@ abstract class AppLocalizations {
   /// **'Custom Items'**
   String get customItems;
 
+  /// Message shown in the custom items library when it's empty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any custom items yet.'**
+  String get customItemsEmpty;
+
   /// Section header on the account page for destructive actions.
   ///
   /// In en, this message translates to:
@@ -581,6 +587,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This action is permanent and cannot be undone. All your lists and data will be lost. Please enter your password to confirm.'**
   String get deleteAccountConfirmationBody;
+
+  /// Warning message in the confirmation dialog for deleting a custom item.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove the item from your library.'**
+  String get deleteItemConfirmationBody;
+
+  /// Title of the confirmation dialog when deleting a custom item.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{itemName}\"?'**
+  String deleteItemConfirmationTitle(String itemName);
 
   /// Warning message in the confirmation dialog for deleting a list.
   ///

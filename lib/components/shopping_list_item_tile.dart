@@ -53,14 +53,12 @@ class ShoppingListItemTile extends ConsumerWidget {
   }
 
   void _onDoubleTap(BuildContext context, WidgetRef ref) {
-    // 2. GET THE LOCALIZATIONS OBJECT FOR THE NOTIFICATION
     final l10n = AppLocalizations.of(context)!;
     ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          // 3. USE THE PARAMETERIZED LOCALIZED STRING
           content: Text(l10n.removedItem(product.name)),
           duration: const Duration(seconds: 1),
         ),
@@ -78,7 +76,6 @@ class ShoppingListItemTile extends ConsumerWidget {
     );
     final double twoLineTextHeight =
         nameTextStyle.fontSize! * nameTextStyle.height! * 2;
-    // GET LOCALIZATIONS FOR THE TILE UI
     final l10n = AppLocalizations.of(context)!;
 
     return Card(
@@ -126,7 +123,6 @@ class ShoppingListItemTile extends ConsumerWidget {
                     children: [
                       StoreLogo(storeName: product.store, height: 18),
                       Text(
-                        // 4. USE THE LOCALIZED CURRENCY SYMBOL
                         '$priceString ${l10n.currencyFrancs}',
                         style: TextStyle(
                           color: theme.secondary,
@@ -148,32 +144,33 @@ class ShoppingListItemTile extends ConsumerWidget {
   Widget _buildListTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
-    // GET LOCALIZATIONS FOR THE TILE UI
     final l10n = AppLocalizations.of(context)!;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16),
+      // MODIFIED: Reduced vertical padding for a denser list
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
+          // MODIFIED: Reduced image size for a more compact row
+          SizedBox(
+            width: 60,
+            height: 60,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: ImageWithAspectRatio(
-                imageUrl: product.imageUrl ?? '',
-                fit: BoxFit.cover,
-                maxWidth: 70,
-                maxHeight: 70,
+              child: Container(
+                color: Colors.white,
+                child: ImageWithAspectRatio(
+                  imageUrl: product.imageUrl ?? '',
+                  fit: BoxFit.cover,
+                  maxWidth: 60,
+                  maxHeight: 60,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          // MODIFIED: Reduced spacing
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               product.name,
@@ -182,7 +179,7 @@ class ShoppingListItemTile extends ConsumerWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
-              maxLines: 3,
+              maxLines: 2, // Keep it to 2 lines to maintain row height
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -191,10 +188,10 @@ class ShoppingListItemTile extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              StoreLogo(storeName: product.store, height: 24),
-              const SizedBox(height: 8),
+              StoreLogo(storeName: product.store, height: 22), // Slightly smaller logo
+              // MODIFIED: Reduced spacing
+              const SizedBox(height: 4),
               Text(
-                // USE THE LOCALIZED CURRENCY SYMBOL
                 '$priceString ${l10n.currencyFrancs}',
                 style: TextStyle(
                   color: theme.secondary,

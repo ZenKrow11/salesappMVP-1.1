@@ -237,6 +237,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customItems => 'Custom Items';
 
   @override
+  String get customItemsEmpty => 'You haven\'t created any custom items yet.';
+
+  @override
   String get dangerZone => 'Danger Zone';
 
   @override
@@ -258,6 +261,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteAccountConfirmationBody =>
       'This action is permanent and cannot be undone. All your lists and data will be lost. Please enter your password to confirm.';
+
+  @override
+  String get deleteItemConfirmationBody =>
+      'This will permanently remove the item from your library.';
+
+  @override
+  String deleteItemConfirmationTitle(String itemName) {
+    return 'Delete \"$itemName\"?';
+  }
 
   @override
   String get deleteListConfirmationBody =>

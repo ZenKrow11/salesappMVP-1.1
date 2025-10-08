@@ -4,88 +4,88 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-// REMOVED: No longer need to import QuantityStepper here.
 
 class ShoppingModeListItemTile extends ConsumerWidget {
   final Product product;
   final bool isChecked;
-  final VoidCallback onCheckTap;
-  final VoidCallback onInfoTap; // This is now used for both quantity and info icon
   final int quantity;
-  // REMOVED: onIncrement and onDecrement are no longer needed on the tile.
+  final VoidCallback onCheckTap;
+  final VoidCallback onInfoTap;
 
   const ShoppingModeListItemTile({
     super.key,
     required this.product,
     required this.isChecked,
+    required this.quantity,
     required this.onCheckTap,
     required this.onInfoTap,
-    required this.quantity,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    final textStyle = TextStyle(
+      color: theme.inactive,
+      fontSize: 16,
+      decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,
+      decorationColor: theme.inactive, // Ensures line-through is visible
+      decorationThickness: 2.0,
+    );
 
     return InkWell(
-      onTap: onCheckTap, // Tapping anywhere on the tile still checks it
+      onTap: onCheckTap, // Tapping anywhere on the tile checks it
       child: Opacity(
-        opacity: isChecked ? 0.6 : 1.0,
+        opacity: isChecked ? 0.5 : 1.0, // Fades out the entire tile when checked
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // --- NEW: Tappable Quantity Display ---
-              // Wrapped in an InkWell to make it a button that opens the info dialog.
+              // --- Tappable Quantity Display ---
               InkWell(
                 onTap: onInfoTap,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  // Fixed width ensures all titles align perfectly in the list.
-                  width: 48,
+                  width: 40, // Fixed width ensures alignment
                   alignment: Alignment.center,
                   child: Text(
                     '${quantity}x',
                     style: TextStyle(
-                      color: theme.primary,
+                      color: isChecked ? theme.secondary.withOpacity(0.8) : theme.secondary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
 
-              // [Product Title]
+              // --- Product Title ---
               Expanded(
                 child: Text(
                   product.name,
-                  style: TextStyle(
-                    color: theme.inactive,
-                    fontSize: 16,
-                    decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-                  ),
+                  style: textStyle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
 
-              // [ info ]
+              // --- Info Icon ---
               IconButton(
-                icon: Icon(Icons.info_outline, color: theme.inactive),
-                onPressed: onInfoTap, // Also triggers the info dialog
+                icon: Icon(Icons.info_outline, color: theme.inactive.withOpacity(0.7)),
+                onPressed: onInfoTap,
                 tooltip: 'View details',
                 splashRadius: 24,
               ),
 
-              // [ checkmark ]
+              // --- Custom Checkbox Icon ---
+              // The outer InkWell handles the tap, so this is just for display
               Icon(
                 isChecked ? Icons.check_box : Icons.check_box_outline_blank,
-                color: isChecked ? theme.secondary : theme.inactive,
-                size: 26,
+                color: isChecked ? theme.secondary : theme.inactive.withOpacity(0.7),
+                size: 28,
               ),
-              const SizedBox(width: 4),
             ],
           ),
         ),

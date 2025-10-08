@@ -20,7 +20,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
-import 'generated/app_localizations_en.dart';
 
 import 'generated/app_localizations.dart';
 //import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -35,7 +34,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
+/*
   // START: Block to connect to Firebase Emulators in debug mode
   if (kDebugMode) {
     try {
@@ -51,6 +50,7 @@ Future<void> main() async {
   }
   // END: Emulator connection block
 
+ */
 
 
   // firebase emulators:start --only firestore,auth

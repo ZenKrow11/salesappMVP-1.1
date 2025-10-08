@@ -65,7 +65,7 @@ class ProductDetails extends ConsumerWidget {
         currentPrice: product.currentPrice,
         normalPrice: product.normalPrice,
         discountPercentage: product.discountPercentage,
-        category: product.category,
+        category: product.category.isEmpty ? 'categoryUncategorized' : product.category,
         subcategory: product.subcategory,
         url: product.url,
         imageUrl: product.imageUrl,

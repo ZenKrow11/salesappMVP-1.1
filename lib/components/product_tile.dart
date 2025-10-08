@@ -50,10 +50,14 @@ class ProductTile extends ConsumerWidget {
       return Product(
           id: product.id, store: product.store, name: product.name,
           currentPrice: product.currentPrice, normalPrice: product.normalPrice,
-          discountPercentage: product.discountPercentage, category: product.category,
+          discountPercentage: product.discountPercentage,
+
+          // --- ADD THIS FIX ---
+          category: product.category.isEmpty ? 'categoryUncategorized' : product.category,
+
           subcategory: product.subcategory, url: product.url, imageUrl: product.imageUrl,
           nameTokens: product.nameTokens, dealStart: product.dealStart,
-          specialCondition: product.specialCondition, // <-- UPDATED
+          specialCondition: product.specialCondition,
           dealEnd: product.dealEnd,
           isCustom: product.isCustom, isOnSale: product.isOnSale
       );

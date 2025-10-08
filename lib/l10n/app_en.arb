@@ -147,6 +147,9 @@
   "customItems": "Custom Items",
   "@customItems": { "description": "Label for the button or section related to user-created custom items." },
 
+  "customItemsEmpty": "You haven't created any custom items yet.",
+  "@customItemsEmpty": { "description": "Message shown in the custom items library when it's empty." },
+
   "dangerZone": "Danger Zone",
   "@dangerZone": { "description": "Section header on the account page for destructive actions." },
 
@@ -167,6 +170,15 @@
 
   "deleteAccountConfirmationBody": "This action is permanent and cannot be undone. All your lists and data will be lost. Please enter your password to confirm.",
   "@deleteAccountConfirmationBody": { "description": "Warning message in the account deletion confirmation dialog." },
+
+  "deleteItemConfirmationBody": "This will permanently remove the item from your library.",
+  "@deleteItemConfirmationBody": { "description": "Warning message in the confirmation dialog for deleting a custom item." },
+
+  "deleteItemConfirmationTitle": "Delete \"{itemName}\"?",
+  "@deleteItemConfirmationTitle": {
+    "description": "Title of the confirmation dialog when deleting a custom item.",
+    "placeholders": { "itemName": { "type": "String" } }
+  },
 
   "deleteListConfirmationBody": "This action is permanent and cannot be undone.",
   "@deleteListConfirmationBody": { "description": "Warning message in the confirmation dialog for deleting a list." },
@@ -576,4 +588,3 @@
   "errorCouldNotLoadData": "Error: Could not load data.",
   "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."}
 }
-
