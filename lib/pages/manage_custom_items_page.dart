@@ -12,6 +12,7 @@ class ManageCustomItemsPage extends ConsumerWidget {
   const ManageCustomItemsPage({super.key});
 
   // Method to show the keyboard-aware bottom modal sheet for creating or editing an item.
+  // This method remains unchanged.
   void _showCreateOrEditItemSheet(BuildContext context, WidgetRef ref, {Product? productToEdit}) {
     final theme = ref.read(themeProvider);
     final l10n = AppLocalizations.of(context)!;
@@ -19,24 +20,22 @@ class ManageCustomItemsPage extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Crucial for keyboard handling
-      backgroundColor: Colors.transparent, // Allows for custom rounded corners
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          // This padding pushes the sheet up when the keyboard appears
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
             decoration: BoxDecoration(
               color: theme.background,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            child: SingleChildScrollView( // Allows scrolling if form content is too tall
+            child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // A "grabber" handle for visual affordance
                     Container(
                       width: 40,
                       height: 5,
@@ -46,7 +45,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    // Title inside the modal sheet
                     Text(
                       isEditing ? l10n.editCustomItem : l10n.createCustomItem,
                       style: TextStyle(
@@ -56,7 +54,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // The form widget itself
                     CreateCustomItemTab(productToEdit: productToEdit),
                   ],
                 ),
@@ -76,22 +73,43 @@ class ManageCustomItemsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.pageBackground,
       appBar: AppBar(
-        title: Text(l10n.manageCustomItemsTitle),
         backgroundColor: theme.primary,
         elevation: 0,
-        // The TabBar is gone, replaced by a simple action button
+        // CHANGE: Remove the default back arrow.
+        automaticallyImplyLeading: false,
+
+        // The title is automatically centered when `leading` is null.
+        title: Text(
+          l10n.manageCustomItemsTitle,
+          style: TextStyle(color: theme.secondary),
+        ),
+
+        // CHANGE: The actions list now contains the add and close buttons in order.
         actions: [
+          // 1. The Add Button
           IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            color: theme.secondary,
+            icon: const Icon(Icons.add),
             tooltip: l10n.createNew,
-            onPressed: () => _showCreateOrEditItemSheet(context, ref), // Calls the modal to create
+            // Use styleFrom for complex button styling
+            style: IconButton.styleFrom(
+              backgroundColor: theme.secondary,
+              foregroundColor: theme.primary, // This sets the icon color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => _showCreateOrEditItemSheet(context, ref),
+          ),
+
+          // 2. The Close Button
+          IconButton(
+            icon: Icon(Icons.close, color: theme.accent),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
-      // The body is now just the library view
       body: CustomItemsLibraryTab(
-        // We pass the function down so the library items can trigger the edit modal
         onEditItem: (product) => _showCreateOrEditItemSheet(context, ref, productToEdit: product),
       ),
     );

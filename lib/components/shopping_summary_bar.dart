@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/pages/shopping_mode_screen.dart';
+import 'package:sales_app_mvp/pages/shopping_mode_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
