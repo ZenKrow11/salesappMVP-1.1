@@ -586,5 +586,23 @@
   "@loadingAllSet": { "description": "Final success message before entering the app." },
 
   "errorCouldNotLoadData": "Error: Could not load data.",
-  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."}
+  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails." },
+
+  "upgradeToPremiumTitle": "Upgrade to Premium",
+  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
+
+  "upgradeToPremiumFeature1": "• Unlimited Shopping Lists",
+  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature2": "• Unlimited Custom Items",
+  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature3": "• Ad-Free Experience",
+  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
+
+  "upgradeButton": "Upgrade Now",
+  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
+
+  "premiumStatus": "Premium Status (Test)",
+  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." }
 }

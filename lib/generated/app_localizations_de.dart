@@ -676,4 +676,22 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get errorCouldNotLoadData =>
       'Fehler: Daten konnten nicht geladen werden.';
+
+  @override
+  String get upgradeToPremiumTitle => 'Upgrade to Premium';
+
+  @override
+  String get upgradeToPremiumFeature1 => '• Unlimited Shopping Lists';
+
+  @override
+  String get upgradeToPremiumFeature2 => '• Unlimited Custom Items';
+
+  @override
+  String get upgradeToPremiumFeature3 => '• Ad-Free Experience';
+
+  @override
+  String get upgradeButton => 'Upgrade Now';
+
+  @override
+  String get premiumStatus => 'Premium Status (Test)';
 }

@@ -1313,6 +1313,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error: Could not load data.'**
   String get errorCouldNotLoadData;
+
+  /// Title for the upgrade to premium dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremiumTitle;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Unlimited Shopping Lists'**
+  String get upgradeToPremiumFeature1;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Unlimited Custom Items'**
+  String get upgradeToPremiumFeature2;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Ad-Free Experience'**
+  String get upgradeToPremiumFeature3;
+
+  /// Button text to initiate the upgrade process.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade Now'**
+  String get upgradeButton;
+
+  /// Text showing the user's premium status, for testing purposes.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Status (Test)'**
+  String get premiumStatus;
 }
 
 class _AppLocalizationsDelegate

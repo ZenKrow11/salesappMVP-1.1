@@ -143,7 +143,6 @@ class AccountPage extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final user = FirebaseAuth.instance.currentUser;
     final userProfileAsync = ref.watch(userProfileProvider);
-    // GET LOCALIZATIONS FOR THE MAIN BUILD METHOD
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -172,7 +171,7 @@ class AccountPage extends ConsumerWidget {
                     children: [
                       _buildAccountCard(
                         icon: Icons.person_outline,
-                        title: l10n.account, // <-- LOCALIZED
+                        title: l10n.account,
                         theme: theme,
                         children: [
                           _buildSubListItem(l10n.editProfile, context, l10n: l10n, theme: theme, onTap: () {
@@ -186,7 +185,7 @@ class AccountPage extends ConsumerWidget {
                       ),
                       _buildAccountCard(
                         icon: Icons.settings_outlined,
-                        title: l10n.settings, // <-- LOCALIZED
+                        title: l10n.settings,
                         theme: theme,
                         children: [
                           _buildSubListItem(l10n.notifications, context, l10n: l10n, theme: theme, onTap: () {}),
@@ -195,20 +194,26 @@ class AccountPage extends ConsumerWidget {
                       ),
                       _buildAccountCard(
                         icon: Icons.warning_amber_rounded,
-                        title: l10n.dangerZone, // <-- LOCALIZED
+                        title: l10n.dangerZone,
                         theme: theme,
                         children: [
                           _buildSubListItem(l10n.deleteAccount, context, l10n: l10n, theme: theme, isDestructive: true, onTap: () => _showDeleteAccountDialog(context, ref)),
                         ],
                       ),
+                      // ========== CHANGE START ==========
+                      // We are modifying the "Premium" card to include our test switch.
                       _buildAccountCard(
                         icon: Icons.star_border_purple500_sharp,
-                        title: l10n.premium, // <-- LOCALIZED
+                        title: l10n.premium,
                         theme: theme,
                         children: [
-                          _buildSubListItem(l10n.manageSubscription, context, l10n: l10n, theme: theme, onTap: () {}),
+                          // The test switch that was here is now gone.
+                          _buildSubListItem(l10n.manageSubscription, context, l10n: l10n, theme: theme, onTap: () {
+                            // TODO: This could eventually link to the device's subscription management page.
+                          }),
                         ],
                       ),
+                      // ========== CHANGE END ==========
                     ],
                   ),
                 ),
@@ -223,7 +228,7 @@ class AccountPage extends ConsumerWidget {
                   child: ListTile(
                     contentPadding: const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
                     leading: Icon(Icons.logout, color: theme.accent, size: 28),
-                    title: Text(l10n.logout, style: TextStyle(color: theme.secondary, fontSize: 18, fontWeight: FontWeight.bold)), // <-- LOCALIZED
+                    title: Text(l10n.logout, style: TextStyle(color: theme.secondary, fontSize: 18, fontWeight: FontWeight.bold)),
                     onTap: () => _showStyledLogoutDialog(context, ref),
                   ),
                 ),
@@ -234,6 +239,41 @@ class AccountPage extends ConsumerWidget {
       ),
     );
   }
+
+  // ========== NEW WIDGET METHOD ADDED ==========
+  /// Builds a ListTile with a switch to test the premium status.
+  Widget _buildPremiumTestSwitch(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider);
+    final l10n = AppLocalizations.of(context)!;
+
+    // 1. Watch the simple boolean provider for the current state.
+    final isPremium = ref.watch(isPremiumProvider);
+
+    // 2. Watch the notifier's state to disable the switch while updating.
+    final notifierState = ref.watch(userProfileNotifierProvider);
+
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 72.0, right: 24.0, bottom: 8.0, top: 4.0),
+      title: Text(
+        l10n.premiumStatus,
+        style: TextStyle(color: theme.inactive),
+      ),
+      trailing: Switch(
+        value: isPremium,
+        activeColor: theme.accent,
+        // 3. Disable the switch while the notifier is busy (loading).
+        onChanged: notifierState.isLoading
+            ? null
+            : (newStatus) {
+          // 4. Call the notifier to update the status in Firestore.
+          ref
+              .read(userProfileNotifierProvider.notifier)
+              .updateUserPremiumStatus(newStatus);
+        },
+      ),
+    );
+  }
+  // ========== END OF NEW WIDGET METHOD ==========
 
   Widget _buildUserInfoHeader({required AppLocalizations l10n, required AppThemeData theme, required User? user, String? displayName}) {
     return Padding(
