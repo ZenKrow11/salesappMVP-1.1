@@ -13,6 +13,8 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 
+import 'package:sales_app_mvp/components/upgrade_dialog.dart';
+
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
 
@@ -145,6 +147,10 @@ class AccountPage extends ConsumerWidget {
     final userProfileAsync = ref.watch(userProfileProvider);
     final l10n = AppLocalizations.of(context)!;
 
+    // We get the isPremium status from the value of our async provider.
+    // This is safer and ensures it's always in sync with the profile data.
+    final isPremium = userProfileAsync.value?.isPremium ?? false;
+
     return Scaffold(
       backgroundColor: theme.primary,
       body: SafeArea(
@@ -159,6 +165,8 @@ class AccountPage extends ConsumerWidget {
                   theme: theme,
                   user: user,
                   displayName: profile?.displayName ?? user?.email?.split('@').first,
+                  // Pass the status from the loaded profile.
+                  isPremium: profile?.isPremium ?? false,
                 ),
                 loading: () => const Padding(padding: EdgeInsets.all(24.0), child: Center(child: CircularProgressIndicator())),
                 error: (e, s) => Text(l10n.errorLoadingProfile, style: TextStyle(color: theme.accent)),
@@ -200,20 +208,30 @@ class AccountPage extends ConsumerWidget {
                           _buildSubListItem(l10n.deleteAccount, context, l10n: l10n, theme: theme, isDestructive: true, onTap: () => _showDeleteAccountDialog(context, ref)),
                         ],
                       ),
-                      // ========== CHANGE START ==========
-                      // We are modifying the "Premium" card to include our test switch.
                       _buildAccountCard(
-                        icon: Icons.star_border_purple500_sharp,
+                        icon: isPremium ? Icons.star : Icons.star_border,
                         title: l10n.premium,
                         theme: theme,
                         children: [
-                          // The test switch that was here is now gone.
-                          _buildSubListItem(l10n.manageSubscription, context, l10n: l10n, theme: theme, onTap: () {
-                            // TODO: This could eventually link to the device's subscription management page.
-                          }),
+                          if (isPremium)
+                            _buildSubListItem(
+                                l10n.manageSubscription,
+                                context,
+                                l10n: l10n,
+                                theme: theme,
+                                onTap: () {}
+                            )
+                          else
+                            _buildSubListItem(
+                              l10n.upgradeToPremiumAction,
+                              context,
+                              l10n: l10n,
+                              theme: theme,
+                              onTap: () => showUpgradeDialog(context, ref),
+                            ),
+                          _buildPremiumTestSwitch(context, ref),
                         ],
                       ),
-                      // ========== CHANGE END ==========
                     ],
                   ),
                 ),
@@ -275,7 +293,17 @@ class AccountPage extends ConsumerWidget {
   }
   // ========== END OF NEW WIDGET METHOD ==========
 
-  Widget _buildUserInfoHeader({required AppLocalizations l10n, required AppThemeData theme, required User? user, String? displayName}) {
+  // --- HEADER WIDGET IS UPDATED ---
+  Widget _buildUserInfoHeader({
+    required AppLocalizations l10n,
+    required AppThemeData theme,
+    required User? user,
+    String? displayName,
+    required bool isPremium, // <-- Accept the premium status
+  }) {
+    final statusText = isPremium ? l10n.accountStatusPremium : l10n.accountStatusFree;
+    final statusColor = isPremium ? theme.accent : theme.inactive.withOpacity(0.7);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
       child: Row(
@@ -287,9 +315,35 @@ class AccountPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(displayName ?? l10n.user, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.inactive), overflow: TextOverflow.ellipsis), // <-- LOCALIZED
+                Text(
+                    displayName ?? l10n.user,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.inactive),
+                    overflow: TextOverflow.ellipsis
+                ),
                 const SizedBox(height: 4),
-                Text(user?.email ?? l10n.noEmailAvailable, style: TextStyle(fontSize: 14, color: theme.inactive.withOpacity(0.7)), overflow: TextOverflow.ellipsis), // <-- LOCALIZED
+                Text(
+                    user?.email ?? l10n.noEmailAvailable,
+                    style: TextStyle(fontSize: 14, color: theme.inactive.withOpacity(0.7)),
+                    overflow: TextOverflow.ellipsis
+                ),
+                const SizedBox(height: 6),
+                // --- NEW STATUS BADGE ---
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    statusText.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

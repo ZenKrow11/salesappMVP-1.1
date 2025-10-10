@@ -1314,6 +1314,36 @@ abstract class AppLocalizations {
   /// **'Error: Could not load data.'**
   String get errorCouldNotLoadData;
 
+  /// Label indicating the user has a free account.
+  ///
+  /// In en, this message translates to:
+  /// **'Free User'**
+  String get accountStatusFree;
+
+  /// Label indicating the user has a premium account.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Member'**
+  String get accountStatusPremium;
+
+  /// Button text prompting a free user to upgrade their account.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremiumAction;
+
+  /// Title for a premium feature highlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Create More Lists'**
+  String get premiumFeatureListsTitle;
+
+  /// Body text for a premium feature highlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.'**
+  String get premiumFeatureListsBody;
+
   /// Title for the upgrade to premium dialog.
   ///
   /// In en, this message translates to:
@@ -1349,6 +1379,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Premium Status (Test)'**
   String get premiumStatus;
+
+  /// Title for the bottom sheet and tooltip for organizing a shopping list
+  ///
+  /// In en, this message translates to:
+  /// **'Organize List'**
+  String get organizeList;
+
+  /// Section header for filtering by store
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Store'**
+  String get filterByStore;
+
+  /// Message shown on the shopping list when filters result in an empty list
+  ///
+  /// In en, this message translates to:
+  /// **'No products match your current filter'**
+  String get noProductsMatchFilter;
 }
 
 class _AppLocalizationsDelegate

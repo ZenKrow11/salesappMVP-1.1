@@ -2,27 +2,28 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
-import 'package:sales_app_mvp/providers/app_data_provider.dart';
-import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-import 'package:sales_app_mvp/models/products_provider.dart';
-import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
-
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
-
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+import 'package:sales_app_mvp/widgets/item_count_widget.dart';
+import 'package:sales_app_mvp/providers/app_data_provider.dart';
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/widgets/search_button.dart';
 import 'package:sales_app_mvp/widgets/filter_button.dart';
 import 'package:sales_app_mvp/widgets/sort_button.dart';
+import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/services/ad_manager.dart';
+
+// --- FIX: IMPORT THE NEW WIDGET ---
+import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/providers/filter_state_provider.dart';
+
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
@@ -45,8 +46,9 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.read(appDataProvider).status == InitializationStatus.loading) {
-        ref.read(appDataProvider.notifier).initialize();
+      final isPremium = ref.read(isPremiumProvider);
+      if (!isPremium) {
+        ref.read(adManagerProvider.notifier).initialize();
       }
     });
   }
@@ -62,66 +64,49 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    final init = ref.watch(initializationProvider);
-
-    // Get a reference to the localizations once.
     final l10n = AppLocalizations.of(context)!;
 
-    return init.when(
-      loading: () => Scaffold(
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
         backgroundColor: theme.pageBackground,
-        body: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (err, stack) => Scaffold(
-        backgroundColor: theme.pageBackground,
-        // 2. USE THE LOCALIZED ERROR STRING
-        body: Center(child: Text(l10n.fatalError(err.toString()))),
-      ),
-      data: (_) => GestureDetector(
-        onTap: () {
-          FocusManager.instance.primaryFocus?.unfocus();
-        },
-        child: Scaffold(
-          backgroundColor: theme.pageBackground,
-          // 3. PASS CONTEXT TO THE HELPER METHOD TO ACCESS LOCALIZATIONS
-          appBar: _buildAppBarForIndex(context, currentIndex, theme, ref),
-          body: _pages[currentIndex],
-          bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: theme.primary,
-            currentIndex: currentIndex,
-            selectedItemColor: theme.secondary,
-            unselectedItemColor: theme.inactive,
-            onTap: navigateToTab,
-            // 4. USE LOCALIZED LABELS FOR NAVIGATION ITEMS
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.attach_money, size: 36),
-                label: l10n.navAllSales,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.list, size: 36),
-                label: l10n.navLists,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.person, size: 36),
-                label: l10n.navAccount,
-              ),
-            ],
-          ),
+        appBar: _buildAppBarForIndex(context, currentIndex, theme, ref),
+        body: IndexedStack(
+          index: currentIndex,
+          children: _pages,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: theme.primary,
+          currentIndex: currentIndex,
+          selectedItemColor: theme.secondary,
+          unselectedItemColor: theme.inactive,
+          onTap: navigateToTab,
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.attach_money, size: 36),
+              label: l10n.navAllSales,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.list, size: 36),
+              label: l10n.navLists,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person, size: 36),
+              label: l10n.navAccount,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Update signature to accept BuildContext
   PreferredSizeWidget? _buildAppBarForIndex(BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
     switch (index) {
-      case 0: // Home Page
+      case 0:
         return _buildHomePageAppBar(theme);
-      case 1: // Shopping List Page
-      // Pass context along
+      case 1:
         return _buildShoppingListPageAppBar(context, theme, ref);
-      default: // All other pages (like Account) have no AppBar
+      default:
         return null;
     }
   }
@@ -143,11 +128,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // Update signature to accept BuildContext
   PreferredSizeWidget _buildShoppingListPageAppBar(BuildContext context, AppThemeData theme, WidgetRef ref) {
     final isGridView = ref.watch(settingsProvider);
-
-    // Get a reference to localizations here as well
     final l10n = AppLocalizations.of(context)!;
 
     return AppBar(
@@ -165,19 +147,17 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
             color: theme.inactive,
           ),
-          // 5. USE LOCALIZED TOOLTIPS
           tooltip: isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
           onPressed: () {
             ref.read(settingsProvider.notifier).toggleView();
           },
         ),
+        _buildOrganizeListAction(theme, l10n),
         _buildShoppingListSettingsAction(theme),
       ],
     );
   }
 
-  // No changes needed in the methods below this point, so they are omitted for brevity.
-  // ... _buildInfoBar(), _buildListSelectorWidget(), etc.
   Widget _buildInfoBar() {
     return Consumer(
       builder: (context, ref, child) {
@@ -186,11 +166,11 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         final appData = ref.watch(appDataProvider);
         final bool isDataLoaded = appData.status == InitializationStatus.loaded;
         final buttonText = activeList;
+
         final totalCount = appData.grandTotal;
         final filteredCount = ref.watch(homePageProductsProvider).whenData((groups) {
           return groups.fold<int>(0, (sum, group) => sum + group.products.length);
         }).value ?? 0;
-        final count = ProductCount(filtered: filteredCount, total: totalCount);
 
         return Row(
           children: [
@@ -229,7 +209,11 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            ItemCountWidget(filtered: count.filtered, total: count.total, showBackground: false,),
+            ItemCountWidget(
+              filtered: filteredCount,
+              total: totalCount,
+              showBackground: false,
+            ),
           ],
         );
       },
@@ -270,6 +254,24 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n) {
+    final isFilterActive = ref.watch(filterStateProvider.select((f) => f.isFilterActiveForShoppingList));
+
+    return IconButton(
+      icon: Badge(
+        isLabelVisible: isFilterActive,
+        child: Icon(Icons.tune_rounded, color: theme.inactive),
+      ),
+      tooltip: l10n.organizeList,
+      onPressed: () {
+        _showModalSheet(
+              (_) => const OrganizeListBottomSheet(),
+          isScrollControlled: true,
+        );
+      },
     );
   }
 

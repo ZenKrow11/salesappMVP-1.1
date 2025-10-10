@@ -9,6 +9,8 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/pages/main_app_screen.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/components/ad_placeholder_widget.dart';
+
 
 // 2. ADD THE TRANSLATION HELPER FUNCTION
 /// A helper function to translate the loading message key from the state.
@@ -89,29 +91,13 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Spacer(flex: 3),
-                      Flexible(
+
+                      // Replace the old placeholder with the new, smart widget
+                      const Flexible(
                         flex: 5,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 250),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 24),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: theme.primary,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: theme.inactive.withOpacity(0.2)),
-                            ),
-                            child: Center(
-                              child: Text(
-                                // 5. LOCALIZE THE AD PLACEHOLDER TEXT
-                                l10n.adPlaceholder,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: theme.inactive, fontSize: 18),
-                              ),
-                            ),
-                          ),
-                        ),
+                        child: AdPlaceholderWidget(adType: AdType.banner),
                       ),
+
                       const Spacer(flex: 2),
                       Icon(
                         hasError ? Icons.error_outline : Icons.shopping_cart_checkout,

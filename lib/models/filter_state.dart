@@ -57,4 +57,7 @@ class FilterState with _$FilterState {
       !isSearchActive &&
           !isFilterActive &&
           sortOption == SortOption.storeAlphabetical;
+
+  bool get isFilterActiveForShoppingList =>
+      selectedStores.isNotEmpty || selectedCategories.isNotEmpty;
 }

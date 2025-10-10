@@ -675,6 +675,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get errorCouldNotLoadData => 'Error: Could not load data.';
 
   @override
+  String get accountStatusFree => 'Free User';
+
+  @override
+  String get accountStatusPremium => 'Premium Member';
+
+  @override
+  String get upgradeToPremiumAction => 'Upgrade to Premium';
+
+  @override
+  String get premiumFeatureListsTitle => 'Create More Lists';
+
+  @override
+  String get premiumFeatureListsBody =>
+      'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.';
+
+  @override
   String get upgradeToPremiumTitle => 'Upgrade to Premium';
 
   @override
@@ -691,4 +707,13 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get premiumStatus => 'Premium Status (Test)';
+
+  @override
+  String get organizeList => 'Organize List';
+
+  @override
+  String get filterByStore => 'Filter by Store';
+
+  @override
+  String get noProductsMatchFilter => 'No products match your current filter';
 }

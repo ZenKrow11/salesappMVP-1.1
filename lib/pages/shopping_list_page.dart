@@ -10,6 +10,8 @@ import 'package:sales_app_mvp/components/shopping_list_item_tile.dart';
 import 'package:sales_app_mvp/components/shopping_summary_bar.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
+import 'package:sales_app_mvp/models/filter_state.dart';
+import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -21,7 +23,7 @@ class ShoppingListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
+    final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final theme = ref.watch(themeProvider);
     final isGridView = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
@@ -31,11 +33,12 @@ class ShoppingListPage extends ConsumerWidget {
       error: (err, stack) => Center(child: Text(l10n.errorLoadingList(err.toString()))),
       data: (products) {
         if (products.isEmpty) {
+          final isFilterActive = ref.read(filterStateProvider).isFilterActiveForShoppingList;
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Text(
-                l10n.listIsEmpty,
+                isFilterActive ? l10n.noProductsMatchFilter : l10n.listIsEmpty,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: theme.inactive.withOpacity(0.7), fontSize: 16),
@@ -44,10 +47,20 @@ class ShoppingListPage extends ConsumerWidget {
           );
         }
 
-        // --- CORE FIX: Group by the raw, non-localized category ID (firestoreName) ---
-        final groupedProducts = groupBy(products, (Product p) => p.category);
+        final sortOption = ref.watch(filterStateProvider).sortOption;
 
-        final orderedGroupNames = categoryDisplayOrder.where((name) => groupedProducts.containsKey(name)).toList();
+        final Map<String, List<Product>> groupedProducts;
+        final List<String> orderedGroupNames;
+
+        if (sortOption == SortOption.storeAlphabetical) {
+          groupedProducts = groupBy(products, (Product p) => p.store);
+          orderedGroupNames = groupedProducts.keys.toList()..sort();
+        } else {
+          groupedProducts = groupBy(products, (Product p) => p.category);
+          orderedGroupNames = categoryDisplayOrder
+              .where((name) => groupedProducts.containsKey(name))
+              .toList();
+        }
 
         final List<Product> flatSortedProducts = orderedGroupNames
             .expand((groupName) => groupedProducts[groupName]!)
@@ -57,8 +70,8 @@ class ShoppingListPage extends ConsumerWidget {
           children: [
             Expanded(
               child: isGridView
-                  ? _buildGroupedGridView(context, ref, flatSortedProducts, groupedProducts, orderedGroupNames, theme)
-                  : _buildGroupedListView(context, ref, flatSortedProducts, groupedProducts, orderedGroupNames, theme),
+                  ? _buildGroupedGridView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption)
+                  : _buildGroupedListView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption),
             ),
             ShoppingSummaryBar(products: products),
           ],
@@ -69,19 +82,18 @@ class ShoppingListPage extends ConsumerWidget {
 
   Widget _buildGroupedGridView(
       BuildContext context,
-      WidgetRef ref,
       List<Product> flatSortedProducts,
       Map<String, List<Product>> groupedProducts,
       List<String> orderedGroupNames,
-      AppThemeData theme) {
+      AppThemeData theme,
+      SortOption sortOption) {
     return CustomScrollView(
       slivers: [
         for (final groupName in orderedGroupNames) ...[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-              // Pass context to the helper
-              child: _buildGroupHeader(groupName, theme, context),
+              child: _buildGroupHeader(groupName, theme, context, sortOption),
             ),
           ),
           SliverPadding(
@@ -110,19 +122,18 @@ class ShoppingListPage extends ConsumerWidget {
 
   Widget _buildGroupedListView(
       BuildContext context,
-      WidgetRef ref,
       List<Product> flatSortedProducts,
       Map<String, List<Product>> groupedProducts,
       List<String> orderedGroupNames,
-      AppThemeData theme) {
+      AppThemeData theme,
+      SortOption sortOption) {
     return CustomScrollView(
       slivers: [
         for (final groupName in orderedGroupNames) ...[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-              // Pass context to the helper
-              child: _buildGroupHeader(groupName, theme, context),
+              child: _buildGroupHeader(groupName, theme, context, sortOption),
             ),
           ),
           SliverList(
@@ -143,11 +154,23 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  // --- FULLY RESTORED AND CORRECTED _buildGroupHeader METHOD ---
-  Widget _buildGroupHeader(String groupFirestoreName, AppThemeData theme, BuildContext context) {
+  Widget _buildGroupHeader(String groupName, AppThemeData theme, BuildContext context, SortOption sortOption) {
+    if (sortOption == SortOption.storeAlphabetical) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: theme.accent.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(5.0),
+        ),
+        child: Text(
+          groupName,
+          style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
-    // Use the service method that takes the raw ID and returns a fully localized style object
-    final style = CategoryService.getLocalizedStyleForGroupingName(groupFirestoreName, l10n);
+    final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -164,7 +187,7 @@ class ShoppingListPage extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            style.displayName, // This is now the correctly translated name
+            style.displayName,
             style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],

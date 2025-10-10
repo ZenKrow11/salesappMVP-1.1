@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
@@ -15,7 +14,9 @@ import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
+import 'package:sales_app_mvp/components/ad_placeholder_widget.dart';
 
+// --- Constants (Unchanged) ---
 const double kHeaderVerticalPadding = 8.0;
 const double kHeaderHeight = 44.0;
 const double kStickyHeaderTotalHeight = kHeaderHeight + (kHeaderVerticalPadding * 2);
@@ -53,27 +54,45 @@ class _ProductList extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        for (final group in groups) ...[
+        // ========== THE FIX IS HERE ==========
+        // Change the loop to a standard 'for' loop to get an index 'i'.
+        for (int i = 0; i < groups.length; i++) ...[
+          // For convenience, we still create a 'group' variable for each iteration.
           SliverToBoxAdapter(
             child: _GroupHeader(
-              style: group.style,
-              itemCount: group.products.length,
+              style: groups[i].style,
+              itemCount: groups[i].products.length,
             ),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
-            sliver: _buildSliverGrid(ref, groups, group, paginationState),
+            sliver: _buildSliverGrid(ref, groups, groups[i], paginationState),
           ),
-          if ((paginationState[group.firestoreName] ?? kCollapsedItemLimit) < group.products.length)
+
+          // --- AD PLACEMENT LOGIC ---
+          // If a "Show More" button will be displayed for this group...
+          if ((paginationState[groups[i].firestoreName] ?? kCollapsedItemLimit) < groups[i].products.length)
+          // ...then show an ad banner just before it.
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12.0, 0, 12.0, 16.0), // Added bottom padding
+                child: AdPlaceholderWidget(adType: AdType.banner),
+              ),
+            ),
+
+          // --- SHOW MORE BUTTON LOGIC ---
+          // This if-condition is the same as the one for the ad above.
+          if ((paginationState[groups[i].firestoreName] ?? kCollapsedItemLimit) < groups[i].products.length)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
+                // Now that 'i' exists, this code will work correctly.
                 child: _ShowMoreButton(
-                  totalItemCount: group.products.length,
-                  showingItemCount: paginationState[group.firestoreName] ?? kCollapsedItemLimit,
+                  totalItemCount: groups[i].products.length,
+                  showingItemCount: paginationState[groups[i].firestoreName] ?? kCollapsedItemLimit,
                   onPressed: () {
                     ref.read(categoryPaginationProvider.notifier).update((state) {
-                      final categoryKey = group.firestoreName;
+                      final categoryKey = groups[i].firestoreName;
                       final newCount = (state[categoryKey] ?? kCollapsedItemLimit) + kPaginationIncrement;
                       return {...state, categoryKey: newCount};
                     });
@@ -81,11 +100,15 @@ class _ProductList extends ConsumerWidget {
                 ),
               ),
             ),
+
+          // I have removed the duplicate ad placement logic (if i == 0 || i == 2)
+          // to match your request of placing the ad only before the "Show More" button.
         ],
       ],
     );
   }
 
+  // This method and the widgets below are unchanged.
   Widget _buildSliverGrid(WidgetRef ref, List<ProductGroup> allGroups, ProductGroup group, Map<String, int> paginationState) {
     final categoryKey = group.firestoreName;
     final itemsToShowCount = paginationState[categoryKey] ?? kCollapsedItemLimit;
@@ -123,6 +146,8 @@ class _ProductList extends ConsumerWidget {
     );
   }
 }
+
+// --- The _GroupHeader and _ShowMoreButton widgets below are completely unchanged ---
 
 class _GroupHeader extends ConsumerWidget {
   const _GroupHeader({required this.style, this.itemCount});

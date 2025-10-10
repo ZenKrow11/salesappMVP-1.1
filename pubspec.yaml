@@ -49,6 +49,7 @@ dependencies:
   freezed_annotation: ^2.4.1
   auto_size_text: ^3.0.0
   grouped_list: ^6.0.0
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:

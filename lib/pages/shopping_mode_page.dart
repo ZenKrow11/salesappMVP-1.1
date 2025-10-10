@@ -16,6 +16,9 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/quantity_stepper.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
+// --- ADDED IMPORTS ---
+import 'package:sales_app_mvp/models/filter_state.dart';
+import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 
 class ShoppingModeScreen extends ConsumerWidget {
   const ShoppingModeScreen({super.key});
@@ -23,7 +26,7 @@ class ShoppingModeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
+    final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final shoppingModeState = ref.watch(shoppingModeProvider);
     final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
@@ -39,9 +42,8 @@ class ShoppingModeScreen extends ConsumerWidget {
           style: TextStyle(color: theme.secondary),
         ),
         actions: [
-          // This is your trailing, accent-colored close button
           IconButton(
-            icon: Icon(Icons.close, color: theme.accent), // Corrected theme color
+            icon: Icon(Icons.close, color: theme.accent),
             tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -64,12 +66,23 @@ class ShoppingModeScreen extends ConsumerWidget {
             );
           }
 
-          final groupedProducts = groupBy(products, (Product p) => (p.category.isEmpty) ? 'categoryUncategorized' : p.category);
+          // --- STEP 2: ADD DYNAMIC GROUPING LOGIC ---
+          final sortOption = ref.watch(filterStateProvider).sortOption;
 
-          final orderedGroupNames = categoryDisplayOrder.where((name) => groupedProducts.containsKey(name)).toList();
+          final Map<String, List<Product>> groupedProducts;
+          final List<String> orderedGroupNames;
 
-          final remainingGroups = groupedProducts.keys.where((key) => !orderedGroupNames.contains(key)).toList();
-          orderedGroupNames.addAll(remainingGroups);
+          if (sortOption == SortOption.storeAlphabetical) {
+            // Group by store if that sort option is selected
+            groupedProducts = groupBy(products, (Product p) => p.store);
+            orderedGroupNames = groupedProducts.keys.toList()..sort();
+          } else {
+            // Default grouping by category
+            groupedProducts = groupBy(products, (Product p) => p.category.isEmpty ? 'categoryUncategorized' : p.category);
+            orderedGroupNames = categoryDisplayOrder.where((name) => groupedProducts.containsKey(name)).toList();
+            final remainingGroups = groupedProducts.keys.where((key) => !orderedGroupNames.contains(key)).toList();
+            orderedGroupNames.addAll(remainingGroups);
+          }
 
           return CustomScrollView(
             slivers: [
@@ -79,7 +92,8 @@ class ShoppingModeScreen extends ConsumerWidget {
                   delegate: _SliverHeaderDelegate(
                     child: Container(
                       color: theme.pageBackground,
-                      child: _buildCompactGroupSeparator(groupName, context, theme),
+                      // Pass sortOption to the header builder
+                      child: _buildCompactGroupSeparator(groupName, context, theme, sortOption),
                     ),
                     height: 58,
                   ),
@@ -110,16 +124,26 @@ class ShoppingModeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompactGroupSeparator(String groupFirestoreName, BuildContext context, AppThemeData theme) {
+  Widget _buildCompactGroupSeparator(String groupName, BuildContext context, AppThemeData theme, SortOption sortOption) {
     final l10n = AppLocalizations.of(context)!;
-    final style = CategoryService.getLocalizedStyleForGroupingName(groupFirestoreName, l10n);
+
+    final String displayName;
+    // If we're sorting by store, the group name is the store name.
+    if (sortOption == SortOption.storeAlphabetical) {
+      displayName = groupName;
+    } else {
+      // Otherwise, it's a category, so get the localized display name.
+      final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
+      displayName = style.displayName;
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            style.displayName.toUpperCase(),
+            displayName.toUpperCase(),
             style: TextStyle(
               fontSize: 14,
               color: theme.inactive.withOpacity(0.7),

@@ -588,6 +588,19 @@
   "errorCouldNotLoadData": "Error: Could not load data.",
   "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails." },
 
+  "accountStatusFree": "Free User",
+  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
+  "accountStatusPremium": "Premium Member",
+  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
+  "upgradeToPremiumAction": "Upgrade to Premium",
+  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
+
+  "premiumFeatureListsTitle": "Create More Lists",
+  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
+
+  "premiumFeatureListsBody": "Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.",
+  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
+
   "upgradeToPremiumTitle": "Upgrade to Premium",
   "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
 
@@ -604,5 +617,15 @@
   "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
 
   "premiumStatus": "Premium Status (Test)",
-  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." }
+  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
+
+  "organizeList": "Organize List",
+  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
+
+  "filterByStore": "Filter by Store",
+  "@filterByStore": { "description": "Section header for filtering by store" },
+
+  "noProductsMatchFilter": "No products match your current filter",
+  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" }
+
 }

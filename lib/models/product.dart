@@ -35,7 +35,7 @@ class Product extends HiveObject implements Categorizable {
   @HiveField(11)
   final DateTime? dealStart;
   @HiveField(12)
-  final String? specialCondition; // <-- RENAMED from sonderkondition
+  final String? specialCondition;
   @HiveField(13)
   final DateTime? dealEnd;
   @HiveField(14)

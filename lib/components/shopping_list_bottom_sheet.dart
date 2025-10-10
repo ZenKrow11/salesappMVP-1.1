@@ -12,6 +12,7 @@ import '../providers/shopping_list_provider.dart';
 import '../services/firestore_service.dart';
 import '../widgets/app_theme.dart';
 import '../providers/user_profile_provider.dart';
+import '../components/upgrade_dialog.dart';
 import '../pages/main_app_screen.dart';
 
 class ShoppingListBottomSheet extends ConsumerStatefulWidget {
@@ -305,7 +306,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
 
   Widget _buildNewListTab(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
-    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
+    final isPremium = ref.watch(isPremiumProvider);
 
     if (isPremium) {
       final allListsAsync = ref.watch(allShoppingListsProvider);
@@ -314,39 +315,51 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
         data: (lists) {
-          final maxLists = 6;
-          final canCreateMoreLists = lists.length < maxLists;
+          const int maxPremiumLists = 9;
+          final canCreateMoreLists = lists.length < maxPremiumLists;
 
           if (canCreateMoreLists) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _newListController,
-                  autofocus: _tabController?.index == 1,
-                  style: TextStyle(color: theme.inactive),
-                  onSubmitted: _createAndSetActive,
-                  decoration: InputDecoration(
-                    labelText: l10n.enterNewListName,
-                    labelStyle: TextStyle(color: theme.inactive),
+            // ========== THE FIX IS HERE ==========
+            // Wrap the Column in a SingleChildScrollView to prevent overflow
+            // when the keyboard appears.
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _newListController,
+                    autofocus: _tabController?.index == 1,
+                    style: TextStyle(color: theme.inactive),
+                    onSubmitted: _createAndSetActive,
+                    decoration: InputDecoration(
+                      labelText: l10n.enterNewListName,
+                      labelStyle: TextStyle(color: theme.inactive),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.secondary),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.secondary,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.secondary,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => _createAndSetActive(_newListController.text),
+                    child: Text(
+                      l10n.createAndSelect,
+                      style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  onPressed: () => _createAndSetActive(_newListController.text),
-                  child: Text(
-                    l10n.createAndSelect,
-                    style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+                ],
+              ),
             );
+            // ========== END OF FIX ==========
           } else {
+            // This part for 'max lists reached' is fine and doesn't need to scroll.
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -355,7 +368,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                   Icon(Icons.inventory_2_outlined, size: 48, color: theme.inactive.withOpacity(0.7)),
                   const SizedBox(height: 16),
                   Text(
-                    l10n.maximumListsReached(maxLists),
+                    l10n.maximumListsReached(maxPremiumLists),
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: theme.inactive),
                   ),
@@ -366,29 +379,42 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
         },
       );
     } else {
-      final maxLists = 6;
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_outline, size: 48, color: theme.inactive.withOpacity(0.7)),
-            const SizedBox(height: 16),
-            Text(
-              l10n.createCustomListsWithPremium(maxLists),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: theme.inactive),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: theme.secondary),
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.findAncestorStateOfType<MainAppScreenState>()?.navigateToTab(2);
-              },
-              child: Text(l10n.upgradeNow, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
-            ),
-          ],
+      // The paywall UI for free users is also fine and doesn't need to scroll.
+      return InkWell(
+        onTap: () {
+          Navigator.of(context).pop(); // Close the current sheet
+          showUpgradeDialog(context, ref); // Show the main upgrade dialog
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline, size: 48, color: theme.inactive.withOpacity(0.5)),
+              const SizedBox(height: 16),
+              Text(
+                l10n.premiumFeatureListsTitle,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.inactive),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.premiumFeatureListsBody,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: theme.inactive.withOpacity(0.7)),
+              ),
+              const SizedBox(height: 24),
+              // AbsorbPointer prevents the button's own tap effect from conflicting with the InkWell
+              AbsorbPointer(
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.star, color: theme.primary),
+                  label: Text(l10n.upgradeNow, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: theme.secondary),
+                  onPressed: () {},
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
