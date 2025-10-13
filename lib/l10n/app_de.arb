@@ -203,6 +203,9 @@
   "customItems": "Eigene Artikel",
   "@customItems": { "description": "Label for the button or section related to user-created custom items." },
 
+  "customItemsEmpty": "Du hast noch keine eigenen Artikel erstellt.",
+  "@customItemsEmpty": { "description": "Message shown in the custom items library when it's empty." },
+
   "dangerZone": "Gefahrenzone",
   "@dangerZone": {
     "description": "Section header on the account page for destructive actions."
@@ -236,6 +239,15 @@
   "deleteAccountConfirmationBody": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden. Alle deine Listen und Daten gehen verloren. Bitte gib dein Passwort zur Bestätigung ein.",
   "@deleteAccountConfirmationBody": {
     "description": "Warning message in the account deletion confirmation dialog."
+  },
+
+  "deleteItemConfirmationBody": "Dadurch wird der Artikel dauerhaft aus Deiner Bibliothek entfernt.",
+  "@deleteItemConfirmationBody": { "description": "Warning message in the confirmation dialog for deleting a custom item." },
+
+  "deleteItemConfirmationTitle": "\"{itemName}\" löschen?",
+  "@deleteItemConfirmationTitle": {
+    "description": "Title of the confirmation dialog when deleting a custom item.",
+    "placeholders": { "itemName": { "type": "String" } }
   },
 
   "deleteListConfirmationBody": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden.",
@@ -856,5 +868,45 @@
   "@loadingAllSet": { "description": "Final success message before entering the app." },
 
   "errorCouldNotLoadData": "Fehler: Daten konnten nicht geladen werden.",
-  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."}
+  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."},
+
+  "accountStatusFree": "Kostenloser Benutzer",
+  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
+  "accountStatusPremium": "Premium-Mitglied",
+  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
+  "upgradeToPremiumAction": "Auf Premium upgraden",
+  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
+
+  "premiumFeatureListsTitle": "Mehr Listen erstellen",
+  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
+
+  "premiumFeatureListsBody": "Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.",
+  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
+
+  "upgradeToPremiumTitle": "Auf Premium upgraden",
+  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
+
+  "upgradeToPremiumFeature1": "• Unbegrenzte Einkaufslisten",
+  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature2": "• Unbegrenzte benutzerdefinierte Artikel",
+  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature3": "• Werbefreies Erlebnis",
+  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
+
+  "upgradeButton": "Jetzt upgraden",
+  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
+
+  "premiumStatus": "Premium-Status (Test)",
+  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
+
+  "organizeList": "Liste organisieren",
+  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
+
+  "filterByStore": "Nach Geschäft filtern",
+  "@filterByStore": { "description": "Section header for filtering by store" },
+
+  "noProductsMatchFilter": "Keine Produkte entsprechen deinem aktuellen Filter",
+  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" }
 }

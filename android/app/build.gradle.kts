@@ -1,47 +1,44 @@
+// In android/build.gradle.kts
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.2.2")
+        classpath("com.google.gms:google-services:4.4.2")
+        // The Kotlin plugin is now declared in the `plugins` block below.
+    }
+}
+
+// NEW: This block is required to configure the toolchain.
+// `apply false` makes the plugin available to subprojects without applying it here.
 plugins {
-    id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
+    id("org.jetbrains.kotlin.android") version "1.9.23" apply false
 }
 
-android {
-    namespace = "com.example.sales_app_mvp"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
-
-    defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.sales_app_mvp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdkVersion(24)
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
-
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
-        }
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
     }
 }
 
-flutter {
-    source = "../.."
+rootProject.buildDir = file("../build")
+
+subprojects {
+    project.buildDir = File(rootProject.buildDir, project.name)
+    // We no longer need the complex afterEvaluate blocks here,
+    // as the toolchain will handle Java version consistency.
+}
+
+// NEW: This is the toolchain configuration. It tells all Kotlin
+// modules in the entire project to target JVM 17.
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.buildDir)
 }

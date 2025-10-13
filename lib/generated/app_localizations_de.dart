@@ -239,7 +239,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get customItems => 'Eigene Artikel';
 
   @override
-  String get customItemsEmpty => 'You haven\'t created any custom items yet.';
+  String get customItemsEmpty => 'Du hast noch keine eigenen Artikel erstellt.';
 
   @override
   String get dangerZone => 'Gefahrenzone';
@@ -266,11 +266,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deleteItemConfirmationBody =>
-      'This will permanently remove the item from your library.';
+      'Dadurch wird der Artikel dauerhaft aus Deiner Bibliothek entfernt.';
 
   @override
   String deleteItemConfirmationTitle(String itemName) {
-    return 'Delete \"$itemName\"?';
+    return '\"$itemName\" löschen?';
   }
 
   @override
@@ -678,45 +678,47 @@ class AppLocalizationsDe extends AppLocalizations {
       'Fehler: Daten konnten nicht geladen werden.';
 
   @override
-  String get accountStatusFree => 'Free User';
+  String get accountStatusFree => 'Kostenloser Benutzer';
 
   @override
-  String get accountStatusPremium => 'Premium Member';
+  String get accountStatusPremium => 'Premium-Mitglied';
 
   @override
-  String get upgradeToPremiumAction => 'Upgrade to Premium';
+  String get upgradeToPremiumAction => 'Auf Premium upgraden';
 
   @override
-  String get premiumFeatureListsTitle => 'Create More Lists';
+  String get premiumFeatureListsTitle => 'Mehr Listen erstellen';
 
   @override
   String get premiumFeatureListsBody =>
-      'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.';
+      'Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.';
 
   @override
-  String get upgradeToPremiumTitle => 'Upgrade to Premium';
+  String get upgradeToPremiumTitle => 'Auf Premium upgraden';
 
   @override
-  String get upgradeToPremiumFeature1 => '• Unlimited Shopping Lists';
+  String get upgradeToPremiumFeature1 => '• Unbegrenzte Einkaufslisten';
 
   @override
-  String get upgradeToPremiumFeature2 => '• Unlimited Custom Items';
+  String get upgradeToPremiumFeature2 =>
+      '• Unbegrenzte benutzerdefinierte Artikel';
 
   @override
-  String get upgradeToPremiumFeature3 => '• Ad-Free Experience';
+  String get upgradeToPremiumFeature3 => '• Werbefreies Erlebnis';
 
   @override
-  String get upgradeButton => 'Upgrade Now';
+  String get upgradeButton => 'Jetzt upgraden';
 
   @override
-  String get premiumStatus => 'Premium Status (Test)';
+  String get premiumStatus => 'Premium-Status (Test)';
 
   @override
-  String get organizeList => 'Organize List';
+  String get organizeList => 'Liste organisieren';
 
   @override
-  String get filterByStore => 'Filter by Store';
+  String get filterByStore => 'Nach Geschäft filtern';
 
   @override
-  String get noProductsMatchFilter => 'No products match your current filter';
+  String get noProductsMatchFilter =>
+      'Keine Produkte entsprechen deinem aktuellen Filter';
 }

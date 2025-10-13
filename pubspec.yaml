@@ -4,23 +4,22 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0' # A safer range than a single version
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-
   flutter_localizations:
     sdk: flutter
 
-  # Firebase
-  firebase_core: ^4.1.1
-  cloud_firestore: ^6.0.2
-  firebase_auth: ^6.1.0
-  google_sign_in: ^7.2.0
-  firebase_ui_auth: ^3.0.0
+  # Firebase - CORRECTED LATEST STABLE VERSIONS
+  firebase_core: ^2.31.0
+  cloud_firestore: ^4.17.3
+  firebase_auth: ^4.19.5
+  google_sign_in: ^6.2.1
+  firebase_ui_auth: ^1.3.0
 
-  # State Management (Riverpod)
+  # State Management (Riverpod) - Corrected to latest stable
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
 
@@ -34,18 +33,18 @@ dependencies:
   cached_network_image: ^3.3.1
   collection: ^1.18.0
   flutter_svg: ^2.0.10+1
-  intl: ^0.20.2 # Updated to a more recent stable version
+  intl: ^0.20.2
   responsive_framework: ^1.4.0
   scrollable_positioned_list: ^0.3.8
   sticky_headers: ^0.3.0
-  url_launcher: ^6.2.6
-  shared_preferences: ^2.5.3
+  url_launcher: ^6.3.0
+  shared_preferences: ^2.2.3
   sliver_tools: ^0.2.12
-  google_fonts: ^6.3.0
-  uuid: ^4.3.3
-  in_app_purchase: ^3.2.0  # <-- ADD THIS LINE HERE
+  google_fonts: ^6.2.1
+  uuid: ^4.4.0
+  in_app_purchase: ^3.2.0
 
-  # Code Generation (Annotations)
+  # Code Generation & Others
   freezed_annotation: ^2.4.1
   auto_size_text: ^3.0.0
   grouped_list: ^6.0.0
@@ -55,14 +54,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
 
-  analyzer: ^6.4.1
-
-  # Code Generation (Generators) - STABLE, COMPATIBLE VERSIONS
-  build_runner: ^2.4.9
-  freezed: ^2.5.2             # Use the stable version of freezed
+  # Code Generation (Generators) - Versions compatible with above
+  build_runner: ^2.4.11
+  freezed: ^2.5.2
   hive_generator: ^2.0.1
   riverpod_generator: ^2.4.0
 

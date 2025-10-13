@@ -43,7 +43,7 @@ Future<void> main() async {
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
       final host = '192.168.1.116';
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
-      FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+      FirebaseFirestore.instance.useFirestoreEmulator(host, 8081);
     } catch (e) {
       debugPrint('Error: Failed to connect to Firebase emulators. $e');
     }

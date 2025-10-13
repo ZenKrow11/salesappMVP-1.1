@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
   return AuthController();
@@ -17,7 +15,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   AuthController() : super(const AsyncData(null));
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> _createUserProfileDocument(User user) async {
@@ -29,9 +27,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     });
   }
 
-  // ========== NEW METHODS ADDED HERE ==========
-
-  /// Re-authenticates the user and then changes their password.
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -39,7 +34,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
     try {
       final user = _auth.currentUser;
-      // You can keep this one as an Exception because it's a developer error, not a user-facing one.
       if (user == null || user.email == null) throw Exception('No user is currently signed in.');
 
       final cred = EmailAuthProvider.credential(
@@ -54,18 +48,11 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       return true;
     } on FirebaseAuthException catch (e, st) {
       debugPrint('CHANGE PASSWORD ERROR: [${e.code}] ${e.message}');
-
-      // === CHANGE IS HERE ===
-      // BEFORE: state = AsyncError(e.message ?? 'An unknown error occurred', st);
-      // AFTER: Pass the original exception object. Let the UI decide what to show.
       state = AsyncError(e, st);
-      // =======================
-
       return false;
     }
   }
 
-  /// Re-authenticates and then permanently deletes the user's account and data.
   Future<bool> deleteAccount({required String currentPassword}) async {
     state = const AsyncLoading();
     try {
@@ -78,12 +65,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       );
 
       await user.reauthenticateWithCredential(cred);
-
-      // Important: Delete Firestore data BEFORE deleting the auth user.
-      // Note: This simple delete won't remove subcollections. A Cloud Function
-      // is the production-ready solution for cascading deletes.
       await _firestore.collection('users').doc(user.uid).delete();
-
       await user.delete();
 
       state = const AsyncData(null);
@@ -94,8 +76,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       return false;
     }
   }
-
-  // ==========================================
 
   Future<bool> signInWithEmail(String email, String password) async {
     state = const AsyncLoading();
@@ -132,20 +112,41 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      await GoogleSignIn.instance.initialize();
+      // ===================== THE FINAL FIX =====================
+      // The initialize() method call has been removed.
+      // =========================================================
+
       GoogleSignInAccount? googleUser;
-      if (GoogleSignIn.instance.supportsAuthenticate()) {
-        googleUser = await GoogleSignIn.instance.authenticate();
+
+      // Check if the user is already signed in to Google
+      final isAlreadySignedIn = await _googleSignIn.isSignedIn();
+      if (isAlreadySignedIn) {
+        // Attempt to sign in silently without showing a dialog
+        googleUser = await _googleSignIn.signInSilently();
       }
+
+      // If not signed in silently (or not signed in at all),
+      // trigger the interactive sign-in flow.
+      googleUser ??= await _googleSignIn.signIn();
+
       if (googleUser == null) {
+        // User cancelled the sign-in flow.
         state = const AsyncData(null);
         return false;
       }
 
       final googleAuth = await googleUser.authentication;
 
+      if (googleAuth.idToken == null) {
+        throw FirebaseAuthException(
+          code: 'id-token-missing',
+          message: 'Google Sign-In did not return an ID token. Check your Firebase/GCP setup.',
+        );
+      }
+
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
@@ -158,11 +159,12 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
+      await _googleSignIn.signOut();
+      debugPrint('GOOGLE SIGN IN ERROR: $e');
       state = AsyncError(e, st);
       return false;
     }
   }
-
 
   Future<void> signOut() async {
     state = const AsyncLoading();
@@ -176,21 +178,16 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<bool> sendPasswordResetEmail(String email) async {
-    // Prevent action if another operation is already in progress.
     if (state.isLoading) return false;
     state = const AsyncValue.loading();
-
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      // Set state back to idle after a successful operation.
       state = const AsyncValue.data(null);
       return true;
     } on FirebaseAuthException catch (e, stackTrace) {
-      // Set state to error and pass the specific error message.
       state = AsyncValue.error(e.message ?? 'Failed to send reset email.', stackTrace);
       return false;
     } catch (e, stackTrace) {
-      // Handle any other unexpected errors.
       state = AsyncValue.error('An unexpected error occurred.', stackTrace);
       return false;
     }
