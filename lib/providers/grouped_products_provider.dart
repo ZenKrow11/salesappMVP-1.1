@@ -3,7 +3,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/generated/app_localizations.dart'; // Import this
+import 'package:sales_app_mvp/generated/app_localizations.dart'; // We DO need this again
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
@@ -12,22 +12,26 @@ import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 
-// 1. UPDATED PRODUCT GROUP MODEL
+// This model is correct and does not need to change.
 class ProductGroup {
   final String firestoreName;
-  final CategoryStyle style;
+  final CategoryStyle style; // This style will now contain the final, translated name.
   final List<PlainProduct> products;
   ProductGroup({required this.firestoreName, required this.style, required this.products});
 }
 
+// This input class is correct.
 class _FilterAndGroupInput {
   final List<PlainProduct> allProducts;
   final FilterState filter;
   _FilterAndGroupInput({required this.allProducts, required this.filter});
 }
 
-// 2. ISOLATE FUNCTION (GROUPS BY RAW, NON-TRANSLATED ID)
+// This isolate function is correct. It should work with raw, non-localized data.
 Map<String, List<PlainProduct>> _processProductDataInBackground(_FilterAndGroupInput input) {
+  // --- NO CHANGES NEEDED HERE ---
+  // This function correctly filters, sorts, and groups by the raw firestoreName.
+  // This is efficient and correct.
   debugPrint("[ISOLATE] Starting background processing task...");
   final plainProducts = input.allProducts;
   final filter = input.filter;
@@ -53,9 +57,8 @@ Map<String, List<PlainProduct>> _processProductDataInBackground(_FilterAndGroupI
 
   if (filteredProducts.isEmpty) return {};
 
-  // Group by the raw 'category' field (the firestoreName). This is stable and non-localized.
   final groupedByFirestoreName = groupBy<PlainProduct, String>(
-    filteredProducts, (p) => (p.category == null || p.category.isEmpty) ? 'Sonstige' : p.category,
+    filteredProducts, (p) => p.category.isEmpty ? 'other' : p.category,
   );
 
   for (final productList in groupedByFirestoreName.values) {
@@ -75,15 +78,14 @@ Map<String, List<PlainProduct>> _processProductDataInBackground(_FilterAndGroupI
   return groupedByFirestoreName;
 }
 
-// 3. PROVIDER TO EXPOSE LOCALIZATIONS TO OTHER PROVIDERS
+// We bring this back, but it will be provided correctly this time.
 final localizationProvider = Provider<AppLocalizations>((ref) {
-  throw UnimplementedError();
+  throw UnimplementedError('localizationProvider must be overridden with the AppLocalizations object from the UI.');
 });
 
 /// Provider that returns grouped products for the home page.
 final homePageProductsProvider =
 FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
-
   final l10n = ref.watch(localizationProvider);
   final appData = ref.watch(appDataProvider);
   final filter = ref.watch(filterStateProvider);
@@ -98,32 +100,6 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   final Map<String, List<PlainProduct>> groupedByFirestoreName =
   await compute(_processProductDataInBackground, input);
 
-  // ==================== INSERT LOGGING CODE HERE ====================
-  // This code will find and print the details of any products that are being ignored.
-
-  final Set<String> foundCategories = groupedByFirestoreName.keys.toSet();
-  final Set<String> expectedCategories = categoryDisplayOrder.toSet(); // Assumes categoryDisplayOrder is accessible
-  final Set<String> unhandledCategories = foundCategories.difference(expectedCategories);
-
-  if (unhandledCategories.isNotEmpty) {
-    int totalMissingCount = 0;
-
-    print('--- UNHANDLED PRODUCTS DETECTED ---');
-    for (final unhandledCategory in unhandledCategories) {
-      final missingProducts = groupedByFirestoreName[unhandledCategory]!;
-      totalMissingCount += missingProducts.length;
-      print("Category: '$unhandledCategory' (${missingProducts.length} items)");
-      for (final product in missingProducts) {
-        // Log the key details of each missing product
-        print('  -> ID: ${product.id}, Name: ${product.name}, Category: ${product.category}');
-      }
-    }
-    print('Total missing products found in logs: $totalMissingCount');
-    print('--- END OF UNHANDLED PRODUCTS ---');
-  }
-  // ======================== END OF LOGGING CODE ========================
-
-
   if (groupedByFirestoreName.isEmpty) {
     return [];
   }
@@ -132,11 +108,11 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   for (final firestoreName in categoryDisplayOrder) {
     if (groupedByFirestoreName.containsKey(firestoreName)) {
       final productList = groupedByFirestoreName[firestoreName]!;
-      final style = CategoryService.getLocalizedStyleForGroupingName(firestoreName, l10n);
+      final translatedStyle = CategoryService.getLocalizedStyleForGroupingName(firestoreName, l10n);
 
       categoryGroups.add(ProductGroup(
         firestoreName: firestoreName,
-        style: style,
+        style: translatedStyle,
         products: productList,
       ));
     }
@@ -144,5 +120,8 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
 
   return categoryGroups;
 },
-  dependencies: [localizationProvider],
+  // --- THIS IS THE FIX ---
+  // Explicitly list the providers that this provider depends on, especially
+  // the one that is being overridden.
+  dependencies: [localizationProvider, appDataProvider, filterStateProvider],
 );

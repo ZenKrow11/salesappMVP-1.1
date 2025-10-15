@@ -13,7 +13,6 @@ import '../services/firestore_service.dart';
 import '../widgets/app_theme.dart';
 import '../providers/user_profile_provider.dart';
 import '../components/upgrade_dialog.dart';
-import '../pages/main_app_screen.dart';
 
 class ShoppingListBottomSheet extends ConsumerStatefulWidget {
   final Product? product;

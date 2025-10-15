@@ -55,10 +55,16 @@ class AppDataController extends StateNotifier<AppDataState> {
   AppDataController(this._ref, this._syncService)
       : super(AppDataState(status: InitializationStatus.uninitialized));
 
+  // --- ADD THIS METHOD ---
+  /// Resets the controller to its initial state. Called on user logout.
+  void reset() {
+    state = AppDataState(status: InitializationStatus.uninitialized);
+  }
+
   Future<void> initialize() async {
+    // This guard is now even more important.
     if (state.status != InitializationStatus.uninitialized) return;
 
-    // --- ALL HARDCODED STRINGS ARE REPLACED WITH KEYS ---
     try {
       state = state.copyWith(status: InitializationStatus.loading, loadingMessage: 'loadingPreparingStorage', loadingProgress: 0.1);
       await _ref.read(hiveInitializationProvider.future);
@@ -101,6 +107,7 @@ class AppDataController extends StateNotifier<AppDataState> {
   }
 }
 
+// ... (provider definition is unchanged) ...
 final appDataProvider =
 StateNotifierProvider<AppDataController, AppDataState>((ref) {
   final syncService = ref.watch(productSyncProvider);

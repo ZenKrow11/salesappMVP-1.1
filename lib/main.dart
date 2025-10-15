@@ -19,10 +19,10 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'generated/app_localizations.dart';
-//import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 
 //============================================================================
 //  MAIN FUNCTION - The App's Entry Point
@@ -39,9 +39,9 @@ Future<void> main() async {
   if (kDebugMode) {
     try {
       //local emulator
-      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
-      final host = '192.168.1.116';
+      //final host = '192.168.1.116';
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8081);
     } catch (e) {
@@ -82,15 +82,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // The builder provides a context that is *inside* the MaterialApp,
-      // so AppLocalizations.of(context) will work correctly here.
+      // which is essential for AppLocalizations.of(context) to work.
       builder: (context, child) {
         return ProviderScope(
-          parent: ProviderScope.containerOf(context), // Link to the root scope
+          // This links to the root ProviderScope established in main().
+          parent: ProviderScope.containerOf(context),
           overrides: [
-            // This is now safe because the context is valid.
+            // This is now safe because the builder's context is valid.
+            // It provides the l10n object for any provider that needs it.
             localizationProvider.overrideWithValue(AppLocalizations.of(context)!),
           ],
-          // The 'child' is the widget tree defined by 'home' or 'routes'.
+          // The 'child' is whatever widget tree 'home' or 'routes' would normally build.
           child: child!,
         );
       },
@@ -104,17 +106,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 //============================================================================
 //  SPLASH & AUTH PROVIDERS
 //============================================================================
-
-/// Ensures the splash screen is shown for a minimum duration for branding.
 final splashControllerProvider = FutureProvider<void>((ref) async {
-  // Adjust the duration as needed.
   await Future.delayed(const Duration(seconds: 2));
 });
 
-/// Provides the current authentication state of the user.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
@@ -122,36 +121,26 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 //============================================================================
 //  AUTH GATE WIDGET
 //============================================================================
-
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch both the authentication state and the splash screen timer.
     final authState = ref.watch(authStateChangesProvider);
     final splashHasFinished = ref.watch(splashControllerProvider);
 
-    // If the splash screen timer hasn't finished, always show the splash screen.
-    // This takes precedence and ensures it's visible for a minimum time.
     if (splashHasFinished is! AsyncData) {
       return const SplashScreen();
     }
 
-    // After the splash timer is done, then decide the screen based on auth state.
     return authState.when(
       data: (user) {
         if (user != null) {
-          // USER IS SIGNED IN
-          // Go to the LoadingGate to ensure data is ready.
           return const LoadingGate();
         } else {
-          // USER IS SIGNED OUT
-          // Go to the login screen.
           return const LoginScreen();
         }
       },
-      // Keep showing splash if auth state is still loading after the timer.
       loading: () => const SplashScreen(),
       error: (err, stack) => Scaffold(
         body: Center(child: Text("Authentication Error: $err")),

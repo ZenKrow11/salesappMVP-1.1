@@ -19,11 +19,11 @@ class AdPlaceholderWidget extends ConsumerStatefulWidget {
 class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  int _retryAttempt = 0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Load the ad here. This gets called when the widget is first inserted into the tree.
     if (_bannerAd == null) {
       _loadAd();
     }
@@ -32,28 +32,37 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
   void _loadAd() {
     final adManager = ref.read(adManagerProvider.notifier);
 
-    // Ask the AdManager factory to create a new ad for this specific widget instance.
     _bannerAd = adManager.createBannerAd(
       BannerAdListener(
         onAdLoaded: (ad) {
-          // Once loaded, rebuild the widget to show the ad.
-          if (mounted) { // Check if the widget is still in the tree
+          debugPrint('BannerAd loaded successfully.');
+          if (mounted) {
             setState(() {
               _isAdLoaded = true;
             });
           }
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('BannerAd failed to load for this widget: $error');
+          debugPrint('BannerAd failed to load: $error. Attempt #${_retryAttempt + 1}');
           ad.dispose();
+
+          // Don't retry forever. Let's try 3 times.
+          if (_retryAttempt < 3) {
+            _retryAttempt++;
+            // Wait for 30 seconds before trying again.
+            Future.delayed(const Duration(seconds: 30), () {
+              if (mounted) {
+                _loadAd();
+              }
+            });
+          }
         },
       ),
-    );
+    )..load(); // <-- IMPORTANT: Added .load()
   }
 
   @override
   void dispose() {
-    // Clean up the ad when this widget is removed from the screen.
     _bannerAd?.dispose();
     super.dispose();
   }
@@ -61,12 +70,12 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
   @override
   Widget build(BuildContext context) {
     final isPremium = ref.watch(isPremiumProvider);
-    if (isPremium || _bannerAd == null) {
-      return const SizedBox.shrink(); // Show nothing if premium or ad isn't even trying to load.
+    // Hide ad for premium users or if it failed to load permanently
+    if (isPremium || (_bannerAd == null && _retryAttempt >= 3)) {
+      return const SizedBox.shrink();
     }
 
-    if (_isAdLoaded) {
-      // If the ad is ready, show it.
+    if (_isAdLoaded && _bannerAd != null) {
       return Container(
         width: _bannerAd!.size.width.toDouble(),
         height: _bannerAd!.size.height.toDouble(),
@@ -75,13 +84,14 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
         child: AdWidget(ad: _bannerAd!),
       );
     } else {
-      // Otherwise, show a loading placeholder.
+      // Show a placeholder while loading
       return Container(
         width: double.infinity,
         height: 50, // Standard banner height
         color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8.0),
+        child: const Text('Ad Loading...'), // Good for debugging
       );
     }
   }

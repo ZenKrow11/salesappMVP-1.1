@@ -2,19 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/pages/main_app_screen.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/components/ad_placeholder_widget.dart';
 
-
-// 2. ADD THE TRANSLATION HELPER FUNCTION
-/// A helper function to translate the loading message key from the state.
+// ... (the _getTranslatedMessage function remains unchanged) ...
 String _getTranslatedMessage(String key, AppLocalizations l10n) {
+  // ... same as before ...
   switch (key) {
     case 'loadingInitializing':
       return l10n.loadingInitializing;
@@ -35,6 +31,7 @@ String _getTranslatedMessage(String key, AppLocalizations l10n) {
   }
 }
 
+
 class LoadingGate extends ConsumerStatefulWidget {
   const LoadingGate({super.key});
 
@@ -46,32 +43,43 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
   @override
   void initState() {
     super.initState();
+    // Use addPostFrameCallback to ensure the widget is built before starting.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appDataProvider.notifier).initialize();
+      // Check if we are still mounted before triggering initialization.
+      if (mounted) {
+        ref.read(appDataProvider.notifier).initialize();
+      }
     });
   }
 
-  // 3. LISTEN TO NAVIGATE AWAY (REMOVED FROM BUILD METHOD)
   @override
   Widget build(BuildContext context) {
+    // --- THIS IS THE FIX ---
     ref.listen<AppDataState>(appDataProvider, (previous, next) {
       if (next.status == InitializationStatus.loaded) {
-        // Use pushReplacementNamed to prevent the user from navigating back to the loading screen.
-        Navigator.of(context).pushReplacementNamed(MainAppScreen.routeName);
+        // Use Future.delayed to schedule navigation for after the current build cycle.
+        // This prevents race conditions with other widgets (like ads) that might be
+        // finishing their work during this same frame.
+        Future.delayed(Duration.zero, () {
+          if (mounted) { // Always check if the widget is still in the tree
+            Navigator.of(context)
+                .pushReplacementNamed(MainAppScreen.routeName);
+          }
+        });
       }
     });
 
     final appDataState = ref.watch(appDataProvider);
+    final hasError = appDataState.status == InitializationStatus.error;
 
-    // This logic is cleaner than returning MainAppScreen directly from here.
-    return _buildLoadingScreen(appDataState, hasError: appDataState.status == InitializationStatus.error);
+    return _buildLoadingScreen(appDataState, hasError: hasError);
   }
 
+  // The _buildLoadingScreen method remains completely unchanged.
   Widget _buildLoadingScreen(AppDataState state, {bool hasError = false}) {
+    // ... same as before ...
     final theme = ref.watch(themeProvider);
-    // 4. GET THE LOCALIZATIONS OBJECT
     final l10n = AppLocalizations.of(context)!;
-
     final Color iconColor = hasError ? Colors.red : theme.secondary;
     final Color textColor = hasError ? Colors.red : theme.inactive;
     final Color progressColor = hasError ? Colors.red : theme.secondary;
@@ -91,13 +99,10 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Spacer(flex: 3),
-
-                      // Replace the old placeholder with the new, smart widget
                       const Flexible(
                         flex: 5,
                         child: AdPlaceholderWidget(adType: AdType.banner),
                       ),
-
                       const Spacer(flex: 2),
                       Icon(
                         hasError ? Icons.error_outline : Icons.shopping_cart_checkout,
@@ -108,7 +113,6 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: Text(
-                          // 6. TRANSLATE THE KEY FROM THE STATE
                           _getTranslatedMessage(state.loadingMessage, l10n),
                           textAlign: TextAlign.center,
                           style: TextStyle(
