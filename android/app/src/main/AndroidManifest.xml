@@ -6,6 +6,7 @@
         android:label="sales_app_mvp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
         android:networkSecurityConfig="@xml/network_security_config">
 
         <meta-data

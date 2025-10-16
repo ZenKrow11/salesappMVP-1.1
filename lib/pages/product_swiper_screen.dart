@@ -99,6 +99,5 @@ class _ReelsPhysics extends PageScrollPhysics {
   double get maxFlingVelocity => 4000.0;
 
   /// Faster snapping animation (default is ~300ms)
-  @override
   Duration get transitionDuration => const Duration(milliseconds: 180);
 }

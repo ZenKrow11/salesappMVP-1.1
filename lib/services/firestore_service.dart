@@ -69,7 +69,7 @@ class FirestoreService {
       final indexSnapshot = await transaction.get(indexDocRef);
       transaction.delete(listDocRef);
       if (indexSnapshot.exists) {
-        final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+        final currentCount = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
         if (currentCount <= 1) {
           transaction.delete(indexDocRef);
         } else {
@@ -98,7 +98,7 @@ class FirestoreService {
         final indexDocRef = indexRefs[i];
 
         if (indexSnapshot.exists) {
-          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (currentCount <= 1) {
             transaction.delete(indexDocRef);
           } else {
@@ -140,7 +140,7 @@ class FirestoreService {
     final collectionRef = _shoppingListsRef(uid).doc(listId).collection('items');
     return collectionRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         data['id'] = doc.id;
         return data;
       }).toList();

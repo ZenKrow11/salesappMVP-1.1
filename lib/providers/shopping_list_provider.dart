@@ -1,7 +1,6 @@
 // lib/providers/shopping_list_provider.dart
 
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -101,7 +100,7 @@ final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>
   }
 
   // Once data is available, apply transformations
-  final products = asyncShoppingList.value!;
+  final products = asyncShoppingList.value;
   List<Product> transformedList = List.from(products);
 
   // 1. APPLY STORE FILTER

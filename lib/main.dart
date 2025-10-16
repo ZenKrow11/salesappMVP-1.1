@@ -34,14 +34,14 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
+/*
   // START: Block to connect to Firebase Emulators in debug mode
   if (kDebugMode) {
     try {
       //local emulator
-      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      //final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
       // IMPORTANT: Replace with your computer's actual IP on the Wi-Fi network
-      //final host = '192.168.1.116';
+      final host = '192.168.1.116';
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
       FirebaseFirestore.instance.useFirestoreEmulator(host, 8081);
     } catch (e) {
@@ -49,6 +49,8 @@ Future<void> main() async {
     }
   }
   // END: Emulator connection block
+
+ */
 
 
   // firebase emulators:start --only firestore,auth
