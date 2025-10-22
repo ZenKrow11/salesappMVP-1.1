@@ -4,6 +4,11 @@
   "account": "Account",
   "@account": { "description": "Title for the account section or page." },
 
+  "accountStatusFree": "Free User",
+  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
+  "accountStatusPremium": "Premium Member",
+  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
+
   "adPlaceholder": "Ad Placeholder\n300 x 250",
   "@adPlaceholder": { "description": "Placeholder text for an advertisement block on the loading screen." },
 
@@ -21,6 +26,9 @@
     "description": "Notification message when an item is added to a specifically named list.",
     "placeholders": { "listName": { "type": "String" } }
   },
+
+  "addToList": "Add to list",
+  "@addToList": { "description": "Tooltip for the button to add a library item to the current shopping list." },
 
   "anUnknownErrorOccurred": "An unknown error occurred",
   "@anUnknownErrorOccurred": { "description": "Generic fallback error message." },
@@ -89,6 +97,12 @@
 
   "checkItem": "Check item",
   "@checkItem": { "description": "Tooltip for the checkbox in shopping mode to mark an item as found." },
+
+  "remove": "Remove",
+  "@remove": { "description": "Button text to remove an item from a list." },
+
+  "add": "Add",
+  "@add": { "description": "Button text to add an item to a list." },
 
   "close": "CLOSE",
   "@close": { "description": "Button text to close a dialog or screen." },
@@ -213,6 +227,9 @@
     "placeholders": { "error": { "type": "String" } }
   },
 
+  "errorCouldNotLoadData": "Error: Could not load data.",
+  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails." },
+
   "errorLoadingList": "Error loading list: {error}",
   "@errorLoadingList": {
     "description": "Error message shown on the shopping list page when data fails to load.",
@@ -246,13 +263,16 @@
   "filter": "Filter",
   "@filter": { "description": "Button text to open filtering options." },
 
+  "filterByStore": "Filter by Store",
+  "@filterByStore": { "description": "Section header for filtering by store" },
+
   "filterProducts": "Filter Products",
   "@filterProducts": { "description": "Header title for the product filtering bottom sheet." },
 
   "finish": "Finish",
   "@finish": { "description": "Button text in shopping mode to finish the shopping session." },
 
-  "finishShoppingBody": "Would you like to remove the items you checked off from your list?",
+  "finishShoppingBody": "Do you want to remove the checked items from your list or keep everything?",
   "@finishShoppingBody": { "description": "Content of the confirmation dialog when finishing shopping." },
 
   "finishShoppingTitle": "Finish Shopping?",
@@ -261,11 +281,44 @@
   "forgotPassword": "Forgot Password?",
   "@forgotPassword": { "description": "Button text for the password reset flow." },
 
+  "hideCheckedItems": "Hide checked items",
+  "@hideCheckedItems": { "description": "Tooltip for the visibility toggle in shopping mode to hide checked items." },
+
   "increaseQuantity": "Increase quantity",
   "@increaseQuantity": { "description": "Tooltip for the plus button on the quantity stepper." },
 
   "initializing": "Initializing...",
   "@initializing": { "description": "Text shown on the splash screen while the app is loading." },
+
+  "itemAddedToList": "\"{itemName}\" added to list.",
+  "@itemAddedToList": {
+    "description": "Success message shown after adding a custom item to a shopping list.",
+    "placeholders": { "itemName": { "type": "String" } }
+  },
+
+  "itemDeleted": "\"{itemName}\" deleted.",
+  "@itemDeleted": {
+    "description": "Success message shown after deleting a custom item from the library.",
+    "placeholders": { "itemName": { "type": "String" } }
+  },
+
+  "itemLimitReachedBody": "Your list contains {currentItems} items, but the maximum is {limit}. Please remove some items to continue.",
+  "@itemLimitReachedBody": {
+    "description": "Message shown when the user has too many items in their shopping list.",
+    "placeholders": {
+      "currentItems": {
+        "type": "int",
+        "example": "35"
+      },
+      "limit": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+
+  "itemLimitReachedTitle": "Item Limit Reached",
+  "@itemLimitReachedTitle": { "description": "Title for the dialog when the shopping list is too full." },
 
   "itemsLabel": "Items",
   "@itemsLabel": { "description": "Label for a counter showing the number of items." },
@@ -287,6 +340,24 @@
 
   "listOptions": "List Options",
   "@listOptions": { "description": "Header title for the list options bottom sheet." },
+
+  "loadingAllSet": "All set!",
+  "@loadingAllSet": { "description": "Final success message before entering the app." },
+
+  "loadingCheckingUpdates": "Checking for updates...",
+  "@loadingCheckingUpdates": { "description": "Loading message when checking if a sync from Firestore is needed." },
+
+  "loadingDownloadingDeals": "Downloading latest deals...",
+  "@loadingDownloadingDeals": { "description": "Loading message during a sync from Firestore." },
+
+  "loadingFromCache": "Loading from local cache...",
+  "@loadingFromCache": { "description": "Loading message when using local data instead of syncing." },
+
+  "loadingInitializing": "Initializing...",
+  "@loadingInitializing": { "description": "Initial loading message." },
+
+  "loadingPreparingStorage": "Preparing local storage...",
+  "@loadingPreparingStorage": { "description": "Loading message when setting up Hive/local database." },
 
   "login": "Login",
   "@login": { "description": "Tab and button text for the login action." },
@@ -342,6 +413,9 @@
   "noProductsFound": "No products found matching your criteria.",
   "@noProductsFound": { "description": "Message shown on the home page when filters result in no products." },
 
+  "noProductsMatchFilter": "No products match your current filter",
+  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" },
+
   "noSubcategoriesAvailable": "No specific subcategories available\nfor the selected category.",
   "@noSubcategoriesAvailable": { "description": "Message shown in the subcategory filter when the selected main category has no subcategories." },
 
@@ -351,8 +425,14 @@
   "notifications": "Notifications",
   "@notifications": { "description": "Button text for the notifications settings." },
 
+  "ok": "OK",
+  "@ok": { "description": "A generic confirmation button text." },
+
   "or": "OR",
   "@or": { "description": "A separator text, typically used between login methods." },
+
+  "organizeList": "Organize List",
+  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
 
   "orSelectMainCategory": "Or select a main category below:",
   "@orSelectMainCategory": { "description": "Instructional text when creating a custom item." },
@@ -401,6 +481,15 @@
 
   "premium": "Premium",
   "@premium": { "description": "Title for the Premium/Subscription section on the account page." },
+
+  "premiumFeatureListsBody": "Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.",
+  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
+
+  "premiumFeatureListsTitle": "Create More Lists",
+  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
+
+  "premiumStatus": "Premium Status (Test)",
+  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
 
   "rememberMe": "Remember me",
   "@rememberMe": { "description": "Label for the 'keep me logged in' checkbox." },
@@ -471,6 +560,9 @@
   "shoppingMode": "Shopping Mode",
   "@shoppingMode": { "description": "Title for the screen where users check off items from their list." },
 
+  "showCheckedItems": "Show checked items",
+  "@showCheckedItems": { "description": "Tooltip for the visibility toggle in shopping mode to show checked items." },
+
   "showMore": "Show {count} more",
   "@showMore": {
     "description": "Button text to paginate and show more items in a category.",
@@ -513,11 +605,11 @@
   "theme": "Theme",
   "@theme": { "description": "Button text for theme settings." },
 
-  "tooltipShowAsList": "Show as list",
-  "@tooltipShowAsList": { "description": "Tooltip for the button to switch to list view." },
-
   "tooltipShowAsGrid": "Show as grid",
   "@tooltipShowAsGrid": { "description": "Tooltip for the button to switch to grid view." },
+
+  "tooltipShowAsList": "Show as list",
+  "@tooltipShowAsList": { "description": "Tooltip for the button to switch to list view." },
 
   "total": "Total",
   "@total": { "description": "Label for the total cost of items in the shopping summary bar." },
@@ -531,8 +623,26 @@
   "updatePassword": "UPDATE PASSWORD",
   "@updatePassword": { "description": "Button text to confirm a password update." },
 
+  "upgradeButton": "Upgrade Now",
+  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
+
   "upgradeNow": "Upgrade Now",
   "@upgradeNow": { "description": "Button text prompting non-premium users to upgrade." },
+
+  "upgradeToPremiumAction": "Upgrade to Premium",
+  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
+
+  "upgradeToPremiumFeature1": "• Unlimited Shopping Lists",
+  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature2": "• Unlimited Custom Items",
+  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumFeature3": "• Ad-Free Experience",
+  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
+
+  "upgradeToPremiumTitle": "Upgrade to Premium",
+  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
 
   "user": "User",
   "@user": { "description": "Fallback display name for a user if their name is not set." },
@@ -565,67 +675,5 @@
   "@welcomeToAppName": {
     "description": "Welcome message on the login screen.",
     "placeholders": { "appName": { "type": "String" } }
-  },
-
-  "loadingInitializing": "Initializing...",
-  "@loadingInitializing": { "description": "Initial loading message." },
-
-  "loadingPreparingStorage": "Preparing local storage...",
-  "@loadingPreparingStorage": { "description": "Loading message when setting up Hive/local database." },
-
-  "loadingCheckingUpdates": "Checking for updates...",
-  "@loadingCheckingUpdates": { "description": "Loading message when checking if a sync from Firestore is needed." },
-
-  "loadingDownloadingDeals": "Downloading latest deals...",
-  "@loadingDownloadingDeals": { "description": "Loading message during a sync from Firestore." },
-
-  "loadingFromCache": "Loading from local cache...",
-  "@loadingFromCache": { "description": "Loading message when using local data instead of syncing." },
-
-  "loadingAllSet": "All set!",
-  "@loadingAllSet": { "description": "Final success message before entering the app." },
-
-  "errorCouldNotLoadData": "Error: Could not load data.",
-  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails." },
-
-  "accountStatusFree": "Free User",
-  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
-  "accountStatusPremium": "Premium Member",
-  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
-  "upgradeToPremiumAction": "Upgrade to Premium",
-  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
-
-  "premiumFeatureListsTitle": "Create More Lists",
-  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
-
-  "premiumFeatureListsBody": "Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.",
-  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
-
-  "upgradeToPremiumTitle": "Upgrade to Premium",
-  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
-
-  "upgradeToPremiumFeature1": "• Unlimited Shopping Lists",
-  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
-
-  "upgradeToPremiumFeature2": "• Unlimited Custom Items",
-  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
-
-  "upgradeToPremiumFeature3": "• Ad-Free Experience",
-  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
-
-  "upgradeButton": "Upgrade Now",
-  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
-
-  "premiumStatus": "Premium Status (Test)",
-  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
-
-  "organizeList": "Organize List",
-  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
-
-  "filterByStore": "Filter by Store",
-  "@filterByStore": { "description": "Section header for filtering by store" },
-
-  "noProductsMatchFilter": "No products match your current filter",
-  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" }
-
+  }
 }

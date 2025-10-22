@@ -104,6 +104,18 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get account;
 
+  /// Label indicating the user has a free account.
+  ///
+  /// In en, this message translates to:
+  /// **'Free User'**
+  String get accountStatusFree;
+
+  /// Label indicating the user has a premium account.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Member'**
+  String get accountStatusPremium;
+
   /// Placeholder text for an advertisement block on the loading screen.
   ///
   /// In en, this message translates to:
@@ -113,7 +125,7 @@ abstract class AppLocalizations {
   /// Button text to add an item to a list.
   ///
   /// In en, this message translates to:
-  /// **'ADD'**
+  /// **'Add'**
   String get add;
 
   /// Button text indicating an item has already been added to a list.
@@ -133,6 +145,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Added to \"{listName}\"'**
   String addedTo(String listName);
+
+  /// Tooltip for the button to add a library item to the current shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to list'**
+  String get addToList;
 
   /// Generic fallback error message.
   ///
@@ -440,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Check item'**
   String get checkItem;
 
+  /// Button text to remove an item from a list.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
   /// Button text to close a dialog or screen.
   ///
   /// In en, this message translates to:
@@ -650,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Error: {error}'**
   String error(String error);
 
+  /// Error message shown on the loading screen if initialization fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: Could not load data.'**
+  String get errorCouldNotLoadData;
+
   /// Error message shown on the shopping list page when data fails to load.
   ///
   /// In en, this message translates to:
@@ -692,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Filter'**
   String get filter;
 
+  /// Section header for filtering by store
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Store'**
+  String get filterByStore;
+
   /// Header title for the product filtering bottom sheet.
   ///
   /// In en, this message translates to:
@@ -707,7 +743,7 @@ abstract class AppLocalizations {
   /// Content of the confirmation dialog when finishing shopping.
   ///
   /// In en, this message translates to:
-  /// **'Would you like to remove the items you checked off from your list?'**
+  /// **'Do you want to remove the checked items from your list or keep everything?'**
   String get finishShoppingBody;
 
   /// Title of the confirmation dialog when finishing shopping.
@@ -722,6 +758,12 @@ abstract class AppLocalizations {
   /// **'Forgot Password?'**
   String get forgotPassword;
 
+  /// Tooltip for the visibility toggle in shopping mode to hide checked items.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide checked items'**
+  String get hideCheckedItems;
+
   /// Tooltip for the plus button on the quantity stepper.
   ///
   /// In en, this message translates to:
@@ -733,6 +775,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Initializing...'**
   String get initializing;
+
+  /// Success message shown after adding a custom item to a shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{itemName}\" added to list.'**
+  String itemAddedToList(String itemName);
+
+  /// Success message shown after deleting a custom item from the library.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{itemName}\" deleted.'**
+  String itemDeleted(String itemName);
+
+  /// Message shown when the user has too many items in their shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Your list contains {currentItems} items, but the maximum is {limit}. Please remove some items to continue.'**
+  String itemLimitReachedBody(int currentItems, int limit);
+
+  /// Title for the dialog when the shopping list is too full.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Limit Reached'**
+  String get itemLimitReachedTitle;
 
   /// Label for a counter showing the number of items.
   ///
@@ -769,6 +835,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'List Options'**
   String get listOptions;
+
+  /// Final success message before entering the app.
+  ///
+  /// In en, this message translates to:
+  /// **'All set!'**
+  String get loadingAllSet;
+
+  /// Loading message when checking if a sync from Firestore is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates...'**
+  String get loadingCheckingUpdates;
+
+  /// Loading message during a sync from Firestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading latest deals...'**
+  String get loadingDownloadingDeals;
+
+  /// Loading message when using local data instead of syncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading from local cache...'**
+  String get loadingFromCache;
+
+  /// Initial loading message.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing...'**
+  String get loadingInitializing;
+
+  /// Loading message when setting up Hive/local database.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing local storage...'**
+  String get loadingPreparingStorage;
 
   /// Tab and button text for the login action.
   ///
@@ -872,6 +974,12 @@ abstract class AppLocalizations {
   /// **'No products found matching your criteria.'**
   String get noProductsFound;
 
+  /// Message shown on the shopping list when filters result in an empty list
+  ///
+  /// In en, this message translates to:
+  /// **'No products match your current filter'**
+  String get noProductsMatchFilter;
+
   /// Message shown in the subcategory filter when the selected main category has no subcategories.
   ///
   /// In en, this message translates to:
@@ -890,11 +998,23 @@ abstract class AppLocalizations {
   /// **'Notifications'**
   String get notifications;
 
+  /// A generic confirmation button text.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
   /// A separator text, typically used between login methods.
   ///
   /// In en, this message translates to:
   /// **'OR'**
   String get or;
+
+  /// Title for the bottom sheet and tooltip for organizing a shopping list
+  ///
+  /// In en, this message translates to:
+  /// **'Organize List'**
+  String get organizeList;
 
   /// Instructional text when creating a custom item.
   ///
@@ -979,6 +1099,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Premium'**
   String get premium;
+
+  /// Body text for a premium feature highlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.'**
+  String get premiumFeatureListsBody;
+
+  /// Title for a premium feature highlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Create More Lists'**
+  String get premiumFeatureListsTitle;
+
+  /// Text showing the user's premium status, for testing purposes.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Status (Test)'**
+  String get premiumStatus;
 
   /// Label for the 'keep me logged in' checkbox.
   ///
@@ -1106,6 +1244,12 @@ abstract class AppLocalizations {
   /// **'Shopping Mode'**
   String get shoppingMode;
 
+  /// Tooltip for the visibility toggle in shopping mode to show checked items.
+  ///
+  /// In en, this message translates to:
+  /// **'Show checked items'**
+  String get showCheckedItems;
+
   /// Button text to paginate and show more items in a category.
   ///
   /// In en, this message translates to:
@@ -1184,17 +1328,17 @@ abstract class AppLocalizations {
   /// **'Theme'**
   String get theme;
 
-  /// Tooltip for the button to switch to list view.
-  ///
-  /// In en, this message translates to:
-  /// **'Show as list'**
-  String get tooltipShowAsList;
-
   /// Tooltip for the button to switch to grid view.
   ///
   /// In en, this message translates to:
   /// **'Show as grid'**
   String get tooltipShowAsGrid;
+
+  /// Tooltip for the button to switch to list view.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as list'**
+  String get tooltipShowAsList;
 
   /// Label for the total cost of items in the shopping summary bar.
   ///
@@ -1220,11 +1364,47 @@ abstract class AppLocalizations {
   /// **'UPDATE PASSWORD'**
   String get updatePassword;
 
+  /// Button text to initiate the upgrade process.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade Now'**
+  String get upgradeButton;
+
   /// Button text prompting non-premium users to upgrade.
   ///
   /// In en, this message translates to:
   /// **'Upgrade Now'**
   String get upgradeNow;
+
+  /// Button text prompting a free user to upgrade their account.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremiumAction;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Unlimited Shopping Lists'**
+  String get upgradeToPremiumFeature1;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Unlimited Custom Items'**
+  String get upgradeToPremiumFeature2;
+
+  /// Feature description for premium.
+  ///
+  /// In en, this message translates to:
+  /// **'• Ad-Free Experience'**
+  String get upgradeToPremiumFeature3;
+
+  /// Title for the upgrade to premium dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremiumTitle;
 
   /// Fallback display name for a user if their name is not set.
   ///
@@ -1267,132 +1447,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome to {appName}'**
   String welcomeToAppName(String appName);
-
-  /// Initial loading message.
-  ///
-  /// In en, this message translates to:
-  /// **'Initializing...'**
-  String get loadingInitializing;
-
-  /// Loading message when setting up Hive/local database.
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing local storage...'**
-  String get loadingPreparingStorage;
-
-  /// Loading message when checking if a sync from Firestore is needed.
-  ///
-  /// In en, this message translates to:
-  /// **'Checking for updates...'**
-  String get loadingCheckingUpdates;
-
-  /// Loading message during a sync from Firestore.
-  ///
-  /// In en, this message translates to:
-  /// **'Downloading latest deals...'**
-  String get loadingDownloadingDeals;
-
-  /// Loading message when using local data instead of syncing.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading from local cache...'**
-  String get loadingFromCache;
-
-  /// Final success message before entering the app.
-  ///
-  /// In en, this message translates to:
-  /// **'All set!'**
-  String get loadingAllSet;
-
-  /// Error message shown on the loading screen if initialization fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Error: Could not load data.'**
-  String get errorCouldNotLoadData;
-
-  /// Label indicating the user has a free account.
-  ///
-  /// In en, this message translates to:
-  /// **'Free User'**
-  String get accountStatusFree;
-
-  /// Label indicating the user has a premium account.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium Member'**
-  String get accountStatusPremium;
-
-  /// Button text prompting a free user to upgrade their account.
-  ///
-  /// In en, this message translates to:
-  /// **'Upgrade to Premium'**
-  String get upgradeToPremiumAction;
-
-  /// Title for a premium feature highlight.
-  ///
-  /// In en, this message translates to:
-  /// **'Create More Lists'**
-  String get premiumFeatureListsTitle;
-
-  /// Body text for a premium feature highlight.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.'**
-  String get premiumFeatureListsBody;
-
-  /// Title for the upgrade to premium dialog.
-  ///
-  /// In en, this message translates to:
-  /// **'Upgrade to Premium'**
-  String get upgradeToPremiumTitle;
-
-  /// Feature description for premium.
-  ///
-  /// In en, this message translates to:
-  /// **'• Unlimited Shopping Lists'**
-  String get upgradeToPremiumFeature1;
-
-  /// Feature description for premium.
-  ///
-  /// In en, this message translates to:
-  /// **'• Unlimited Custom Items'**
-  String get upgradeToPremiumFeature2;
-
-  /// Feature description for premium.
-  ///
-  /// In en, this message translates to:
-  /// **'• Ad-Free Experience'**
-  String get upgradeToPremiumFeature3;
-
-  /// Button text to initiate the upgrade process.
-  ///
-  /// In en, this message translates to:
-  /// **'Upgrade Now'**
-  String get upgradeButton;
-
-  /// Text showing the user's premium status, for testing purposes.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium Status (Test)'**
-  String get premiumStatus;
-
-  /// Title for the bottom sheet and tooltip for organizing a shopping list
-  ///
-  /// In en, this message translates to:
-  /// **'Organize List'**
-  String get organizeList;
-
-  /// Section header for filtering by store
-  ///
-  /// In en, this message translates to:
-  /// **'Filter by Store'**
-  String get filterByStore;
-
-  /// Message shown on the shopping list when filters result in an empty list
-  ///
-  /// In en, this message translates to:
-  /// **'No products match your current filter'**
-  String get noProductsMatchFilter;
 }
 
 class _AppLocalizationsDelegate

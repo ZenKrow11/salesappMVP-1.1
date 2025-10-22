@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+
+// --- IMPORT THE CATEGORY SERVICE ---
+import 'package:sales_app_mvp/services/category_service.dart';
 
 class SubcategoriesFilterTab extends ConsumerWidget {
   final FilterState localFilterState;
@@ -26,14 +27,13 @@ class SubcategoriesFilterTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    // 2. GET THE LOCALIZATIONS OBJECT
     final l10n = AppLocalizations.of(context)!;
 
+    // This section is already correct.
     if (localFilterState.selectedCategories.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          // 3. REPLACE HARDCODED TEXT
           child: Text(
             l10n.pleaseSelectCategoryFirst,
             textAlign: TextAlign.center,
@@ -43,6 +43,7 @@ class SubcategoriesFilterTab extends ConsumerWidget {
       );
     }
 
+    // This logic is also correct.
     final availableSubcategories = <SubCategory>[];
     for (var mainCategory in allCategories) {
       if (localFilterState.selectedCategories
@@ -76,10 +77,15 @@ class SubcategoriesFilterTab extends ConsumerWidget {
         final isSelected =
         localFilterState.selectedSubcategories.contains(sub.name);
 
+        // ======================= THE FIX IS HERE =======================
+        // Use the CategoryService to translate the subcategory key.
+        final localizedName = CategoryService.getLocalizedCategoryName(sub.name, l10n);
+        // ================================================================
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: GestureDetector(
-            onTap: () => onToggleSubcategory(sub.name),
+            onTap: () => onToggleSubcategory(sub.name), // Correctly uses the raw key
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.all(12),
@@ -102,10 +108,9 @@ class SubcategoriesFilterTab extends ConsumerWidget {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    // NOTE: This text is correct as is. 'sub.name' is data
-                    // that should be localized at its source (CategoryService).
+                    // --- USE THE TRANSLATED NAME IN THE UI ---
                     child: Text(
-                      sub.name,
+                      localizedName, // <-- Use the translated name here
                       style: TextStyle(
                         color: theme.secondary,
                         fontWeight: FontWeight.w600,

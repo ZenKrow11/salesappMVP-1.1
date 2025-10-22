@@ -19,17 +19,28 @@ import 'package:sales_app_mvp/models/category_definitions.dart';
 // --- ADDED IMPORTS ---
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
+import 'package:sales_app_mvp/providers/settings_provider.dart';
+
 
 class ShoppingModeScreen extends ConsumerWidget {
   const ShoppingModeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ======================= THE FIX IS HERE =======================
+    // Define all the providers you need at the top of the build method.
+
     final theme = ref.watch(themeProvider);
     final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final shoppingModeState = ref.watch(shoppingModeProvider);
-    final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
+
+    // --- ADD THESE MISSING DEFINITIONS ---
+    final settingsState = ref.watch(settingsProvider);
+    final settingsNotifier = ref.read(settingsProvider.notifier);
+    final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
+    // ================================================================
+
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
@@ -43,9 +54,27 @@ class ShoppingModeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: Icon(
+              // This line will now work correctly
+              settingsState.hideCheckedItemsInShoppingMode
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: theme.secondary,
+            ),
+            // This line will now work correctly
+            tooltip: settingsState.hideCheckedItemsInShoppingMode
+                ? "Show checked items"
+                : "Hide checked items",
+            // This line will now work correctly
+            onPressed: () => settingsNotifier.toggleHideCheckedItems(),
+          ),
+          IconButton(
             icon: Icon(Icons.close, color: theme.accent),
             tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              ref.read(shoppingModeProvider.notifier).resetState();
+              Navigator.of(context).pop();
+            },
           ),
         ],
       ),
@@ -60,25 +89,30 @@ class ShoppingModeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
         data: (products) {
-          if (products.isEmpty) {
+          // This line will now work correctly
+          final visibleProducts = settingsState.hideCheckedItemsInShoppingMode
+              ? products
+              .where((p) => !shoppingModeState.checkedProductIds.contains(p.id))
+              .toList()
+              : products;
+
+          if (visibleProducts.isEmpty) {
             return Center(
               child: Text(l10n.shoppingListEmpty, style: TextStyle(color: theme.inactive)),
             );
           }
 
-          // --- STEP 2: ADD DYNAMIC GROUPING LOGIC ---
+          // --- STEP 2: USE `visibleProducts` for grouping ---
           final sortOption = ref.watch(filterStateProvider).sortOption;
 
           final Map<String, List<Product>> groupedProducts;
           final List<String> orderedGroupNames;
 
           if (sortOption == SortOption.storeAlphabetical) {
-            // Group by store if that sort option is selected
-            groupedProducts = groupBy(products, (Product p) => p.store);
+            groupedProducts = groupBy(visibleProducts, (Product p) => p.store);
             orderedGroupNames = groupedProducts.keys.toList()..sort();
           } else {
-            // Default grouping by category
-            groupedProducts = groupBy(products, (Product p) => p.category.isEmpty ? 'categoryUncategorized' : p.category);
+            groupedProducts = groupBy(visibleProducts, (Product p) => p.category.isEmpty ? 'categoryUncategorized' : p.category);
             orderedGroupNames = categoryDisplayOrder.where((name) => groupedProducts.containsKey(name)).toList();
             final remainingGroups = groupedProducts.keys.where((key) => !orderedGroupNames.contains(key)).toList();
             orderedGroupNames.addAll(remainingGroups);
@@ -88,11 +122,11 @@ class ShoppingModeScreen extends ConsumerWidget {
             slivers: [
               for (final groupName in orderedGroupNames) ...[
                 SliverPersistentHeader(
-                  pinned: true,
+                  // --- STEP 3: SET `pinned` TO `false` TO MAKE HEADERS SCROLL AWAY ---
+                  pinned: false,
                   delegate: _SliverHeaderDelegate(
                     child: Container(
                       color: theme.pageBackground,
-                      // Pass sortOption to the header builder
                       child: _buildCompactGroupSeparator(groupName, context, theme, sortOption),
                     ),
                     height: 58,
@@ -124,15 +158,15 @@ class ShoppingModeScreen extends ConsumerWidget {
     );
   }
 
+  // --- (The rest of the file remains the same) ---
+
   Widget _buildCompactGroupSeparator(String groupName, BuildContext context, AppThemeData theme, SortOption sortOption) {
     final l10n = AppLocalizations.of(context)!;
 
     final String displayName;
-    // If we're sorting by store, the group name is the store name.
     if (sortOption == SortOption.storeAlphabetical) {
       displayName = groupName;
     } else {
-      // Otherwise, it's a category, so get the localized display name.
       final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
       displayName = style.displayName;
     }
@@ -252,7 +286,6 @@ class ShoppingModeScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Item Count Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -268,8 +301,6 @@ class ShoppingModeScreen extends ConsumerWidget {
               ),
             ],
           ),
-
-          // Total Cost Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -285,8 +316,6 @@ class ShoppingModeScreen extends ConsumerWidget {
               ),
             ],
           ),
-
-          // Finish Button
           ElevatedButton.icon(
             onPressed: () => _showFinishShoppingDialog(context, ref, products),
             icon: const Icon(Icons.check_circle_outline),
@@ -306,6 +335,7 @@ class ShoppingModeScreen extends ConsumerWidget {
   Future<void> _showFinishShoppingDialog(BuildContext context, WidgetRef ref, List<Product> allProducts) async {
     final theme = ref.read(themeProvider);
     final l10n = AppLocalizations.of(context)!;
+    final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
 
     return showDialog<void>(
       context: context,
@@ -328,6 +358,7 @@ class ShoppingModeScreen extends ConsumerWidget {
                 TextButton(
                   child: Text(l10n.keepAllItems, style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold)),
                   onPressed: () {
+                    shoppingModeNotifier.resetState();
                     Navigator.of(dialogContext).pop();
                     Navigator.of(context).pop();
                   },
@@ -349,6 +380,7 @@ class ShoppingModeScreen extends ConsumerWidget {
                       final productToRemove = allProducts.firstWhere((p) => p.id == productId);
                       listNotifier.removeItemFromList(productToRemove);
                     }
+                    shoppingModeNotifier.resetState();
                     Navigator.of(dialogContext).pop();
                     Navigator.of(context).pop();
                   },

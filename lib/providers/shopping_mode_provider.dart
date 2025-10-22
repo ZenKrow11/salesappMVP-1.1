@@ -1,18 +1,20 @@
+// lib/providers/shopping_mode_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'shopping_mode_provider.freezed.dart';
 
-// 1. Define the state object using Freezed for immutability
 @freezed
 class ShoppingModeState with _$ShoppingModeState {
   const factory ShoppingModeState({
     @Default({}) Map<String, int> productQuantities,
     @Default({}) Set<String> checkedProductIds,
+    // --- ADD THIS LINE ---
+    @Default(false) bool hideCheckedItems,
   }) = _ShoppingModeState;
 }
 
-// 2. Create the Notifier to manage the state
 class ShoppingModeNotifier extends StateNotifier<ShoppingModeState> {
   ShoppingModeNotifier() : super(const ShoppingModeState());
 
@@ -24,6 +26,11 @@ class ShoppingModeNotifier extends StateNotifier<ShoppingModeState> {
       newCheckedIds.add(productId);
     }
     state = state.copyWith(checkedProductIds: newCheckedIds);
+  }
+
+  // --- ADD THIS METHOD ---
+  void toggleHideChecked() {
+    state = state.copyWith(hideCheckedItems: !state.hideCheckedItems);
   }
 
   void incrementQuantity(String productId) {
@@ -46,11 +53,11 @@ class ShoppingModeNotifier extends StateNotifier<ShoppingModeState> {
 
   // Resets the entire state to its initial condition
   void resetState() {
+    // This will correctly reset `hideCheckedItems` to false as well
     state = const ShoppingModeState();
   }
 }
 
-// 3. Define the global provider
 final shoppingModeProvider = StateNotifierProvider.autoDispose<ShoppingModeNotifier, ShoppingModeState>(
       (ref) => ShoppingModeNotifier(),
 );

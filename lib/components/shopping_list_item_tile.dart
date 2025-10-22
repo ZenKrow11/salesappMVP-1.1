@@ -2,16 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+
+// --- 1. CHANGE THIS IMPORT ---
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 
 class ShoppingListItemTile extends ConsumerWidget {
@@ -43,11 +42,15 @@ class ShoppingListItemTile extends ConsumerWidget {
     final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
     if (initialIndex != -1) {
       final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
-      Navigator.of(context).push(SlideUpPageRoute(
+
+      // --- 2. REPLACE THE PAGE ROUTE ---
+      Navigator.of(context).push(SlidePageRoute( // Was SlideUpPageRoute
         page: ProductSwiperScreen(
           products: plainProducts,
           initialIndex: initialIndex,
         ),
+        // A slide from the right is a standard, intuitive direction here.
+        direction: SlideDirection.rightToLeft,
       ));
     }
   }

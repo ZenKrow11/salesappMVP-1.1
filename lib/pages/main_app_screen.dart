@@ -8,7 +8,6 @@ import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
 import 'package:sales_app_mvp/pages/account_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/components/list_options_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
@@ -19,6 +18,10 @@ import 'package:sales_app_mvp/widgets/sort_button.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
+import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+
 
 // --- FIX: IMPORT THE NEW WIDGET ---
 import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
@@ -129,7 +132,9 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   PreferredSizeWidget _buildShoppingListPageAppBar(BuildContext context, AppThemeData theme, WidgetRef ref) {
-    final isGridView = ref.watch(settingsProvider);
+    // ======================= STEP 1: GET THE STATE OBJECT =======================
+    // This line is correct, but we'll rename the variable for clarity.
+    final settingsState = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return AppBar(
@@ -144,12 +149,21 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       actions: [
         IconButton(
           icon: Icon(
-            isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+            // ======================= STEP 2: ACCESS THE BOOLEAN PROPERTY =======================
+            // OLD: isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+            // NEW:
+            settingsState.isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
             color: theme.inactive,
           ),
-          tooltip: isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
+          // ======================= STEP 3: ACCESS THE BOOLEAN PROPERTY AGAIN =======================
+          // OLD: tooltip: isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
+          // NEW:
+          tooltip: settingsState.isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
           onPressed: () {
-            ref.read(settingsProvider.notifier).toggleView();
+            // ======================= STEP 4: CALL THE CORRECT, RENAMED METHOD =======================
+            // OLD: ref.read(settingsProvider.notifier).toggleView();
+            // NEW:
+            ref.read(settingsProvider.notifier).toggleGridView();
           },
         ),
         _buildOrganizeListAction(theme, l10n),
@@ -279,11 +293,14 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: IconButton(
-        icon: Icon(Icons.settings, color: theme.inactive),
+        // OPTIONAL: You might want to change this icon to Icons.add_box_outlined
+        // since it now only goes to "Custom items", but keeping it as settings works too.
+        icon: Icon(Icons.add_box, color: theme.inactive),
+        tooltip: "Manage custom items", // Helpful tooltip since behavior changed
         onPressed: () {
-          _showModalSheet(
-                (_) => const ListOptionsBottomSheet(),
-            isScrollControlled: true,
+          // --- CHANGED: Navigate directly to ManageCustomItemsPage ---
+          Navigator.of(context, rootNavigator: true).push(
+            SlideUpPageRoute(page: const ManageCustomItemsPage()),
           );
         },
       ),

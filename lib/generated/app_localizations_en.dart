@@ -12,10 +12,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get account => 'Account';
 
   @override
+  String get accountStatusFree => 'Free User';
+
+  @override
+  String get accountStatusPremium => 'Premium Member';
+
+  @override
   String get adPlaceholder => 'Ad Placeholder\n300 x 250';
 
   @override
-  String get add => 'ADD';
+  String get add => 'Add';
 
   @override
   String get added => 'ADDED';
@@ -27,6 +33,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String addedTo(String listName) {
     return 'Added to \"$listName\"';
   }
+
+  @override
+  String get addToList => 'Add to list';
 
   @override
   String get anUnknownErrorOccurred => 'An unknown error occurred';
@@ -183,6 +192,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkItem => 'Check item';
 
   @override
+  String get remove => 'Remove';
+
+  @override
   String get close => 'CLOSE';
 
   @override
@@ -304,6 +316,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get errorCouldNotLoadData => 'Error: Could not load data.';
+
+  @override
   String errorLoadingList(String error) {
     return 'Error loading list: $error';
   }
@@ -333,6 +348,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filter => 'Filter';
 
   @override
+  String get filterByStore => 'Filter by Store';
+
+  @override
   String get filterProducts => 'Filter Products';
 
   @override
@@ -340,7 +358,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get finishShoppingBody =>
-      'Would you like to remove the items you checked off from your list?';
+      'Do you want to remove the checked items from your list or keep everything?';
 
   @override
   String get finishShoppingTitle => 'Finish Shopping?';
@@ -349,10 +367,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPassword => 'Forgot Password?';
 
   @override
+  String get hideCheckedItems => 'Hide checked items';
+
+  @override
   String get increaseQuantity => 'Increase quantity';
 
   @override
   String get initializing => 'Initializing...';
+
+  @override
+  String itemAddedToList(String itemName) {
+    return '\"$itemName\" added to list.';
+  }
+
+  @override
+  String itemDeleted(String itemName) {
+    return '\"$itemName\" deleted.';
+  }
+
+  @override
+  String itemLimitReachedBody(int currentItems, int limit) {
+    return 'Your list contains $currentItems items, but the maximum is $limit. Please remove some items to continue.';
+  }
+
+  @override
+  String get itemLimitReachedTitle => 'Item Limit Reached';
 
   @override
   String get itemsLabel => 'Items';
@@ -374,6 +413,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listOptions => 'List Options';
+
+  @override
+  String get loadingAllSet => 'All set!';
+
+  @override
+  String get loadingCheckingUpdates => 'Checking for updates...';
+
+  @override
+  String get loadingDownloadingDeals => 'Downloading latest deals...';
+
+  @override
+  String get loadingFromCache => 'Loading from local cache...';
+
+  @override
+  String get loadingInitializing => 'Initializing...';
+
+  @override
+  String get loadingPreparingStorage => 'Preparing local storage...';
 
   @override
   String get login => 'Login';
@@ -429,6 +486,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noProductsFound => 'No products found matching your criteria.';
 
   @override
+  String get noProductsMatchFilter => 'No products match your current filter';
+
+  @override
   String get noSubcategoriesAvailable =>
       'No specific subcategories available\nfor the selected category.';
 
@@ -439,7 +499,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
+  String get ok => 'OK';
+
+  @override
   String get or => 'OR';
+
+  @override
+  String get organizeList => 'Organize List';
 
   @override
   String get orSelectMainCategory => 'Or select a main category below:';
@@ -487,6 +553,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premium => 'Premium';
+
+  @override
+  String get premiumFeatureListsBody =>
+      'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.';
+
+  @override
+  String get premiumFeatureListsTitle => 'Create More Lists';
+
+  @override
+  String get premiumStatus => 'Premium Status (Test)';
 
   @override
   String get rememberMe => 'Remember me';
@@ -557,6 +633,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingMode => 'Shopping Mode';
 
   @override
+  String get showCheckedItems => 'Show checked items';
+
+  @override
   String showMore(int count) {
     return 'Show $count more';
   }
@@ -598,10 +677,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get theme => 'Theme';
 
   @override
-  String get tooltipShowAsList => 'Show as list';
+  String get tooltipShowAsGrid => 'Show as grid';
 
   @override
-  String get tooltipShowAsGrid => 'Show as grid';
+  String get tooltipShowAsList => 'Show as list';
 
   @override
   String get total => 'Total';
@@ -616,7 +695,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updatePassword => 'UPDATE PASSWORD';
 
   @override
+  String get upgradeButton => 'Upgrade Now';
+
+  @override
   String get upgradeNow => 'Upgrade Now';
+
+  @override
+  String get upgradeToPremiumAction => 'Upgrade to Premium';
+
+  @override
+  String get upgradeToPremiumFeature1 => '• Unlimited Shopping Lists';
+
+  @override
+  String get upgradeToPremiumFeature2 => '• Unlimited Custom Items';
+
+  @override
+  String get upgradeToPremiumFeature3 => '• Ad-Free Experience';
+
+  @override
+  String get upgradeToPremiumTitle => 'Upgrade to Premium';
 
   @override
   String get user => 'User';
@@ -646,68 +743,4 @@ class AppLocalizationsEn extends AppLocalizations {
   String welcomeToAppName(String appName) {
     return 'Welcome to $appName';
   }
-
-  @override
-  String get loadingInitializing => 'Initializing...';
-
-  @override
-  String get loadingPreparingStorage => 'Preparing local storage...';
-
-  @override
-  String get loadingCheckingUpdates => 'Checking for updates...';
-
-  @override
-  String get loadingDownloadingDeals => 'Downloading latest deals...';
-
-  @override
-  String get loadingFromCache => 'Loading from local cache...';
-
-  @override
-  String get loadingAllSet => 'All set!';
-
-  @override
-  String get errorCouldNotLoadData => 'Error: Could not load data.';
-
-  @override
-  String get accountStatusFree => 'Free User';
-
-  @override
-  String get accountStatusPremium => 'Premium Member';
-
-  @override
-  String get upgradeToPremiumAction => 'Upgrade to Premium';
-
-  @override
-  String get premiumFeatureListsTitle => 'Create More Lists';
-
-  @override
-  String get premiumFeatureListsBody =>
-      'Unlock the ability to create and manage multiple shopping lists by upgrading to Premium.';
-
-  @override
-  String get upgradeToPremiumTitle => 'Upgrade to Premium';
-
-  @override
-  String get upgradeToPremiumFeature1 => '• Unlimited Shopping Lists';
-
-  @override
-  String get upgradeToPremiumFeature2 => '• Unlimited Custom Items';
-
-  @override
-  String get upgradeToPremiumFeature3 => '• Ad-Free Experience';
-
-  @override
-  String get upgradeButton => 'Upgrade Now';
-
-  @override
-  String get premiumStatus => 'Premium Status (Test)';
-
-  @override
-  String get organizeList => 'Organize List';
-
-  @override
-  String get filterByStore => 'Filter by Store';
-
-  @override
-  String get noProductsMatchFilter => 'No products match your current filter';
 }

@@ -6,6 +6,8 @@ import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+const double _kSwipeVelocityThreshold = 500.0;
+
 class ProductSwiperScreen extends ConsumerStatefulWidget {
   final List<PlainProduct> products;
   final int initialIndex;
@@ -43,39 +45,48 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     final theme = ref.watch(themeProvider);
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(color: theme.background.withOpacity(0.95)),
-          ),
-          Column(
-            children: [
-              // Leave status bar space transparent
-              Container(height: statusBarHeight, color: Colors.transparent),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  scrollDirection: Axis.vertical,
-                  physics: const _ReelsPhysics(),
-                  itemCount: widget.products.length,
-                  itemBuilder: (context, index) {
-                    final product = widget.products[index];
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        // --- THIS IS THE CORRECTED LOGIC FOR A "SWIPE LEFT" DISMISS ---
+        // details.primaryVelocity < 0 means the swipe was from right-to-left.
+        // We check against the negative threshold for a deliberate swipe.
+        if (details.primaryVelocity != null && details.primaryVelocity! < -_kSwipeVelocityThreshold) {
+          // If the condition is met, pop the screen.
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(color: theme.background.withOpacity(0.95)),
+            ),
+            Column(
+              children: [
+                Container(height: statusBarHeight, color: Colors.transparent),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    scrollDirection: Axis.vertical,
+                    physics: const _ReelsPhysics(),
+                    itemCount: widget.products.length,
+                    itemBuilder: (context, index) {
+                      final product = widget.products[index];
 
-                    // Each product detail fills the screen, like TikTok/Shorts
-                    return ProductDetails(
-                      key: ValueKey(product.id),
-                      product: product,
-                      currentIndex: index + 1,
-                      totalItems: widget.products.length,
-                    );
-                  },
+                      return ProductDetails(
+                        key: ValueKey(product.id),
+                        product: product,
+                        currentIndex: index + 1,
+                        totalItems: widget.products.length,
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -90,14 +101,11 @@ class _ReelsPhysics extends PageScrollPhysics {
     return _ReelsPhysics(parent: buildParent(ancestor));
   }
 
-  /// Lower fling threshold so a light swipe changes pages
   @override
   double get minFlingVelocity => 200.0;
 
-  /// Cap velocity to avoid overly fast flings
   @override
   double get maxFlingVelocity => 4000.0;
 
-  /// Faster snapping animation (default is ~300ms)
   Duration get transitionDuration => const Duration(milliseconds: 180);
 }

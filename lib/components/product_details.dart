@@ -83,7 +83,7 @@ class ProductDetails extends ConsumerWidget {
       showTopNotification(context,
           message: l10n.removedFrom(activeList), theme: theme);
     } else {
-      notifier.addToList(hiveProduct);
+      notifier.addToList(hiveProduct, context);
       showTopNotification(context,
           message: l10n.addedTo(activeList), theme: theme);
     }
@@ -141,7 +141,7 @@ class ProductDetails extends ConsumerWidget {
                     children: [
                       _buildHeader(context, ref, theme),
                       const SizedBox(height: 12),
-                      _buildCategoryRow(context), // Pass context here
+                      _buildCategoryRow(context),
                       const SizedBox(height: 12),
                       _buildProductName(theme),
                       const Spacer(),
@@ -204,18 +204,18 @@ class ProductDetails extends ConsumerWidget {
   Widget _buildAddToListButton(BuildContext context, WidgetRef ref,
       AppThemeData theme, bool isInShoppingList, AppLocalizations l10n) {
     if (isInShoppingList) {
-      return ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.secondary,
+      return TextButton.icon(
+        style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 10),
+          backgroundColor: theme.secondary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         onPressed: () => _toggleItemInList(context, ref),
-        icon: Icon(Icons.check, color: theme.primary),
+        icon: Icon(Icons.remove, color: theme.primary),
         label: Text(
-          l10n.added,
+          l10n.remove, // Assumes 'remove' key exists in your l10n file
           style: TextStyle(
             color: theme.primary,
             fontWeight: FontWeight.bold,
@@ -273,7 +273,7 @@ class ProductDetails extends ConsumerWidget {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                       color: theme.secondary,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
                             color: Colors.black.withOpacity(0.5),
@@ -296,7 +296,7 @@ class ProductDetails extends ConsumerWidget {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.4),
-                    shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
                     Icons.open_in_new_rounded,

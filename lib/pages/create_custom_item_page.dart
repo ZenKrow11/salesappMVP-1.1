@@ -118,7 +118,7 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         final activeListId = ref.read(activeShoppingListProvider);
         await ref
             .read(shoppingListsProvider.notifier)
-            .addToSpecificList(productToSave, activeListId);
+            .addToSpecificList(productToSave, activeListId, context);
       }
 
       if (mounted) {

@@ -85,10 +85,8 @@ class CategoryService {
   static CategoryStyle getLocalizedStyleForGroupingName(String firestoreName, AppLocalizations l10n) {
     final mainCat = _mainCategoryMap[firestoreName] ?? _mainCategoryMap['other']!;
     final originalStyle = mainCat.style;
-    // Note: The key for the main category's display name is in `originalStyle.displayName`,
-    // while the firestoreName is the key for the group itself. They might be different.
-    // Assuming here the firestoreName can be used to look up the main category name.
-    final localizedName = getLocalizedCategoryName(originalStyle.displayName, l10n);
+    final localizedName = getLocalizedCategoryName(firestoreName, l10n);
+
     return originalStyle.copyWith(displayName: localizedName);
   }
 

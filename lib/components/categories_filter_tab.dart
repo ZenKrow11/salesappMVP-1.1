@@ -39,15 +39,23 @@ class CategoriesFilterTab extends ConsumerWidget {
         final isSelected =
         selectedCategories.contains(mainCategory.firestoreName);
 
-        // 3. TRANSLATE THE KEY using your CategoryService.
+        // ======================= THE FIX IS THIS ONE LINE =======================
+        // OLD LINE:
+        // final localizedName = CategoryService.getLocalizedCategoryName(
+        //   mainCategory.style.displayName, // This is the wrong key
+        //   l10n,
+        // );
+
+        // NEW, CORRECT LINE:
         final localizedName = CategoryService.getLocalizedCategoryName(
-          mainCategory.style.displayName, // This is the key
+          mainCategory.firestoreName, // This is the correct key ("beverages")
           l10n,
         );
+        // ========================================================================
 
         return _buildCategoryChip(
           ref,
-          name: localizedName, // <-- 4. PASS THE TRANSLATED NAME to the chip.
+          name: localizedName, // Pass the translated name to the chip.
           iconAssetPath: mainCategory.style.iconAssetPath,
           color: mainCategory.style.color,
           isSelected: isSelected,

@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
-
 import '../models/product.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
@@ -22,16 +21,14 @@ class FirestoreService {
 
   String? get _uid => _auth.currentUser?.uid;
 
-  // ========== NEW METHOD ADDED HERE ==========
-  /// Updates the user's profile document in Firestore.
+  // Update user profile document
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    final userRef = _firestore.collection('users').doc(uid);
-    await userRef.update(data);
+    await _firestore.collection('users').doc(uid).update(data);
   }
-  // ===========================================
 
+  // Firestore collection shortcuts
   CollectionReference _shoppingListsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('shoppingLists');
 
@@ -50,6 +47,7 @@ class FirestoreService {
     if (uid == null) throw Exception('User not logged in.');
     final listDocRef = _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
     final indexDocRef = _listedProductIdsRef(uid).doc(productId);
+
     final batch = _firestore.batch();
     final dataToSet = productData ?? {'addedAt': FieldValue.serverTimestamp()};
     batch.set(listDocRef, dataToSet);
@@ -57,6 +55,7 @@ class FirestoreService {
     await batch.commit();
   }
 
+  // Remove an item from a shopping list
   Future<void> removeItemFromList({
     required String listId,
     required String productId,
@@ -65,6 +64,7 @@ class FirestoreService {
     if (uid == null) throw Exception('User not logged in.');
     final listDocRef = _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
     final indexDocRef = _listedProductIdsRef(uid).doc(productId);
+
     await _firestore.runTransaction((transaction) async {
       final indexSnapshot = await transaction.get(indexDocRef);
       transaction.delete(listDocRef);
@@ -79,6 +79,7 @@ class FirestoreService {
     });
   }
 
+  // Delete a full shopping list
   Future<void> deleteList({required String listId}) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
@@ -96,7 +97,6 @@ class FirestoreService {
       for (var i = 0; i < indexSnapshots.length; i++) {
         final indexSnapshot = indexSnapshots[i];
         final indexDocRef = indexRefs[i];
-
         if (indexSnapshot.exists) {
           final currentCount = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (currentCount <= 1) {
@@ -118,6 +118,7 @@ class FirestoreService {
     }
   }
 
+  // Stream of all product IDs currently in lists
   Stream<Set<String>> getListedProductIdsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value({});
@@ -126,6 +127,7 @@ class FirestoreService {
     });
   }
 
+  // Stream of all shopping lists
   Stream<List<ShoppingListInfo>> getAllShoppingListsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value([]);
@@ -134,6 +136,7 @@ class FirestoreService {
     });
   }
 
+  // Stream of all items in a list (live updates)
   Stream<List<Map<String, dynamic>>> getShoppingListItemsStream({required String listId}) {
     final uid = _uid;
     if (uid == null) return Stream.value([]);
@@ -147,6 +150,21 @@ class FirestoreService {
     });
   }
 
+  // NEW: One-time read of shopping list items (for item limit enforcement)
+  Future<List<Map<String, dynamic>>> getShoppingListItemsOnce({required String listId}) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+    final snapshot =
+    await _shoppingListsRef(uid).doc(listId).collection('items').get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return data;
+    }).toList();
+  }
+
+  // Create a new empty shopping list
   Future<void> createNewList({required String listName}) async {
     final uid = _uid;
     if (uid == null) return;
@@ -154,6 +172,7 @@ class FirestoreService {
     await listRef.set({'createdAt': FieldValue.serverTimestamp()});
   }
 
+  // Ensure default list exists (Merkliste)
   Future<void> ensureDefaultListExists({required String listId}) async {
     final uid = _uid;
     if (uid == null) return;
@@ -167,33 +186,30 @@ class FirestoreService {
     }
   }
 
+  // CUSTOM ITEM STORAGE (Add / Read / Update / Delete)
   Future<void> addCustomItemToStorage(Product customItem) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    // The toJson() method on your Product model is required here.
     await _customItemsRef(uid).doc(customItem.id).set(customItem.toJson());
   }
 
-  /// READ: Get a stream of all custom items for the current user.
   Stream<List<Product>> getCustomItemsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value([]);
     return _customItemsRef(uid).snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => Product.fromFirestore(
-          doc.id, doc.data() as Map<String, dynamic>))
+          .map((doc) =>
+          Product.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
     });
   }
 
-  /// UPDATE: Modify an existing custom item in storage.
   Future<void> updateCustomItemInStorage(Product customItem) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
     await _customItemsRef(uid).doc(customItem.id).update(customItem.toJson());
   }
 
-  /// DELETE: Remove a custom item from storage.
   Future<void> deleteCustomItemFromStorage(String customItemId) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');

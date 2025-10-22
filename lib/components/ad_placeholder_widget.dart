@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 enum AdType { banner }
 
@@ -19,17 +20,22 @@ class AdPlaceholderWidget extends ConsumerStatefulWidget {
 class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  bool _isAdLoadInitiated = false;
   int _retryAttempt = 0;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_bannerAd == null) {
-      _loadAd();
-    }
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
   }
 
   void _loadAd() {
+    // Prevent multiple load attempts
+    if (_isAdLoadInitiated) {
+      return;
+    }
+    _isAdLoadInitiated = true;
+
     final adManager = ref.read(adManagerProvider.notifier);
 
     _bannerAd = adManager.createBannerAd(
@@ -52,19 +58,15 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
             // Wait for 30 seconds before trying again.
             Future.delayed(const Duration(seconds: 30), () {
               if (mounted) {
+                // Reset the flag to allow a new load attempt
+                _isAdLoadInitiated = false;
                 _loadAd();
               }
             });
           }
         },
       ),
-    )..load(); // <-- IMPORTANT: Added .load()
-  }
-
-  @override
-  void dispose() {
-    _bannerAd?.dispose();
-    super.dispose();
+    )..load();
   }
 
   @override
@@ -75,24 +77,29 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
       return const SizedBox.shrink();
     }
 
-    if (_isAdLoaded && _bannerAd != null) {
-      return Container(
+    return VisibilityDetector(
+      key: Key('ad_placeholder_${widget.key}'),
+      onVisibilityChanged: (visibilityInfo) {
+        if (visibilityInfo.visibleFraction > 0 && !_isAdLoaded) {
+          _loadAd();
+        }
+      },
+      child: _isAdLoaded && _bannerAd != null
+          ? Container(
         width: _bannerAd!.size.width.toDouble(),
         height: _bannerAd!.size.height.toDouble(),
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         child: AdWidget(ad: _bannerAd!),
-      );
-    } else {
-      // Show a placeholder while loading
-      return Container(
+      )
+          : Container(
         width: double.infinity,
         height: 50, // Standard banner height
         color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         child: const Text('Ad Loading...'), // Good for debugging
-      );
-    }
+      ),
+    );
   }
 }

@@ -12,6 +12,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get account => 'Konto';
 
   @override
+  String get accountStatusFree => 'Kostenloser Benutzer';
+
+  @override
+  String get accountStatusPremium => 'Premium-Mitglied';
+
+  @override
   String get adPlaceholder => 'Werbeplatzhalter\n300 x 250';
 
   @override
@@ -27,6 +33,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String addedTo(String listName) {
     return 'Zu \"$listName\" hinzugefügt';
   }
+
+  @override
+  String get addToList => 'Add to list';
 
   @override
   String get anUnknownErrorOccurred => 'Ein unbekannter Fehler ist aufgetreten';
@@ -184,6 +193,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkItem => 'Artikel abhaken';
 
   @override
+  String get remove => 'Remove';
+
+  @override
   String get close => 'SCHLIESSEN';
 
   @override
@@ -306,6 +318,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get errorCouldNotLoadData =>
+      'Fehler: Daten konnten nicht geladen werden.';
+
+  @override
   String errorLoadingList(String error) {
     return 'Fehler beim Laden der Liste: $error';
   }
@@ -336,6 +352,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get filter => 'Filter';
 
   @override
+  String get filterByStore => 'Nach Geschäft filtern';
+
+  @override
   String get filterProducts => 'Produkte filtern';
 
   @override
@@ -352,10 +371,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get forgotPassword => 'Passwort vergessen?';
 
   @override
+  String get hideCheckedItems => 'Hide checked items';
+
+  @override
   String get increaseQuantity => 'Menge erhöhen';
 
   @override
   String get initializing => 'Initialisiere...';
+
+  @override
+  String itemAddedToList(String itemName) {
+    return '\"$itemName\" added to list.';
+  }
+
+  @override
+  String itemDeleted(String itemName) {
+    return '\"$itemName\" deleted.';
+  }
+
+  @override
+  String itemLimitReachedBody(int currentItems, int limit) {
+    return 'Your list contains $currentItems items, but the maximum is $limit. Please remove some items to continue.';
+  }
+
+  @override
+  String get itemLimitReachedTitle => 'Item Limit Reached';
 
   @override
   String get itemsLabel => 'Artikel';
@@ -377,6 +417,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get listOptions => 'Listenoptionen';
+
+  @override
+  String get loadingAllSet => 'Alles bereit!';
+
+  @override
+  String get loadingCheckingUpdates => 'Suche nach Updates...';
+
+  @override
+  String get loadingDownloadingDeals =>
+      'Neueste Angebote werden heruntergeladen...';
+
+  @override
+  String get loadingFromCache => 'Lade aus dem lokalen Cache...';
+
+  @override
+  String get loadingInitializing => 'Initialisiere...';
+
+  @override
+  String get loadingPreparingStorage => 'Lokaler Speicher wird vorbereitet...';
 
   @override
   String get login => 'Anmelden';
@@ -433,6 +492,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine Produkte gefunden, die deinen Kriterien entsprechen.';
 
   @override
+  String get noProductsMatchFilter =>
+      'Keine Produkte entsprechen deinem aktuellen Filter';
+
+  @override
   String get noSubcategoriesAvailable =>
       'Keine spezifischen Unterkategorien\nfür die gewählte Kategorie verfügbar.';
 
@@ -443,7 +506,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notifications => 'Benachrichtigungen';
 
   @override
+  String get ok => 'OK';
+
+  @override
   String get or => 'ODER';
+
+  @override
+  String get organizeList => 'Liste organisieren';
 
   @override
   String get orSelectMainCategory =>
@@ -494,6 +563,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get premium => 'Premium';
+
+  @override
+  String get premiumFeatureListsBody =>
+      'Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.';
+
+  @override
+  String get premiumFeatureListsTitle => 'Mehr Listen erstellen';
+
+  @override
+  String get premiumStatus => 'Premium-Status (Test)';
 
   @override
   String get rememberMe => 'Angemeldet bleiben';
@@ -564,6 +643,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get shoppingMode => 'Einkaufsmodus';
 
   @override
+  String get showCheckedItems => 'Show checked items';
+
+  @override
   String showMore(int count) {
     return '$count weitere anzeigen';
   }
@@ -605,10 +687,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get theme => 'Design';
 
   @override
-  String get tooltipShowAsList => 'Als Liste anzeigen';
+  String get tooltipShowAsGrid => 'Als Gitter anzeigen';
 
   @override
-  String get tooltipShowAsGrid => 'Als Gitter anzeigen';
+  String get tooltipShowAsList => 'Als Liste anzeigen';
 
   @override
   String get total => 'Total';
@@ -623,7 +705,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get updatePassword => 'PASSWORT AKTUALISIEREN';
 
   @override
+  String get upgradeButton => 'Jetzt upgraden';
+
+  @override
   String get upgradeNow => 'Jetzt upgraden';
+
+  @override
+  String get upgradeToPremiumAction => 'Auf Premium upgraden';
+
+  @override
+  String get upgradeToPremiumFeature1 => '• Unbegrenzte Einkaufslisten';
+
+  @override
+  String get upgradeToPremiumFeature2 =>
+      '• Unbegrenzte benutzerdefinierte Artikel';
+
+  @override
+  String get upgradeToPremiumFeature3 => '• Werbefreies Erlebnis';
+
+  @override
+  String get upgradeToPremiumTitle => 'Auf Premium upgraden';
 
   @override
   String get user => 'Benutzer';
@@ -653,72 +754,4 @@ class AppLocalizationsDe extends AppLocalizations {
   String welcomeToAppName(String appName) {
     return 'Willkommen bei $appName';
   }
-
-  @override
-  String get loadingInitializing => 'Initialisiere...';
-
-  @override
-  String get loadingPreparingStorage => 'Lokaler Speicher wird vorbereitet...';
-
-  @override
-  String get loadingCheckingUpdates => 'Suche nach Updates...';
-
-  @override
-  String get loadingDownloadingDeals =>
-      'Neueste Angebote werden heruntergeladen...';
-
-  @override
-  String get loadingFromCache => 'Lade aus dem lokalen Cache...';
-
-  @override
-  String get loadingAllSet => 'Alles bereit!';
-
-  @override
-  String get errorCouldNotLoadData =>
-      'Fehler: Daten konnten nicht geladen werden.';
-
-  @override
-  String get accountStatusFree => 'Kostenloser Benutzer';
-
-  @override
-  String get accountStatusPremium => 'Premium-Mitglied';
-
-  @override
-  String get upgradeToPremiumAction => 'Auf Premium upgraden';
-
-  @override
-  String get premiumFeatureListsTitle => 'Mehr Listen erstellen';
-
-  @override
-  String get premiumFeatureListsBody =>
-      'Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.';
-
-  @override
-  String get upgradeToPremiumTitle => 'Auf Premium upgraden';
-
-  @override
-  String get upgradeToPremiumFeature1 => '• Unbegrenzte Einkaufslisten';
-
-  @override
-  String get upgradeToPremiumFeature2 =>
-      '• Unbegrenzte benutzerdefinierte Artikel';
-
-  @override
-  String get upgradeToPremiumFeature3 => '• Werbefreies Erlebnis';
-
-  @override
-  String get upgradeButton => 'Jetzt upgraden';
-
-  @override
-  String get premiumStatus => 'Premium-Status (Test)';
-
-  @override
-  String get organizeList => 'Liste organisieren';
-
-  @override
-  String get filterByStore => 'Nach Geschäft filtern';
-
-  @override
-  String get noProductsMatchFilter =>
-      'Keine Produkte entsprechen deinem aktuellen Filter';
 }

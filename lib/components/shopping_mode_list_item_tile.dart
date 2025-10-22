@@ -24,18 +24,22 @@ class ShoppingModeListItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+
+    // --- MODIFICATION: Updated text style for better visibility ---
     final textStyle = TextStyle(
-      color: theme.inactive,
+      // Unchecked items are now brighter
+      color: isChecked ? theme.inactive : Colors.white,
       fontSize: 16,
       decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-      decorationColor: theme.inactive, // Ensures line-through is visible
+      // Strikethrough color is now the theme's secondary color
+      decorationColor: theme.secondary,
       decorationThickness: 2.0,
     );
 
     return InkWell(
-      onTap: onCheckTap, // Tapping anywhere on the tile checks it
+      onTap: onCheckTap, // This correctly handles the tap for the whole tile
       child: Opacity(
-        opacity: isChecked ? 0.5 : 1.0, // Fades out the entire tile when checked
+        opacity: isChecked ? 0.6 : 1.0, // Fades the tile slightly when checked
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -46,12 +50,12 @@ class ShoppingModeListItemTile extends ConsumerWidget {
                 onTap: onInfoTap,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  width: 40, // Fixed width ensures alignment
+                  width: 40,
                   alignment: Alignment.center,
                   child: Text(
                     '${quantity}x',
                     style: TextStyle(
-                      color: isChecked ? theme.secondary.withOpacity(0.8) : theme.secondary,
+                      color: theme.secondary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -79,13 +83,7 @@ class ShoppingModeListItemTile extends ConsumerWidget {
                 splashRadius: 24,
               ),
 
-              // --- Custom Checkbox Icon ---
-              // The outer InkWell handles the tap, so this is just for display
-              Icon(
-                isChecked ? Icons.check_box : Icons.check_box_outline_blank,
-                color: isChecked ? theme.secondary : theme.inactive.withOpacity(0.7),
-                size: 28,
-              ),
+              // --- MODIFICATION: The custom checkbox icon has been removed ---
             ],
           ),
         ),

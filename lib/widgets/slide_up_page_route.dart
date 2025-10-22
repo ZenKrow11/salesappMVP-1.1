@@ -9,8 +9,8 @@ class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
   SlideUpPageRoute({required this.page})
       : super(
     // --- CHANGE: Reduced duration for a faster transition ---
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionDuration: const Duration(milliseconds: 450),
+    reverseTransitionDuration: const Duration(milliseconds: 450),
 
     // This is the crucial property. Setting it to false tells Flutter to
     // keep drawing the previous route (the homepage) underneath this one.

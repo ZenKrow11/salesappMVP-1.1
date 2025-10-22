@@ -17,7 +17,9 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$ShoppingModeState {
   Map<String, int> get productQuantities => throw _privateConstructorUsedError;
-  Set<String> get checkedProductIds => throw _privateConstructorUsedError;
+  Set<String> get checkedProductIds =>
+      throw _privateConstructorUsedError; // --- ADD THIS LINE ---
+  bool get hideCheckedItems => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $ShoppingModeStateCopyWith<ShoppingModeState> get copyWith =>
@@ -31,7 +33,9 @@ abstract class $ShoppingModeStateCopyWith<$Res> {
       _$ShoppingModeStateCopyWithImpl<$Res, ShoppingModeState>;
   @useResult
   $Res call(
-      {Map<String, int> productQuantities, Set<String> checkedProductIds});
+      {Map<String, int> productQuantities,
+      Set<String> checkedProductIds,
+      bool hideCheckedItems});
 }
 
 /// @nodoc
@@ -49,6 +53,7 @@ class _$ShoppingModeStateCopyWithImpl<$Res, $Val extends ShoppingModeState>
   $Res call({
     Object? productQuantities = null,
     Object? checkedProductIds = null,
+    Object? hideCheckedItems = null,
   }) {
     return _then(_value.copyWith(
       productQuantities: null == productQuantities
@@ -59,6 +64,10 @@ class _$ShoppingModeStateCopyWithImpl<$Res, $Val extends ShoppingModeState>
           ? _value.checkedProductIds
           : checkedProductIds // ignore: cast_nullable_to_non_nullable
               as Set<String>,
+      hideCheckedItems: null == hideCheckedItems
+          ? _value.hideCheckedItems
+          : hideCheckedItems // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -72,7 +81,9 @@ abstract class _$$ShoppingModeStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Map<String, int> productQuantities, Set<String> checkedProductIds});
+      {Map<String, int> productQuantities,
+      Set<String> checkedProductIds,
+      bool hideCheckedItems});
 }
 
 /// @nodoc
@@ -88,6 +99,7 @@ class __$$ShoppingModeStateImplCopyWithImpl<$Res>
   $Res call({
     Object? productQuantities = null,
     Object? checkedProductIds = null,
+    Object? hideCheckedItems = null,
   }) {
     return _then(_$ShoppingModeStateImpl(
       productQuantities: null == productQuantities
@@ -98,6 +110,10 @@ class __$$ShoppingModeStateImplCopyWithImpl<$Res>
           ? _value._checkedProductIds
           : checkedProductIds // ignore: cast_nullable_to_non_nullable
               as Set<String>,
+      hideCheckedItems: null == hideCheckedItems
+          ? _value.hideCheckedItems
+          : hideCheckedItems // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -107,7 +123,8 @@ class __$$ShoppingModeStateImplCopyWithImpl<$Res>
 class _$ShoppingModeStateImpl implements _ShoppingModeState {
   const _$ShoppingModeStateImpl(
       {final Map<String, int> productQuantities = const {},
-      final Set<String> checkedProductIds = const {}})
+      final Set<String> checkedProductIds = const {},
+      this.hideCheckedItems = false})
       : _productQuantities = productQuantities,
         _checkedProductIds = checkedProductIds;
 
@@ -131,9 +148,14 @@ class _$ShoppingModeStateImpl implements _ShoppingModeState {
     return EqualUnmodifiableSetView(_checkedProductIds);
   }
 
+// --- ADD THIS LINE ---
+  @override
+  @JsonKey()
+  final bool hideCheckedItems;
+
   @override
   String toString() {
-    return 'ShoppingModeState(productQuantities: $productQuantities, checkedProductIds: $checkedProductIds)';
+    return 'ShoppingModeState(productQuantities: $productQuantities, checkedProductIds: $checkedProductIds, hideCheckedItems: $hideCheckedItems)';
   }
 
   @override
@@ -144,14 +166,17 @@ class _$ShoppingModeStateImpl implements _ShoppingModeState {
             const DeepCollectionEquality()
                 .equals(other._productQuantities, _productQuantities) &&
             const DeepCollectionEquality()
-                .equals(other._checkedProductIds, _checkedProductIds));
+                .equals(other._checkedProductIds, _checkedProductIds) &&
+            (identical(other.hideCheckedItems, hideCheckedItems) ||
+                other.hideCheckedItems == hideCheckedItems));
   }
 
   @override
   int get hashCode => Object.hash(
       runtimeType,
       const DeepCollectionEquality().hash(_productQuantities),
-      const DeepCollectionEquality().hash(_checkedProductIds));
+      const DeepCollectionEquality().hash(_checkedProductIds),
+      hideCheckedItems);
 
   @JsonKey(ignore: true)
   @override
@@ -164,12 +189,15 @@ class _$ShoppingModeStateImpl implements _ShoppingModeState {
 abstract class _ShoppingModeState implements ShoppingModeState {
   const factory _ShoppingModeState(
       {final Map<String, int> productQuantities,
-      final Set<String> checkedProductIds}) = _$ShoppingModeStateImpl;
+      final Set<String> checkedProductIds,
+      final bool hideCheckedItems}) = _$ShoppingModeStateImpl;
 
   @override
   Map<String, int> get productQuantities;
   @override
   Set<String> get checkedProductIds;
+  @override // --- ADD THIS LINE ---
+  bool get hideCheckedItems;
   @override
   @JsonKey(ignore: true)
   _$$ShoppingModeStateImplCopyWith<_$ShoppingModeStateImpl> get copyWith =>

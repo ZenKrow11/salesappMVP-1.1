@@ -1,5 +1,3 @@
-// lib/pages/home_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,7 +9,7 @@ import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/pages/product_swiper_screen.dart';
 import 'package:sales_app_mvp/components/product_tile.dart';
 import 'package:sales_app_mvp/components/ad_placeholder_widget.dart';
@@ -114,11 +112,12 @@ class _ProductList extends ConsumerWidget {
               final flatSortedProducts = allGroups.expand((g) => g.products).toList();
               final initialIndex = flatSortedProducts.indexWhere((p) => p.id == product.id);
 
-              Navigator.of(context).push(SlideUpPageRoute(
+              Navigator.of(context).push(SlidePageRoute(
                 page: ProductSwiperScreen(
                   products: flatSortedProducts,
                   initialIndex: initialIndex != -1 ? initialIndex : 0,
                 ),
+                direction: SlideDirection.rightToLeft,
               ));
             },
           );
@@ -129,6 +128,7 @@ class _ProductList extends ConsumerWidget {
   }
 }
 
+// ... (Rest of the file is unchanged and correct)
 class _GroupHeader extends ConsumerWidget {
   final ProductGroup group;
   final AppLocalizations l10n;

@@ -25,7 +25,7 @@ class ShoppingListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final theme = ref.watch(themeProvider);
-    final isGridView = ref.watch(settingsProvider);
+    final isGridView = ref.watch(settingsProvider).isGridView;
     final l10n = AppLocalizations.of(context)!;
 
     return asyncShoppingList.when(

@@ -74,7 +74,7 @@ class ProductTile extends ConsumerWidget {
           notifier.removeItemFromList(hiveProduct);
           showTopNotification(context, message: l10n.removedFromList, theme: theme);
         } else {
-          notifier.addToList(hiveProduct);
+          notifier.addToList(hiveProduct, context);
           showTopNotification(context, message: l10n.addedToActiveList, theme: theme);
         }
       },
@@ -92,7 +92,7 @@ class ProductTile extends ConsumerWidget {
               onConfirm: (selectedListId) {
                 ref
                     .read(shoppingListsProvider.notifier)
-                    .addToSpecificList(hiveProduct, selectedListId);
+                    .addToSpecificList(hiveProduct, selectedListId, context);
                 Navigator.of(ctx).pop();
                 showTopNotification(
                   context,
@@ -104,59 +104,34 @@ class ProductTile extends ConsumerWidget {
           },
         );
       },
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: backgroundTint,
-              borderRadius: BorderRadius.circular(12.0),
-              border: isInShoppingList
-                  ? Border.all(color: theme.secondary, width: 2.5)
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8.0,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundTint,
+          borderRadius: BorderRadius.circular(12.0),
+          border: isInShoppingList
+              ? Border.all(color: theme.secondary, width: 2.5)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8.0,
+              offset: const Offset(0, 4),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10.0),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: _buildContent(context, ref, l10n),
-              ),
-            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10.0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _buildContent(context, ref, l10n, isInShoppingList),
           ),
-          if (isInShoppingList)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                    color: theme.secondary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1))
-                    ]),
-                child: Icon(
-                  Icons.check,
-                  color: theme.primary,
-                  size: 16,
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, AppLocalizations l10n, bool isInShoppingList) {
+    final theme = ref.watch(themeProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -201,6 +176,28 @@ class ProductTile extends ConsumerWidget {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                if (isInShoppingList)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                          color: theme.secondary,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1))
+                          ]),
+                      child: Icon(
+                        Icons.check,
+                        color: theme.primary,
+                        size: 16,
                       ),
                     ),
                   ),

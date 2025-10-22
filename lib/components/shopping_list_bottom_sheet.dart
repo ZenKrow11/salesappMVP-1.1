@@ -60,7 +60,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
   void _addAndDismiss() {
     final l10n = AppLocalizations.of(context)!;
     if (widget.product == null) return;
-    ref.read(shoppingListsProvider.notifier).addToList(widget.product!);
+    ref.read(shoppingListsProvider.notifier).addToList(widget.product!, context);
     widget.onConfirm!(merklisteListName);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.addedTo(merklisteListName))),
@@ -280,7 +280,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                     ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
                     Navigator.pop(context);
                   } else {
-                    ref.read(shoppingListsProvider.notifier).addToSpecificList(widget.product!, list.id);
+                    ref.read(shoppingListsProvider.notifier).addToSpecificList(widget.product!, list.id, context);
                     widget.onConfirm!(list.name);
                   }
                 },
