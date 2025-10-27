@@ -86,7 +86,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           onTap: navigateToTab,
           items: [
             BottomNavigationBarItem(
-              icon: const Icon(Icons.attach_money, size: 36),
+              icon: const Icon(Icons.percent, size: 36),
               label: l10n.navAllSales,
             ),
             BottomNavigationBarItem(

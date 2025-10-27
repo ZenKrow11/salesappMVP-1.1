@@ -6,7 +6,7 @@ import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
-const double _kSwipeVelocityThreshold = 500.0;
+const double _kSwipeVelocityThreshold = 50.0;
 
 class ProductSwiperScreen extends ConsumerStatefulWidget {
   final List<PlainProduct> products;
@@ -47,43 +47,37 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
-        // --- THIS IS THE CORRECTED LOGIC FOR A "SWIPE LEFT" DISMISS ---
-        // details.primaryVelocity < 0 means the swipe was from right-to-left.
-        // We check against the negative threshold for a deliberate swipe.
-        if (details.primaryVelocity != null && details.primaryVelocity! < -_kSwipeVelocityThreshold) {
-          // If the condition is met, pop the screen.
+        if (details.primaryVelocity != null && details.primaryVelocity! > _kSwipeVelocityThreshold) {
           Navigator.of(context).pop();
         }
       },
+      // --- CHANGES ARE HERE ---
       child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
+        // 1. Set the background to the solid theme color to match the details page.
+        backgroundColor: theme.primary,
+        // 2. The Stack and Positioned.fill are no longer needed.
+        //    The body can now be the Column directly.
+        body: Column(
           children: [
-            Positioned.fill(
-              child: Container(color: theme.background.withOpacity(0.95)),
-            ),
-            Column(
-              children: [
-                Container(height: statusBarHeight, color: Colors.transparent),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    scrollDirection: Axis.vertical,
-                    physics: const _ReelsPhysics(),
-                    itemCount: widget.products.length,
-                    itemBuilder: (context, index) {
-                      final product = widget.products[index];
+            // This is still needed to account for the phone's status bar area.
+            Container(height: statusBarHeight),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                scrollDirection: Axis.vertical,
+                physics: const _ReelsPhysics(),
+                itemCount: widget.products.length,
+                itemBuilder: (context, index) {
+                  final product = widget.products[index];
 
-                      return ProductDetails(
-                        key: ValueKey(product.id),
-                        product: product,
-                        currentIndex: index + 1,
-                        totalItems: widget.products.length,
-                      );
-                    },
-                  ),
-                ),
-              ],
+                  return ProductDetails(
+                    key: ValueKey(product.id),
+                    product: product,
+                    currentIndex: index + 1,
+                    totalItems: widget.products.length,
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -94,7 +88,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
 
 /// Custom scroll physics tuned for TikTok/YouTube Shorts style
 class _ReelsPhysics extends PageScrollPhysics {
-  const _ReelsPhysics({ScrollPhysics? parent}) : super(parent: parent);
+  const _ReelsPhysics({super.parent});
 
   @override
   _ReelsPhysics applyTo(ScrollPhysics? ancestor) {

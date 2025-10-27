@@ -32,6 +32,7 @@ class ProductDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SafeArea(
+      // Using `SafeArea` at the top level is good practice
       child: GestureDetector(
         onDoubleTap: () => _toggleItemInList(context, ref),
         onLongPress: () {
@@ -116,49 +117,40 @@ class ProductDetails extends ConsumerWidget {
     final isInShoppingList =
     shoppingListProducts.any((item) => item.id == product.id);
 
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.0),
-        decoration: BoxDecoration(
-            color: theme.primary,
-            borderRadius: BorderRadius.circular(20.0),
-            boxShadow: [
-              BoxShadow(
-                  color: theme.primary.withOpacity(0.5),
-                  blurRadius: 10.0,
-                  offset: const Offset(0, 5))
-            ]),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20.0),
-          child: LayoutBuilder(builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              child: Container(
-                height: constraints.maxHeight,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(context, ref, theme),
-                      const SizedBox(height: 12),
-                      _buildCategoryRow(context),
-                      const SizedBox(height: 12),
-                      _buildProductName(theme),
-                      const Spacer(),
-                      _buildSpecialConditionInfo(theme),
-                      const SizedBox(height: 8),
-                      _buildImageContainer(context, ref, theme, isInShoppingList),
-                      const SizedBox(height: 12),
-                      _buildPriceRow(ref),
-                      _buildAvailabilityInfo(context, theme),
-                      const Spacer(),
-                      _buildActionRow(context, ref, theme, isInShoppingList),
-                    ]),
-              ),
-            );
-          }),
-        ),
-      ),
+    // --- The changes are in this Container and the removed ClipRRect ---
+    return Container(
+      // REMOVED: margin, boxShadow, and borderRadius.
+      // The color now acts as the page's background.
+      color: theme.primary,
+      child: LayoutBuilder(builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Container(
+            height: constraints.maxHeight,
+            // The padding is kept to prevent content from touching the screen edges.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, ref, theme),
+                  const SizedBox(height: 12),
+                  _buildCategoryRow(context),
+                  const SizedBox(height: 12),
+                  _buildProductName(theme),
+                  const Spacer(),
+                  _buildSpecialConditionInfo(theme),
+                  const SizedBox(height: 8),
+                  // The image container itself still has rounded corners, which looks nice.
+                  _buildImageContainer(context, ref, theme, isInShoppingList),
+                  const SizedBox(height: 12),
+                  _buildPriceRow(ref),
+                  _buildAvailabilityInfo(context, theme),
+                  const Spacer(),
+                  _buildActionRow(context, ref, theme, isInShoppingList),
+                ]),
+          ),
+        );
+      }),
     );
   }
 
@@ -296,7 +288,7 @@ class ProductDetails extends ConsumerWidget {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
                     Icons.open_in_new_rounded,
@@ -406,17 +398,16 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- THIS METHOD IS NOW CORRECTED ---
   Widget _buildCategoryRow(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: CategoryChip(categoryKey: product.category), // Pass the key, e.g., "beverages"
+          child: CategoryChip(categoryKey: product.category),
         ),
         if (product.subcategory.isNotEmpty && product.subcategory != 'categoryUncategorized') ...[
           const SizedBox(width: 8),
           Expanded(
-            child: CategoryChip(categoryKey: product.subcategory), // Pass the key
+            child: CategoryChip(categoryKey: product.subcategory),
           ),
         ],
       ],
