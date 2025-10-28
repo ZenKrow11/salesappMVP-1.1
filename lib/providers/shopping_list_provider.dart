@@ -121,25 +121,17 @@ class ShoppingListNotifier extends StateNotifier<void> {
 
   Future<void> initialize() async {
     try {
-      // This line will check Firestore for a list named 'Merkliste'
-      // and create it if it doesn't exist for the current user.
       await _firestoreService.ensureDefaultListExists(listId: merklisteListName);
     } catch (e) {
-      // It's good practice to log errors, even if we don't show them to the user.
       print("Error ensuring default list exists: $e");
     }
   }
-  // --- END OF FIX ---
 
   Future<void> createNewList(String listName) async {
-    // This method is now slightly redundant but still useful for creating non-default lists.
-    // We can keep it as is.
     await _firestoreService.createNewList(listName: listName);
   }
 
-  /// 🔒 Global limit enforcement (30 normal, 60 premium)
   Future<bool> _checkItemLimit(BuildContext context) async {
-    // ... (this method remains unchanged)
     final user = _ref.read(userProfileProvider).value;
     final isPremium = user?.isPremium ?? false;
     final limit = isPremium ? 60 : 30;
@@ -159,7 +151,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
     return true;
   }
 
-  /// Adds a product to the active shopping list (with limit check)
   Future<void> addToList(Product product, BuildContext context) async {
     final canAdd = await _checkItemLimit(context);
     if (!canAdd) return;
@@ -202,7 +193,49 @@ class ShoppingListNotifier extends StateNotifier<void> {
       productData: customProduct.toJson(),
     );
   }
-}
+
+  // --- THIS IS THE FIX: The methods are now INSIDE the class ---
+
+  /// Removes all products from the currently active list where isOnSale is false.
+  Future<void> purgeExpiredItems() async {
+    final activeListId = _ref.read(activeShoppingListProvider);
+    final asyncShoppingList = _ref.read(shoppingListWithDetailsProvider);
+
+    if (asyncShoppingList.value == null) return;
+
+    final allProducts = asyncShoppingList.value!;
+    final expiredProductIds = allProducts
+        .where((product) => !product.isOnSale)
+        .map((product) => product.id)
+        .toList();
+
+    if (expiredProductIds.isNotEmpty) {
+      await _firestoreService.removeItemsFromList(
+        listId: activeListId,
+        productIds: expiredProductIds,
+      );
+    }
+  }
+
+  /// Removes ALL products from the currently active list.
+  Future<void> clearActiveList() async {
+    final activeListId = _ref.read(activeShoppingListProvider);
+    final asyncShoppingList = _ref.read(shoppingListWithDetailsProvider);
+
+    if (asyncShoppingList.value == null) return;
+
+    final allProductIds = asyncShoppingList.value!
+        .map((product) => product.id)
+        .toList();
+
+    if (allProductIds.isNotEmpty) {
+      await _firestoreService.removeItemsFromList(
+        listId: activeListId,
+        productIds: allProductIds,
+      );
+    }
+  }
+} // <-- IMPORTANT: The methods are now above this closing brace.
 
 final shoppingListsProvider =
 StateNotifierProvider<ShoppingListNotifier, void>((ref) {

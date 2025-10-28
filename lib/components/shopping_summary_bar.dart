@@ -1,3 +1,5 @@
+// lib/components/shopping_summary_bar.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
@@ -21,29 +23,27 @@ class ShoppingSummaryBar extends ConsumerWidget {
 
     final int itemLimit = isPremium ? 60 : 30;
 
-    // --- THE FIX IS HERE ---
-
-    // 1. Calculate the TOTAL number of items on the list (for the limit check).
-    // An expired item still takes up a slot in the user's list.
+    // The logic for item counts remains correct:
+    // Total items are used for limit checks, active items are used for display.
     final int totalItemsOnList = products.length;
     final bool overLimit = totalItemsOnList > itemLimit;
 
-    // 2. Calculate the number of ACTIVE, buyable items (for display).
-    // This is the number the user actually cares about when looking at the count.
     final List<Product> activeProducts = products.where((item) => item.isOnSale).toList();
     final int activeItemsCount = activeProducts.length;
 
-    // 3. Calculate the total cost based ONLY on the active items.
+    // The total cost calculation is already correct.
     final double totalCost = activeProducts.fold(
       0.0,
           (sum, item) => sum + item.currentPrice,
     );
 
-    // 4. Savings can be calculated on all items, as it's useful historical info.
-    final double totalSavings = products.fold(
+    // --- THIS IS THE FIX ---
+    // Calculate total savings based ONLY on the active items.
+    final double totalSavings = activeProducts.fold(
       0.0,
-          (sum, item) => sum + (item.normalPrice - item.currentPrice),
+          (sum, item) => sum + (item.normalPrice - item.currentPrice > 0 ? item.normalPrice - item.currentPrice : 0),
     );
+    // --- END OF FIX ---
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -57,7 +57,6 @@ class ShoppingSummaryBar extends ConsumerWidget {
         children: [
           Row(
             children: [
-              // 5. Display the ACTIVE item count, but use the TOTAL limit.
               _buildItemCountSummary(activeItemsCount, itemLimit, l10n),
               const SizedBox(width: 20),
               _buildSummaryItem(
@@ -75,13 +74,12 @@ class ShoppingSummaryBar extends ConsumerWidget {
           ),
           FilledButton.icon(
             onPressed: () {
-              // Use the TOTAL item count for the limit dialog check.
               if (overLimit) {
                 _showItemLimitDialog(
                   context,
                   l10n,
                   theme,
-                  totalItemsOnList, // Use total here
+                  totalItemsOnList,
                   itemLimit,
                 );
               } else {

@@ -46,7 +46,7 @@ class ProductTile extends ConsumerWidget {
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
 
-    Product _createHiveProduct() {
+    Product createHiveProduct() {
       return Product(
           id: product.id, store: product.store, name: product.name,
           currentPrice: product.currentPrice, normalPrice: product.normalPrice,
@@ -68,7 +68,7 @@ class ProductTile extends ConsumerWidget {
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
         final theme = ref.read(themeProvider);
-        final hiveProduct = _createHiveProduct();
+        final hiveProduct = createHiveProduct();
 
         if (isInShoppingList) {
           notifier.removeItemFromList(hiveProduct);
@@ -86,7 +86,7 @@ class ProductTile extends ConsumerWidget {
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (ctx) {
-            final hiveProduct = _createHiveProduct();
+            final hiveProduct = createHiveProduct();
             return ShoppingListBottomSheet(
               product: hiveProduct,
               onConfirm: (selectedListId) {

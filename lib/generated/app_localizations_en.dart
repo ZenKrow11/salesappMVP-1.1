@@ -746,4 +746,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dealExpired => 'Expired';
+
+  @override
+  String get tooltipManageListItems => 'Manage list items';
+
+  @override
+  String get manageItemsTitle => 'Manage Items';
+
+  @override
+  String get purgeButtonLabel => 'Purge Expired';
+
+  @override
+  String get purgeExpiredConfirmationTitle => 'Purge Expired?';
+
+  @override
+  String get purgeExpiredConfirmationBody =>
+      'This will remove all expired (greyed-out) items from your list. This cannot be undone.';
+
+  @override
+  String get purgeButton => 'Purge';
+
+  @override
+  String get clearAllButtonLabel => 'Clear All Items';
+
+  @override
+  String get clearAllConfirmationTitle => 'Clear All Items?';
+
+  @override
+  String get clearAllConfirmationBody =>
+      'This will permanently remove ALL items from your current list. This action cannot be undone.';
+
+  @override
+  String get clearAllButton => 'Clear All';
 }

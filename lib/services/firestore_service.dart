@@ -186,6 +186,55 @@ class FirestoreService {
     }
   }
 
+  /// Removes a list of product IDs from a specific shopping list in a batch.
+  Future<void> removeItemsFromList({
+    required String listId,
+    required List<String> productIds,
+  }) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+    if (productIds.isEmpty) return;
+
+    await _firestore.runTransaction((transaction) async {
+      // --- PHASE 1: ALL READS FIRST ---
+      // First, we gather all the document references for the index counters.
+      final indexRefs = productIds
+          .map((id) => _listedProductIdsRef(uid).doc(id))
+          .toList();
+
+      // Now, execute all the 'get' operations for these references.
+      // This is the "read" phase of the transaction.
+      final indexSnapshots = await Future.wait(
+          indexRefs.map((ref) => transaction.get(ref))
+      );
+
+      // --- PHASE 2: ALL WRITES LAST ---
+      // Now that all reads are complete, we can safely perform our writes.
+      for (var i = 0; i < productIds.length; i++) {
+        final productId = productIds[i];
+        final indexSnapshot = indexSnapshots[i];
+
+        // Queue the deletion from the specific shopping list.
+        final listDocRef = _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
+        transaction.delete(listDocRef);
+
+        // Now, using the data we already read, decide whether to update or delete the index.
+        if (indexSnapshot.exists) {
+          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+
+          if (currentCount <= 1) {
+            // This item only exists in this one list, so delete the index document.
+            transaction.delete(indexSnapshot.reference);
+          } else {
+            // This item exists in other lists, so just decrement the counter.
+            transaction.update(indexSnapshot.reference, {'count': FieldValue.increment(-1)});
+          }
+        }
+      }
+    });
+  }
+
+
   // CUSTOM ITEM STORAGE (Add / Read / Update / Delete)
   Future<void> addCustomItemToStorage(Product customItem) async {
     final uid = _uid;

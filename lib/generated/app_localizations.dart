@@ -1453,6 +1453,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expired'**
   String get dealExpired;
+
+  /// Tooltip for the button that opens the list management options (purge, clear all).
+  ///
+  /// In en, this message translates to:
+  /// **'Manage list items'**
+  String get tooltipManageListItems;
+
+  /// Title for the bottom sheet that manages shopping list items.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Items'**
+  String get manageItemsTitle;
+
+  /// Text for the button that purges expired items.
+  ///
+  /// In en, this message translates to:
+  /// **'Purge Expired'**
+  String get purgeButtonLabel;
+
+  /// Confirmation dialog title for purging expired items.
+  ///
+  /// In en, this message translates to:
+  /// **'Purge Expired?'**
+  String get purgeExpiredConfirmationTitle;
+
+  /// Confirmation dialog body for purging expired items.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove all expired (greyed-out) items from your list. This cannot be undone.'**
+  String get purgeExpiredConfirmationBody;
+
+  /// Text for the confirmation button to purge items.
+  ///
+  /// In en, this message translates to:
+  /// **'Purge'**
+  String get purgeButton;
+
+  /// Text for the button that clears all items.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All Items'**
+  String get clearAllButtonLabel;
+
+  /// Confirmation dialog title for clearing all items.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All Items?'**
+  String get clearAllConfirmationTitle;
+
+  /// Confirmation dialog body for clearing all items.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove ALL items from your current list. This action cannot be undone.'**
+  String get clearAllConfirmationBody;
+
+  /// Text for the confirmation button to clear all items.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAllButton;
 }
 
 class _AppLocalizationsDelegate

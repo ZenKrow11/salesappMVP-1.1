@@ -103,7 +103,7 @@ class SortBottomSheet extends ConsumerWidget {
                     },
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

@@ -20,7 +20,8 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
-import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+import 'package:sales_app_mvp/components/manage_list_items_bottom_sheet.dart';
+
 
 
 // --- FIX: IMPORT THE NEW WIDGET ---
@@ -149,21 +150,24 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       actions: [
         IconButton(
           icon: Icon(
-            // ======================= STEP 2: ACCESS THE BOOLEAN PROPERTY =======================
-            // OLD: isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-            // NEW:
             settingsState.isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
             color: theme.inactive,
           ),
-          // ======================= STEP 3: ACCESS THE BOOLEAN PROPERTY AGAIN =======================
-          // OLD: tooltip: isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
-          // NEW:
           tooltip: settingsState.isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
           onPressed: () {
-            // ======================= STEP 4: CALL THE CORRECT, RENAMED METHOD =======================
-            // OLD: ref.read(settingsProvider.notifier).toggleView();
-            // NEW:
             ref.read(settingsProvider.notifier).toggleGridView();
+          },
+        ),
+        IconButton(
+          icon: Icon(Icons.delete, color: theme.inactive),
+          tooltip: l10n.tooltipManageListItems, // Use a proper l10n key
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              useRootNavigator: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const ManageListItemsBottomSheet(),
+            );
           },
         ),
         _buildOrganizeListAction(theme, l10n),

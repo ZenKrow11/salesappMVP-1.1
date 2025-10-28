@@ -663,19 +663,46 @@
   },
 
   "validUntil": "Valid until {toDate}",
-  "@validUntil": {
-    "description": "Indicates the end date of a product's sale.",
-    "placeholders": { "toDate": { "type": "String" } }
-  },
+    "@validUntil": {
+      "description": "Indicates the end date of a product's sale.",
+      "placeholders": { "toDate": { "type": "String" } }
+    },
 
-  "validityUnknown": "Validity unknown",
-  "@validityUnknown": { "description": "Text shown when a product's sale period is not known." },
+    "validityUnknown": "Validity unknown",
+    "@validityUnknown": { "description": "Text shown when a product's sale period is not known." },
 
-  "welcomeToAppName": "Welcome to {appName}",
-  "@welcomeToAppName": {
-    "description": "Welcome message on the login screen.",
-    "placeholders": { "appName": { "type": "String" } }
-  },
-  "dealExpired": "Expired",
-  "@dealExpired": { "description": "Label for expired deals" }
+    "welcomeToAppName": "Welcome to {appName}",
+    "@welcomeToAppName": {
+      "description": "Welcome message on the login screen.",
+      "placeholders": { "appName": { "type": "String" } }
+    },
+
+    "dealExpired": "Expired",
+    "@dealExpired": { "description": "Label for expired deals" },
+
+    "tooltipManageListItems": "Manage list items",
+    "@tooltipManageListItems": {
+      "description": "Tooltip for the button that opens the list management options (purge, clear all)."
+    },
+
+    "manageItemsTitle": "Manage Items",
+    "@manageItemsTitle": { "description": "Title for the bottom sheet that manages shopping list items." },
+
+    "purgeButtonLabel": "Purge Expired",
+    "@purgeButtonLabel": { "description": "Text for the button that purges expired items." },
+    "purgeExpiredConfirmationTitle": "Purge Expired?",
+    "@purgeExpiredConfirmationTitle": { "description": "Confirmation dialog title for purging expired items." },
+    "purgeExpiredConfirmationBody": "This will remove all expired (greyed-out) items from your list. This cannot be undone.",
+    "@purgeExpiredConfirmationBody": { "description": "Confirmation dialog body for purging expired items." },
+    "purgeButton": "Purge",
+    "@purgeButton": { "description": "Text for the confirmation button to purge items." },
+
+    "clearAllButtonLabel": "Clear All Items",
+    "@clearAllButtonLabel": { "description": "Text for the button that clears all items." },
+    "clearAllConfirmationTitle": "Clear All Items?",
+    "@clearAllConfirmationTitle": { "description": "Confirmation dialog title for clearing all items." },
+    "clearAllConfirmationBody": "This will permanently remove ALL items from your current list. This action cannot be undone.",
+    "@clearAllConfirmationBody": { "description": "Confirmation dialog body for clearing all items." },
+    "clearAllButton": "Clear All",
+    "@clearAllButton": { "description": "Text for the confirmation button to clear all items." }
 }
