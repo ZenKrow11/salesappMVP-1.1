@@ -56,7 +56,8 @@ class AppDataController extends StateNotifier<AppDataState> {
       : super(AppDataState(status: InitializationStatus.uninitialized));
 
   // --- ADD THIS METHOD ---
-  /// Resets the controller to its initial state. Called on user logout.
+  /// Resets the controller to its initial, uninitialized state.
+  /// This is crucial to call on user logout to clear the previous session's data.
   void reset() {
     state = AppDataState(status: InitializationStatus.uninitialized);
   }

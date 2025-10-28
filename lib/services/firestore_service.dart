@@ -25,7 +25,7 @@ class FirestoreService {
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    await _firestore.collection('users').doc(uid).update(data);
+    await _firestore.collection('users').doc(uid).set(data, SetOptions(merge: true));
   }
 
   // Firestore collection shortcuts

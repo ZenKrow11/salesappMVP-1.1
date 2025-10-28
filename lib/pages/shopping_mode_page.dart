@@ -16,7 +16,6 @@ import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/quantity_stepper.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
-// --- ADDED IMPORTS ---
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
@@ -27,19 +26,13 @@ class ShoppingModeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ======================= THE FIX IS HERE =======================
-    // Define all the providers you need at the top of the build method.
-
     final theme = ref.watch(themeProvider);
     final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final shoppingModeState = ref.watch(shoppingModeProvider);
-    final l10n = AppLocalizations.of(context)!;
-
-    // --- ADD THESE MISSING DEFINITIONS ---
+    final localizations = AppLocalizations.of(context)!;
     final settingsState = ref.watch(settingsProvider);
     final settingsNotifier = ref.read(settingsProvider.notifier);
     final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
-    // ================================================================
 
 
     return Scaffold(
@@ -49,23 +42,20 @@ class ShoppingModeScreen extends ConsumerWidget {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          l10n.shoppingMode,
+          localizations.shoppingMode,
           style: TextStyle(color: theme.secondary),
         ),
         actions: [
           IconButton(
             icon: Icon(
-              // This line will now work correctly
               settingsState.hideCheckedItemsInShoppingMode
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
               color: theme.secondary,
             ),
-            // This line will now work correctly
             tooltip: settingsState.hideCheckedItemsInShoppingMode
                 ? "Show checked items"
                 : "Hide checked items",
-            // This line will now work correctly
             onPressed: () => settingsNotifier.toggleHideCheckedItems(),
           ),
           IconButton(
@@ -79,40 +69,46 @@ class ShoppingModeScreen extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: asyncShoppingList.when(
-        data: (products) => products.isNotEmpty
-            ? _buildSummaryBar(context, ref, products, shoppingModeState)
-            : const SizedBox.shrink(),
+        data: (products) {
+          final activeProducts = products.where((product) => product.isOnSale).toList();
+          return activeProducts.isNotEmpty
+              ? _buildSummaryBar(context, ref, activeProducts, shoppingModeState)
+              : const SizedBox.shrink();
+        },
         loading: () => const SizedBox.shrink(),
-        error: (err, stack) => const SizedBox.shrink(),
+        error: (error, stackTrace) => const SizedBox.shrink(),
       ),
       body: asyncShoppingList.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
+        error: (error, stack) => Center(child: Text(localizations.error(error.toString()))),
         data: (products) {
-          // This line will now work correctly
+          // ** THE FIX **
+          // Filter the main list to only include products that are currently on sale.
+          final activeProducts = products.where((product) => product.isOnSale).toList();
+
+          // Further filter the list based on user settings (e.g., hiding checked items).
           final visibleProducts = settingsState.hideCheckedItemsInShoppingMode
-              ? products
-              .where((p) => !shoppingModeState.checkedProductIds.contains(p.id))
+              ? activeProducts
+              .where((product) => !shoppingModeState.checkedProductIds.contains(product.id))
               .toList()
-              : products;
+              : activeProducts;
 
           if (visibleProducts.isEmpty) {
             return Center(
-              child: Text(l10n.shoppingListEmpty, style: TextStyle(color: theme.inactive)),
+              child: Text(localizations.shoppingListEmpty, style: TextStyle(color: theme.inactive)),
             );
           }
 
-          // --- STEP 2: USE `visibleProducts` for grouping ---
           final sortOption = ref.watch(filterStateProvider).sortOption;
 
           final Map<String, List<Product>> groupedProducts;
           final List<String> orderedGroupNames;
 
           if (sortOption == SortOption.storeAlphabetical) {
-            groupedProducts = groupBy(visibleProducts, (Product p) => p.store);
+            groupedProducts = groupBy(visibleProducts, (Product product) => product.store);
             orderedGroupNames = groupedProducts.keys.toList()..sort();
           } else {
-            groupedProducts = groupBy(visibleProducts, (Product p) => p.category.isEmpty ? 'categoryUncategorized' : p.category);
+            groupedProducts = groupBy(visibleProducts, (Product product) => product.category.isEmpty ? 'categoryUncategorized' : product.category);
             orderedGroupNames = categoryDisplayOrder.where((name) => groupedProducts.containsKey(name)).toList();
             final remainingGroups = groupedProducts.keys.where((key) => !orderedGroupNames.contains(key)).toList();
             orderedGroupNames.addAll(remainingGroups);
@@ -122,7 +118,6 @@ class ShoppingModeScreen extends ConsumerWidget {
             slivers: [
               for (final groupName in orderedGroupNames) ...[
                 SliverPersistentHeader(
-                  // --- STEP 3: SET `pinned` TO `false` TO MAKE HEADERS SCROLL AWAY ---
                   pinned: false,
                   delegate: _SliverHeaderDelegate(
                     child: Container(
@@ -158,16 +153,14 @@ class ShoppingModeScreen extends ConsumerWidget {
     );
   }
 
-  // --- (The rest of the file remains the same) ---
-
   Widget _buildCompactGroupSeparator(String groupName, BuildContext context, AppThemeData theme, SortOption sortOption) {
-    final l10n = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context)!;
 
     final String displayName;
     if (sortOption == SortOption.storeAlphabetical) {
       displayName = groupName;
     } else {
-      final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
+      final style = CategoryService.getLocalizedStyleForGroupingName(groupName, localizations);
       displayName = style.displayName;
     }
 
@@ -267,7 +260,7 @@ class ShoppingModeScreen extends ConsumerWidget {
 
   Widget _buildSummaryBar(BuildContext context, WidgetRef ref, List<Product> products, ShoppingModeState shoppingModeState) {
     final theme = ref.watch(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context)!;
 
     final double totalCost = products.fold(0.0, (sum, product) {
       final quantity = shoppingModeState.productQuantities[product.id] ?? 1;
@@ -291,7 +284,7 @@ class ShoppingModeScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                l10n.itemsLabel.toUpperCase(),
+                localizations.itemsLabel.toUpperCase(),
                 style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
@@ -306,12 +299,12 @@ class ShoppingModeScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                l10n.total.toUpperCase(),
+                localizations.total.toUpperCase(),
                 style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
-                '${totalCost.toStringAsFixed(2)} ${l10n.currencyFrancs}',
+                '${totalCost.toStringAsFixed(2)} ${localizations.currencyFrancs}',
                 style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ],
@@ -319,7 +312,7 @@ class ShoppingModeScreen extends ConsumerWidget {
           ElevatedButton.icon(
             onPressed: () => _showFinishShoppingDialog(context, ref, products),
             icon: const Icon(Icons.check_circle_outline),
-            label: Text(l10n.finish),
+            label: Text(localizations.finish),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.secondary,
               foregroundColor: theme.primary,
@@ -334,7 +327,7 @@ class ShoppingModeScreen extends ConsumerWidget {
 
   Future<void> _showFinishShoppingDialog(BuildContext context, WidgetRef ref, List<Product> allProducts) async {
     final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context)!;
     final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
 
     return showDialog<void>(
@@ -343,8 +336,8 @@ class ShoppingModeScreen extends ConsumerWidget {
         return AlertDialog(
           backgroundColor: theme.background,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(l10n.finishShoppingTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          content: Text(l10n.finishShoppingBody, style: TextStyle(color: theme.inactive.withOpacity(0.8))),
+          title: Text(localizations.finishShoppingTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: Text(localizations.finishShoppingBody, style: TextStyle(color: theme.inactive.withOpacity(0.8))),
           actionsAlignment: MainAxisAlignment.center,
           actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           actions: <Widget>[
@@ -352,11 +345,11 @@ class ShoppingModeScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextButton(
-                  child: Text(l10n.cancel, style: TextStyle(color: theme.inactive.withOpacity(0.6))),
+                  child: Text(localizations.cancel, style: TextStyle(color: theme.inactive.withOpacity(0.6))),
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
                 TextButton(
-                  child: Text(l10n.keepAllItems, style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold)),
+                  child: Text(localizations.keepAllItems, style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold)),
                   onPressed: () {
                     shoppingModeNotifier.resetState();
                     Navigator.of(dialogContext).pop();
@@ -371,13 +364,13 @@ class ShoppingModeScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text(l10n.removeCheckedItems, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(localizations.removeCheckedItems, style: const TextStyle(fontWeight: FontWeight.bold)),
                   onPressed: () {
                     final checkedIds = ref.read(shoppingModeProvider).checkedProductIds;
                     final listNotifier = ref.read(shoppingListsProvider.notifier);
 
                     for (final productId in checkedIds) {
-                      final productToRemove = allProducts.firstWhere((p) => p.id == productId);
+                      final productToRemove = allProducts.firstWhere((product) => product.id == productId);
                       listNotifier.removeItemFromList(productToRemove);
                     }
                     shoppingModeNotifier.resetState();

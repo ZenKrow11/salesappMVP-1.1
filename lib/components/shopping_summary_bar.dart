@@ -20,14 +20,26 @@ class ShoppingSummaryBar extends ConsumerWidget {
     final isPremium = user?.isPremium ?? false;
 
     final int itemLimit = isPremium ? 60 : 30;
-    final int currentItems = products.length;
-    final bool overLimit = currentItems > itemLimit;
 
-    final double totalCost = products.fold(
+    // --- THE FIX IS HERE ---
+
+    // 1. Calculate the TOTAL number of items on the list (for the limit check).
+    // An expired item still takes up a slot in the user's list.
+    final int totalItemsOnList = products.length;
+    final bool overLimit = totalItemsOnList > itemLimit;
+
+    // 2. Calculate the number of ACTIVE, buyable items (for display).
+    // This is the number the user actually cares about when looking at the count.
+    final List<Product> activeProducts = products.where((item) => item.isOnSale).toList();
+    final int activeItemsCount = activeProducts.length;
+
+    // 3. Calculate the total cost based ONLY on the active items.
+    final double totalCost = activeProducts.fold(
       0.0,
           (sum, item) => sum + item.currentPrice,
     );
 
+    // 4. Savings can be calculated on all items, as it's useful historical info.
     final double totalSavings = products.fold(
       0.0,
           (sum, item) => sum + (item.normalPrice - item.currentPrice),
@@ -45,7 +57,8 @@ class ShoppingSummaryBar extends ConsumerWidget {
         children: [
           Row(
             children: [
-              _buildItemCountSummary(currentItems, itemLimit, l10n),
+              // 5. Display the ACTIVE item count, but use the TOTAL limit.
+              _buildItemCountSummary(activeItemsCount, itemLimit, l10n),
               const SizedBox(width: 20),
               _buildSummaryItem(
                 l10n.saved,
@@ -62,12 +75,13 @@ class ShoppingSummaryBar extends ConsumerWidget {
           ),
           FilledButton.icon(
             onPressed: () {
+              // Use the TOTAL item count for the limit dialog check.
               if (overLimit) {
                 _showItemLimitDialog(
                   context,
                   l10n,
                   theme,
-                  currentItems,
+                  totalItemsOnList, // Use total here
                   itemLimit,
                 );
               } else {

@@ -754,4 +754,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String welcomeToAppName(String appName) {
     return 'Willkommen bei $appName';
   }
+
+  @override
+  String get dealExpired => 'Expired';
 }

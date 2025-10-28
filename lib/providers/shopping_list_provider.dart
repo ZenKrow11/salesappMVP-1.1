@@ -34,7 +34,11 @@ final initializationProvider = FutureProvider<void>((ref) async {
 
 final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
   final authState = ref.watch(authStateChangesProvider);
-  if (authState.value == null) return Stream.value([]);
+  ref.watch(initializationProvider);
+  if (authState.value == null) {
+    return Stream.value([]);
+  }
+
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getAllShoppingListsStream();
 });
@@ -116,31 +120,32 @@ class ShoppingListNotifier extends StateNotifier<void> {
   ShoppingListNotifier(this._firestoreService, this._ref) : super(null);
 
   Future<void> initialize() async {
-    // ... (this method remains unchanged)
+    try {
+      // This line will check Firestore for a list named 'Merkliste'
+      // and create it if it doesn't exist for the current user.
+      await _firestoreService.ensureDefaultListExists(listId: merklisteListName);
+    } catch (e) {
+      // It's good practice to log errors, even if we don't show them to the user.
+      print("Error ensuring default list exists: $e");
+    }
   }
+  // --- END OF FIX ---
 
   Future<void> createNewList(String listName) async {
-    // ... (this method remains unchanged)
+    // This method is now slightly redundant but still useful for creating non-default lists.
+    // We can keep it as is.
+    await _firestoreService.createNewList(listName: listName);
   }
 
   /// 🔒 Global limit enforcement (30 normal, 60 premium)
   Future<bool> _checkItemLimit(BuildContext context) async {
+    // ... (this method remains unchanged)
     final user = _ref.read(userProfileProvider).value;
     final isPremium = user?.isPremium ?? false;
     final limit = isPremium ? 60 : 30;
 
-    // ======================= CHANGE THIS BLOCK =======================
-    // OLD LOGIC (causes the bug):
-    // final currentList = await _firestoreService.getShoppingListItemsOnce(
-    //   listId: _ref.read(activeShoppingListProvider),
-    // );
-
-    // NEW LOGIC (always correct):
-    // Read from the provider that is already listening to the live stream.
-    // This guarantees the count is in sync with the UI.
     final asyncShoppingList = _ref.read(shoppingListWithDetailsProvider);
     final currentList = asyncShoppingList.value ?? [];
-    // ================================================================
 
     if (currentList.length >= limit) {
       ScaffoldMessenger.of(context)

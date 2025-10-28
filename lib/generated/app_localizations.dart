@@ -1447,6 +1447,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome to {appName}'**
   String welcomeToAppName(String appName);
+
+  /// Label for expired deals
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get dealExpired;
 }
 
 class _AppLocalizationsDelegate

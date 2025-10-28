@@ -6,6 +6,11 @@ import 'package:hive/hive.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 
+// --- STEP 1: ADD THIS IMPORT ---
+// We need this to access the user's saved product IDs.
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+
+
 /// Provider for ProductSyncService
 final productSyncProvider = Provider<ProductSyncService>((ref) {
   return ProductSyncService(ref);
@@ -17,13 +22,10 @@ class ProductSyncService {
   ProductSyncService(this._ref);
 
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
-
   Box<Product> get _productBox => _ref.read(productsBoxProvider);
-
   Box<dynamic> get _metadataBox => _ref.read(metadataBoxProvider);
 
-  /// --- Fetches the entire metadata document from Firestore ---
-  /// This document acts as the "control panel" for the app.
+  // ... (getRemoteMetadata, getLocalMetadata, and needsSync methods remain unchanged) ...
   Future<Map<String, dynamic>?> getRemoteMetadata() async {
     try {
       final docSnapshot =
@@ -38,22 +40,14 @@ class ProductSyncService {
     }
   }
 
-  /// --- Gets the locally stored metadata ---
   Map<String, dynamic> getLocalMetadata() {
     return Map<String, dynamic>.from(_metadataBox.get('localMetadata') ?? {});
   }
 
-  /// --- Decides if a sync is needed ---
-  // lib/services/product_sync_service.dart
-
-  /// --- Decides if a sync is needed (IMPROVED LOGIC) ---
   Future<bool> needsSync() async {
     final remoteMetadata = await getRemoteMetadata();
     final localMetadata = getLocalMetadata();
 
-    // Case 1: No remote metadata exists at all.
-    // If we have local data, we MUST sync to clear it.
-    // If we have no local data, we don't need to do anything.
     if (remoteMetadata == null) {
       return localMetadata.isNotEmpty;
     }
@@ -61,73 +55,83 @@ class ProductSyncService {
     final remoteTimestampValue = remoteMetadata['lastUpdated'];
     final localTimestampValue = localMetadata['lastUpdated'];
 
-    // Case 2: No timestamp on remote. Treat as an invalid state, but
-    // safer not to sync than to wipe data accidentally. A log would be good here.
     if (remoteTimestampValue == null) {
       print("[ProductSyncService] Warning: Remote metadata is missing 'lastUpdated' field.");
       return false;
     }
 
-    // Case 3: We have never synced before. We MUST sync.
     if (localTimestampValue == null) {
       return true;
     }
 
-    // Case 4: Compare the timestamps.
-    // Note: The local timestamp is already a DateTime from the last sync.
     final remoteTimestamp = (remoteTimestampValue as Timestamp).toDate();
     final localTimestamp = localTimestampValue as DateTime;
 
-    // Sync only if the remote timestamp is newer.
     return remoteTimestamp.isAfter(localTimestamp);
   }
 
-  /// --- Main sync function ---
+
+  /// --- Main sync function (MODIFIED) ---
   /// Fetches all products and the latest metadata from Firestore,
   /// saves them to Hive, and returns the new metadata.
   Future<Map<String, dynamic>> syncFromFirestore() async {
     final remoteMetadata = await getRemoteMetadata();
 
-    // --- START: MODIFIED LOGIC ---
-
-    // Case 1: No data on the server at all.
-    // The correct action is to wipe the local cache and return an empty state.
     if (remoteMetadata == null) {
       print("[ProductSyncService] No remote metadata found. Clearing local cache.");
       await _productBox.clear();
-      await _metadataBox.clear(); // Also clear local metadata
-      return {}; // Return empty metadata
+      await _metadataBox.clear();
+      return {};
     }
 
-    // This check is still good. If metadata exists, it MUST have a timestamp.
     if (remoteMetadata['lastUpdated'] == null) {
       throw Exception(
           "Aborting sync: Remote metadata is present but is missing the 'lastUpdated' field.");
     }
 
-    // --- END: MODIFIED LOGIC ---
+    // --- STEP 2: FETCH ALL SAVED PRODUCT IDS ---
+    // Read the provider once to get the current set of all product IDs
+    // the user has saved across all their lists.
+    final savedProductIds = await _ref.read(listedProductIdsProvider.future);
 
-    // Query products explicitly marked as on sale
-    final productsSnapshot = await _firestore
+    // This will hold all products we need to cache, using their ID as the key
+    // to automatically handle duplicates (e.g., a product is on sale AND saved).
+    final Map<String, Product> productMap = {};
+
+    // --- QUERY 1: Fetch all products currently on sale ---
+    final productsOnSaleSnapshot = await _firestore
         .collection('products')
         .where('isOnSale', isEqualTo: true)
         .get();
 
-    // Fallback: also fetch products missing the "isOnSale" field (legacy docs)
-    final fallbackSnapshot = await _firestore
-        .collection('products')
-        .where('isOnSale', isNull: true)
-        .get();
+    for (var doc in productsOnSaleSnapshot.docs) {
+      productMap[doc.id] = Product.fromFirestore(doc.id, doc.data());
+    }
 
-    final allDocs = [...productsSnapshot.docs, ...fallbackSnapshot.docs];
+    // --- QUERY 2: Fetch all products saved by the user that are NOT already fetched ---
+    final idsToFetch = savedProductIds.where((id) => !productMap.containsKey(id)).toList();
 
-    final products = allDocs
-        .map((doc) => Product.fromFirestore(doc.id, doc.data()))
-        .toList();
+    if (idsToFetch.isNotEmpty) {
+      // Firestore 'whereIn' queries are limited to 30 elements per query.
+      // We must break our list of IDs into chunks of 30.
+      for (var i = 0; i < idsToFetch.length; i += 30) {
+        final chunk = idsToFetch.sublist(i, i + 30 > idsToFetch.length ? idsToFetch.length : i + 30);
+        if (chunk.isNotEmpty) {
+          final savedProductsSnapshot = await _firestore
+              .collection('products')
+              .where(FieldPath.documentId, whereIn: chunk)
+              .get();
 
-    // Perform the database write operations
+          for (var doc in savedProductsSnapshot.docs) {
+            productMap[doc.id] = Product.fromFirestore(doc.id, doc.data());
+          }
+        }
+      }
+    }
+
+    // --- STEP 3: REPLACE THE OLD DATABASE LOGIC ---
+    // Instead of mapping a specific query, we now use our combined map.
     await _productBox.clear();
-    final Map<String, Product> productMap = {for (var p in products) p.id: p};
     await _productBox.putAll(productMap);
 
     // On success, save the new metadata locally

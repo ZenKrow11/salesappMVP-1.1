@@ -675,5 +675,7 @@
   "@welcomeToAppName": {
     "description": "Welcome message on the login screen.",
     "placeholders": { "appName": { "type": "String" } }
-  }
+  },
+  "dealExpired": "Expired",
+  "@dealExpired": { "description": "Label for expired deals" }
 }

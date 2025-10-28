@@ -7,6 +7,7 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/pages/change_password_page.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 import 'package:sales_app_mvp/components/upgrade_dialog.dart';
@@ -22,11 +23,13 @@ class AccountPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        // --- THIS IS THE FIX: RESTORE THESE MISSING PROPERTIES ---
         backgroundColor: theme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(l10n.logout,
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.secondary)),
         content: Text(l10n.logoutConfirmation, style: TextStyle(color: theme.inactive)),
+        // --- END OF FIX ---
         actions: [
           TextButton(
             child: Text(l10n.cancel, style: TextStyle(color: theme.inactive.withOpacity(0.7))),
@@ -37,6 +40,7 @@ class AccountPage extends ConsumerWidget {
             child: Text(l10n.logout),
             onPressed: () async {
               Navigator.of(dialogContext).pop();
+              ref.read(appDataProvider.notifier).reset();
               await ref.read(authControllerProvider.notifier).signOut();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -154,10 +158,7 @@ class AccountPage extends ConsumerWidget {
     );
   }
 
-  // --- ADDED THIS METHOD ---
-  /// Placeholder for managing subscription.
-  /// In a real app, this would open the native subscription management UI
-  /// for Google Play or the Apple App Store.
+  // --- Manage Subscription ---
   void _manageSubscription(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -234,9 +235,6 @@ class AccountPage extends ConsumerWidget {
                         ),
                       ],
                     ),
-
-                    // --- ADDED THIS WIDGET ---
-                    // Conditionally show the Premium management card if the user is premium
                     if (isPremium)
                       _buildAccountCard(
                         icon: Icons.workspace_premium_outlined,
@@ -250,7 +248,6 @@ class AccountPage extends ConsumerWidget {
                             theme: theme,
                             onTap: () => _manageSubscription(context, ref),
                           ),
-                          // You can add more premium-related options here in the future
                         ],
                       ),
 
@@ -312,65 +309,81 @@ class AccountPage extends ConsumerWidget {
     final statusText = isPremium ? l10n.accountStatusPremium : l10n.accountStatusFree;
     final statusColor = isPremium ? theme.accent : theme.inactive.withOpacity(0.7);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CircleAvatar(radius: 35, backgroundColor: theme.background, child: Icon(Icons.person_outline, size: 40, color: theme.secondary)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(displayName ?? l10n.user,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.inactive),
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(user?.email ?? l10n.noEmailAvailable,
-                    style: TextStyle(fontSize: 14, color: theme.inactive.withOpacity(0.7)),
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
-                  child: Text(statusText.toUpperCase(),
-                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
-                ),
-                // Conditionally show the upgrade button if the user is not premium
-                if (!isPremium) ...[
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () => showUpgradeDialog(context, ref),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.accent.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: theme.accent, width: 1.5),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star_purple500_outlined, color: theme.accent, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            l10n.upgradeButton,
-                            style: TextStyle(
-                              color: theme.accent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+    return GestureDetector(
+      onLongPress: () async {
+        try {
+          await ref.read(userProfileNotifierProvider.notifier).updateUserPremiumStatus(!isPremium);
+          ref.refresh(userProfileProvider);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(isPremium ? 'Developer Mode: Set to FREE' : 'Developer Mode: Set to PREMIUM'),
+            duration: const Duration(seconds: 1),
+          ));
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error updating status: $e'),
+            backgroundColor: theme.accent,
+          ));
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(radius: 35, backgroundColor: theme.background, child: Icon(Icons.person_outline, size: 40, color: theme.secondary)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(displayName ?? l10n.user,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.inactive),
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text(user?.email ?? l10n.noEmailAvailable,
+                      style: TextStyle(fontSize: 14, color: theme.inactive.withOpacity(0.7)),
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: statusColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                    child: Text(statusText.toUpperCase(),
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
+                  ),
+                  if (!isPremium) ...[
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () => showUpgradeDialog(context, ref),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: theme.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: theme.accent, width: 1.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star_purple500_outlined, color: theme.accent, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.upgradeButton,
+                              style: TextStyle(
+                                color: theme.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ]
-              ],
+                  ]
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

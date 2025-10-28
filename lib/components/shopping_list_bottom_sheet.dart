@@ -71,8 +71,16 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
   void _createAndSetActive(String listName) {
     final l10n = AppLocalizations.of(context)!;
     if (listName.trim().isEmpty) return;
+
     final trimmedName = listName.trim();
+
+    // 1. Create the new list in Firestore.
     ref.read(shoppingListsProvider.notifier).createNewList(trimmedName);
+
+    // 2. **[THE MISSING STEP]** Update the app's state to make this new list active.
+    ref.read(activeShoppingListProvider.notifier).setActiveList(trimmedName);
+
+    // 3. Close the sheet and notify the user.
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.createdAndSelectedList(trimmedName))),
@@ -114,47 +122,42 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    // 3. GET THE l10n OBJECT IN THE MAIN BUILD METHOD
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.background,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.background,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 4. PASS l10n TO ALL HELPER WIDGETS
-                _buildHeader(l10n),
-                const SizedBox(height: 12),
-                _buildTabBar(l10n),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: TabBarView(
-                    controller: _tabController!,
-                    children: [
-                      _buildSelectList(l10n),
-                      _buildNewListTab(l10n),
-                    ],
-                  ),
+        ),
+        // --- FIX 1: THE MAIN LAYOUT IS NOW A FLEXIBLE COLUMN ---
+        // This allows us to use Expanded on the TabBarView.
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(l10n),
+              const SizedBox(height: 12),
+              _buildTabBar(l10n),
+              const SizedBox(height: 16),
+              // Use Expanded to make the TabBarView fill the remaining space,
+              // which will shrink and grow correctly with the keyboard.
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController!,
+                  children: [
+                    _buildSelectList(l10n),
+                    _buildNewListTab(l10n),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -303,6 +306,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     );
   }
 
+  // --- FIX 2: MAKE THE "CREATE NEW" TAB CONTENT SCROLLABLE ---
   Widget _buildNewListTab(AppLocalizations l10n) {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(isPremiumProvider);
@@ -318,7 +322,6 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
           final canCreateMoreLists = lists.length < maxPremiumLists;
 
           if (canCreateMoreLists) {
-            // ========== THE FIX IS HERE ==========
             // Wrap the Column in a SingleChildScrollView to prevent overflow
             // when the keyboard appears.
             return SingleChildScrollView(
@@ -356,9 +359,8 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
                 ],
               ),
             );
-            // ========== END OF FIX ==========
           } else {
-            // This part for 'max lists reached' is fine and doesn't need to scroll.
+            // ... (max lists reached UI is unchanged)
             return Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
