@@ -69,7 +69,7 @@ final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
 
 final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>>((ref) {
   final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
-  final filterState = ref.watch(filterStateProvider);
+  final filterState = ref.watch(shoppingListPageFilterStateProvider);
 
   if (asyncShoppingList is! AsyncData<List<Product>>) {
     return asyncShoppingList;

@@ -7,12 +7,12 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
+// --- CHANGE: IMPORT THE NEW PROVIDERS ---
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/widgets/store_logo.dart'; // <-- IMPORT YOUR WIDGET
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 
-// Re-using the localization extension from your sort_bottom_sheet
 import 'sort_bottom_sheet.dart' show SortOptionLocalization;
 
 class OrganizeListBottomSheet extends ConsumerStatefulWidget {
@@ -32,8 +32,8 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Clone the global state to a local state for modification
-    _localFilterState = ref.read(filterStateProvider);
+    // --- CHANGE: Clone the Shopping List's global state to a local state. ---
+    _localFilterState = ref.read(shoppingListPageFilterStateProvider);
   }
 
   @override
@@ -47,7 +47,8 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
-    final filterNotifier = ref.read(filterStateProvider.notifier);
+    // --- CHANGE: Get the Shopping List's filter notifier. ---
+    final filterNotifier = ref.read(shoppingListPageFilterStateProvider.notifier);
 
     return Container(
       constraints: BoxConstraints(
@@ -70,15 +71,12 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // Stores Tab
                   asyncStoreOptions.when(
                     data: (stores) => _buildStoresTab(stores, theme),
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (e, s) => Center(child: Text('Error: $e')),
                   ),
-                  // Categories Tab
                   _buildCategoriesTab(theme, l10n),
-                  // Sort Tab
                   _buildSortTab(l10n, theme),
                 ],
               ),
@@ -86,11 +84,12 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
             FilterActionBar(
               onReset: () {
                 setState(() {
-                  _localFilterState = const FilterState();
+                  // --- CHANGE: Reset to a default state suitable for the shopping list. ---
+                  _localFilterState = const FilterState(sortOption: SortOption.storeAlphabetical);
                 });
               },
               onApply: () {
-                // Apply local changes to the global state provider
+                // Apply local changes to the Shopping List's global state provider
                 filterNotifier.state = _localFilterState;
                 Navigator.pop(context);
               },
@@ -148,7 +147,7 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
         crossAxisCount: 3,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.5, // Adjust aspect ratio for logos
+        childAspectRatio: 1.5,
       ),
       itemCount: stores.length,
       itemBuilder: (context, index) {
@@ -177,7 +176,6 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
                   ? Border.all(color: theme.secondary, width: 3)
                   : null,
             ),
-            // --- FIX: USING YOUR StoreLogo WIDGET ---
             child: Center(child: StoreLogo(storeName: store, height: 40)),
           ),
         );
@@ -193,7 +191,7 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
         crossAxisCount: 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 3.5, // Wider aspect ratio for text
+        childAspectRatio: 3.5,
       ),
       itemCount: allCategories.length,
       itemBuilder: (context, index) {

@@ -88,7 +88,7 @@ final homePageProductsProvider =
 FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   final l10n = ref.watch(localizationProvider);
   final appData = ref.watch(appDataProvider);
-  final filter = ref.watch(filterStateProvider);
+  final filter = ref.watch(homePageFilterStateProvider);
 
   if (appData.status != InitializationStatus.loaded || appData.allProducts.isEmpty) {
     return [];
@@ -123,5 +123,5 @@ FutureProvider.autoDispose<List<ProductGroup>>((ref) async {
   // --- THIS IS THE FIX ---
   // Explicitly list the providers that this provider depends on, especially
   // the one that is being overridden.
-  dependencies: [localizationProvider, appDataProvider, filterStateProvider],
+  dependencies: [localizationProvider, appDataProvider, homePageFilterStateProvider],
 );

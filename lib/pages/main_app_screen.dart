@@ -276,12 +276,22 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n) {
-    final isFilterActive = ref.watch(filterStateProvider.select((f) => f.isFilterActiveForShoppingList));
+    // This correctly watches the shopping list's specific filter provider.
+    final isFilterActive = ref.watch(shoppingListPageFilterStateProvider.select((f) => f.isFilterActiveForShoppingList));
 
     return IconButton(
       icon: Badge(
+        // This correctly controls when the dot is visible.
         isLabelVisible: isFilterActive,
-        child: Icon(Icons.tune_rounded, color: theme.inactive),
+
+        // --- ADD THIS LINE ---
+        // Set the background color of the dot to your app's secondary color.
+        backgroundColor: theme.secondary,
+
+        // Ensure the badge is a small dot by having no label.
+        label: null,
+
+        child: Icon(Icons.filter_list_alt, color: theme.inactive),
       ),
       tooltip: l10n.organizeList,
       onPressed: () {

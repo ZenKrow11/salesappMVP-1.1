@@ -99,7 +99,7 @@ class ShoppingModeScreen extends ConsumerWidget {
             );
           }
 
-          final sortOption = ref.watch(filterStateProvider).sortOption;
+          final sortOption = ref.watch(homePageFilterStateProvider).sortOption;
 
           final Map<String, List<Product>> groupedProducts;
           final List<String> orderedGroupNames;

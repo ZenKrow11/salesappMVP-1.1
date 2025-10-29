@@ -30,13 +30,13 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
   @override
   void initState() {
     super.initState();
-    final initialQuery = ref.read(filterStateProvider).searchQuery;
+    final initialQuery = ref.read(homePageFilterStateProvider).searchQuery;
     _textController.text = initialQuery;
 
     _textController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 500), () {
-        if (mounted && _textController.text != ref.read(filterStateProvider).searchQuery) {
+        if (mounted && _textController.text != ref.read(homePageFilterStateProvider).searchQuery) {
           _commitSearch(_textController.text);
         }
       });
@@ -53,7 +53,7 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
 
   void _commitSearch(String query) {
     ref
-        .read(filterStateProvider.notifier)
+        .read(homePageFilterStateProvider.notifier)
         .update((state) => state.copyWith(searchQuery: query));
   }
 

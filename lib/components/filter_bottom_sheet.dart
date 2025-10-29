@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
+// --- CHANGE: IMPORT THE NEW PROVIDERS ---
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -18,14 +19,14 @@ import 'filter_action_bar.dart';
 
 /// Holds the temporary filter state while the user is making changes.
 final _localFilterStateProvider = StateProvider.autoDispose<FilterState>((ref) {
-  // Initialize with the current global filter state.
-  return ref.watch(filterStateProvider);
+  // --- CHANGE: Initialize with the HomePage's global filter state. ---
+  return ref.watch(homePageFilterStateProvider);
 });
 
 /// Manages the temporary set of stores tapped by the user.
 final _tappedStoresProvider = StateProvider.autoDispose<Set<String>>((ref) {
-  // Initialize with the current global selection.
-  return ref.watch(filterStateProvider).selectedStores.toSet();
+  // --- CHANGE: Initialize with the HomePage's current selection. ---
+  return ref.watch(homePageFilterStateProvider).selectedStores.toSet();
 });
 
 /// Manages the include/exclude toggle for the stores tab.
@@ -42,7 +43,6 @@ class FilterBottomSheet extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // The subcategory color map can be a simple final variable.
     final subCategoryColorMap = {
       for (var mainCat in allCategories)
         for (var subCat in mainCat.subcategories) subCat.name: mainCat.style.color
@@ -88,11 +88,10 @@ class FilterBottomSheet extends ConsumerWidget {
                         final current = ref.read(_localFilterStateProvider).selectedCategories.toSet();
                         current.contains(category) ? current.remove(category) : current.add(category);
 
-                        // Update the local state provider
                         ref.read(_localFilterStateProvider.notifier).update((state) =>
                             state.copyWith(
                               selectedCategories: current.toList(),
-                              selectedSubcategories: [], // Reset subcategories
+                              selectedSubcategories: [],
                             ));
                       },
                     ),
@@ -129,9 +128,7 @@ class FilterBottomSheet extends ConsumerWidget {
     );
   }
 
-  /// Helper method to toggle an item in a Set within a StateProvider.
   void _toggleSetOption(WidgetRef ref, AutoDisposeStateProvider<Set<String>> provider, String option) {
-    // ================================================================
     final currentSet = ref.read(provider);
     if (currentSet.contains(option)) {
       ref.read(provider.notifier).state = Set.from(currentSet)..remove(option);
@@ -154,12 +151,12 @@ class FilterBottomSheet extends ConsumerWidget {
       selectedStores: finalSelectedStores,
     );
 
-    ref.read(filterStateProvider.notifier).state = finalState;
+    // --- CHANGE: Update the HomePage's state provider. ---
+    ref.read(homePageFilterStateProvider.notifier).state = finalState;
     Navigator.pop(context);
   }
 
   Widget _buildHeader(BuildContext context, AppThemeData theme, AppLocalizations l10n) {
-    // This widget's code remains the same
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 12, 4),
       child: Row(
@@ -183,7 +180,6 @@ class FilterBottomSheet extends ConsumerWidget {
   }
 
   Widget _buildTabBar(AppThemeData theme, AppLocalizations l10n) {
-    // This widget's code remains the same
     return TabBar(
       labelColor: theme.secondary,
       unselectedLabelColor: theme.inactive,

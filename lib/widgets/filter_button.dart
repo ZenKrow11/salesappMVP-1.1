@@ -17,7 +17,7 @@ class FilterButton extends ConsumerWidget {
     // --- GET LOCALIZATIONS ---
     final l10n = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
-    final isFilterActive = ref.watch(filterStateProvider.select((f) => f.isFilterActive));
+    final isFilterActive = ref.watch(homePageFilterStateProvider.select((f) => f.isFilterActive));
 
     return ElevatedButton.icon(
       icon: Icon(Icons.filter_alt, color: theme.secondary, size: 22.0),
@@ -34,7 +34,7 @@ class FilterButton extends ConsumerWidget {
           if (isFilterActive)
             _ClearButton(
               onPressed: () {
-                ref.read(filterStateProvider.notifier).update((state) => state.copyWith(
+                ref.read(homePageFilterStateProvider.notifier).update((state) => state.copyWith(
                   selectedStores: [],
                   selectedCategories: [],
                   selectedSubcategories: [],

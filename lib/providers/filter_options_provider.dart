@@ -82,7 +82,7 @@ final categoryOptionsProvider = FutureProvider.autoDispose<List<String>>((ref) {
   final plainProducts = ref.watch(_plainProductsProvider);
   if (plainProducts.isEmpty) return [];
 
-  final filterState = ref.watch(filterStateProvider);
+  final filterState = ref.watch(homePageFilterStateProvider);
   final input = _OptionsInput(products: plainProducts, filterState: filterState);
 
   return compute(_generateCategoryOptionsInBackground, input);
@@ -94,7 +94,7 @@ FutureProvider.autoDispose<List<String>>((ref) {
   final plainProducts = ref.watch(_plainProductsProvider);
   if (plainProducts.isEmpty) return [];
 
-  final filterState = ref.watch(filterStateProvider);
+  final filterState = ref.watch(homePageFilterStateProvider);
   final input = _OptionsInput(products: plainProducts, filterState: filterState);
 
   return compute(_generateSubcategoryOptionsInBackground, input);

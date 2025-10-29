@@ -33,7 +33,7 @@ class ShoppingListPage extends ConsumerWidget {
       error: (err, stack) => Center(child: Text(l10n.errorLoadingList(err.toString()))),
       data: (products) {
         if (products.isEmpty) {
-          final isFilterActive = ref.read(filterStateProvider).isFilterActiveForShoppingList;
+          final isFilterActive = ref.read(homePageFilterStateProvider).isFilterActiveForShoppingList;
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
@@ -47,7 +47,7 @@ class ShoppingListPage extends ConsumerWidget {
           );
         }
 
-        final sortOption = ref.watch(filterStateProvider).sortOption;
+        final sortOption = ref.watch(homePageFilterStateProvider).sortOption;
 
         final Map<String, List<Product>> groupedProducts;
         final List<String> orderedGroupNames;

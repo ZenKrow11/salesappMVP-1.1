@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-import 'package:sales_app_mvp/services/purchase_service.dart'; // Import the new service
+// The purchase service is no longer called directly from the disabled button,
+// but we can leave the import in case you re-enable it later.
+import 'package:sales_app_mvp/services/purchase_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 void showUpgradeDialog(BuildContext context, WidgetRef ref) {
@@ -22,11 +24,38 @@ void showUpgradeDialog(BuildContext context, WidgetRef ref) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- NO CHANGE: The feature list remains the same ---
             Text(l10n.upgradeToPremiumFeature1, style: TextStyle(color: theme.inactive)),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(l10n.upgradeToPremiumFeature2, style: TextStyle(color: theme.inactive)),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(l10n.upgradeToPremiumFeature3, style: TextStyle(color: theme.inactive)),
+
+            // --- CHANGE 1: ADD THE "COMING SOON" MESSAGE ---
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                  color: theme.secondary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.secondary.withOpacity(0.5))
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.new_releases_outlined, color: theme.secondary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    // You can create a new key in your l10n file for this
+                    "Premium Coming Soon!",
+                    style: TextStyle(
+                      color: theme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -34,17 +63,16 @@ void showUpgradeDialog(BuildContext context, WidgetRef ref) {
             child: Text(l10n.cancel, style: TextStyle(color: theme.inactive)),
             onPressed: () => Navigator.of(context).pop(),
           ),
+          // --- CHANGE 2: DISABLE THE UPGRADE BUTTON ---
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.accent,
-              foregroundColor: Colors.white,
+              // Use a "disabled" look for the button
+              backgroundColor: theme.inactive.withOpacity(0.3),
+              foregroundColor: theme.inactive.withOpacity(0.7),
             ),
-            child: Text(l10n.upgradeButton),
-            onPressed: () {
-              // THIS IS THE KEY! Call your PurchaseService to start the payment flow.
-              ref.read(purchaseServiceProvider).buyPremium();
-              Navigator.of(context).pop();
-            },
+            // Setting onPressed to null automatically disables the button
+            onPressed: null,
+            child: const Text("Upgrade"), // The text can remain "Upgrade" or change
           ),
         ],
       );
