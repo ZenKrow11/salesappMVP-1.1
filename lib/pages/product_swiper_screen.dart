@@ -2,10 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // Import for AdSize
+import 'package:sales_app_mvp/components/preloaded_ad_widget.dart'; // Import new widget
 import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
+import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/services/ad_manager.dart'; // Import for AdPlacement
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+const int _adFrequency = 8;
 const double _kSwipeVelocityThreshold = 50.0;
 
 class ProductSwiperScreen extends ConsumerStatefulWidget {
@@ -32,6 +37,14 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     _pageController = PageController(
       initialPage: widget.initialIndex,
     );
+
+    // --- Start pre-loading the swiper ad as soon as the screen is opened ---
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isPremium = ref.read(isPremiumProvider);
+      if (!isPremium) {
+        ref.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.productSwiper, AdSize.largeBanner);
+      }
+    });
   }
 
   @override
@@ -43,50 +56,59 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    final isPremium = ref.watch(isPremiumProvider);
+
+    final int adCount =
+    isPremium ? 0 : (widget.products.length / _adFrequency).floor();
+    final int totalPageCount = widget.products.length + adCount;
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! > _kSwipeVelocityThreshold) {
+        if (details.primaryVelocity != null &&
+            details.primaryVelocity! > _kSwipeVelocityThreshold) {
           Navigator.of(context).pop();
         }
       },
-      // --- CHANGES ARE HERE ---
       child: Scaffold(
-        // 1. Set the background to the solid theme color to match the details page.
         backgroundColor: theme.primary,
-        // 2. The Stack and Positioned.fill are no longer needed.
-        //    The body can now be the Column directly.
-        body: Column(
-          children: [
-            // This is still needed to account for the phone's status bar area.
-            Container(height: statusBarHeight),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                scrollDirection: Axis.vertical,
-                physics: const _ReelsPhysics(),
-                itemCount: widget.products.length,
-                itemBuilder: (context, index) {
-                  final product = widget.products[index];
+        body: SafeArea(
+          child: PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            physics: const _ReelsPhysics(),
+            itemCount: totalPageCount,
+            itemBuilder: (context, pageIndex) {
+              if (adCount > 0 && (pageIndex + 1) % (_adFrequency + 1) == 0) {
+                // --- Use the new PreloadedAdWidget ---
+                return const Center(
+                  child: PreloadedAdWidget(
+                    placement: AdPlacement.productSwiper,
+                    adSize: AdSize.largeBanner,
+                  ),
+                );
+              } else {
+                final int adOffset = (adCount > 0)
+                    ? ((pageIndex + 1) / (_adFrequency + 1)).floor()
+                    : 0;
+                final int productIndex = pageIndex - adOffset;
+                final product = widget.products[productIndex];
 
-                  return ProductDetails(
-                    key: ValueKey(product.id),
-                    product: product,
-                    currentIndex: index + 1,
-                    totalItems: widget.products.length,
-                  );
-                },
-              ),
-            ),
-          ],
+                return ProductDetails(
+                  key: ValueKey(product.id),
+                  product: product,
+                  currentIndex: productIndex + 1,
+                  totalItems: widget.products.length,
+                );
+              }
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-/// Custom scroll physics tuned for TikTok/YouTube Shorts style
+/// Custom scroll physics (unchanged).
 class _ReelsPhysics extends PageScrollPhysics {
   const _ReelsPhysics({super.parent});
 
@@ -97,9 +119,7 @@ class _ReelsPhysics extends PageScrollPhysics {
 
   @override
   double get minFlingVelocity => 200.0;
-
   @override
   double get maxFlingVelocity => 4000.0;
-
   Duration get transitionDuration => const Duration(milliseconds: 180);
 }

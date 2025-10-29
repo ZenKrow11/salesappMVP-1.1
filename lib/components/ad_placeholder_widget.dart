@@ -7,11 +7,10 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-enum AdType { banner }
-
+// --- This widget is now simplified for a single purpose: lazy-loading standard banners ---
 class AdPlaceholderWidget extends ConsumerStatefulWidget {
-  final AdType adType;
-  const AdPlaceholderWidget({super.key, required this.adType});
+  // No longer needs an AdType, as it only handles one type now.
+  const AdPlaceholderWidget({super.key});
 
   @override
   ConsumerState<AdPlaceholderWidget> createState() => _AdPlaceholderWidgetState();
@@ -30,18 +29,20 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
   }
 
   void _loadAd() {
-    // Prevent multiple load attempts
-    if (_isAdLoadInitiated) {
+    if (_isAdLoadInitiated || !mounted) {
       return;
     }
     _isAdLoadInitiated = true;
 
     final adManager = ref.read(adManagerProvider.notifier);
 
+    // --- THIS IS THE FIX ---
+    // We call the simplified createBannerAd method. It has no parameters
+    // other than the listener, because it's hardcoded to create a standard banner.
     _bannerAd = adManager.createBannerAd(
       BannerAdListener(
         onAdLoaded: (ad) {
-          debugPrint('BannerAd loaded successfully.');
+          debugPrint('Lazy-loaded BannerAd loaded successfully.');
           if (mounted) {
             setState(() {
               _isAdLoaded = true;
@@ -49,16 +50,12 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
           }
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('BannerAd failed to load: $error. Attempt #${_retryAttempt + 1}');
+          debugPrint('Lazy-loaded BannerAd failed to load: $error. Attempt #${_retryAttempt + 1}');
           ad.dispose();
-
-          // Don't retry forever. Let's try 3 times.
           if (_retryAttempt < 3) {
             _retryAttempt++;
-            // Wait for 30 seconds before trying again.
             Future.delayed(const Duration(seconds: 30), () {
               if (mounted) {
-                // Reset the flag to allow a new load attempt
                 _isAdLoadInitiated = false;
                 _loadAd();
               }
@@ -66,13 +63,12 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
           }
         },
       ),
-    )..load();
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isPremium = ref.watch(isPremiumProvider);
-    // Hide ad for premium users or if it failed to load permanently
     if (isPremium || (_bannerAd == null && _retryAttempt >= 3)) {
       return const SizedBox.shrink();
     }
@@ -80,7 +76,7 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
     return VisibilityDetector(
       key: Key('ad_placeholder_${widget.key}'),
       onVisibilityChanged: (visibilityInfo) {
-        if (visibilityInfo.visibleFraction > 0 && !_isAdLoaded) {
+        if (visibilityInfo.visibleFraction > 0 && !_isAdLoaded && !_isAdLoadInitiated) {
           _loadAd();
         }
       },
@@ -89,16 +85,17 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
         width: _bannerAd!.size.width.toDouble(),
         height: _bannerAd!.size.height.toDouble(),
         alignment: Alignment.center,
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        margin: const EdgeInsets.symmetric(vertical: 8.0), // Margin is suitable for home page
         child: AdWidget(ad: _bannerAd!),
       )
           : Container(
-        width: double.infinity,
-        height: 50, // Standard banner height
+        // The placeholder size is now always a standard banner.
+        width: AdSize.banner.width.toDouble(),
+        height: AdSize.banner.height.toDouble(),
         color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8.0),
-        child: const Text('Ad Loading...'), // Good for debugging
+        child: const Text('Ad Loading...'),
       ),
     );
   }

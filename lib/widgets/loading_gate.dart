@@ -2,15 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/generated/app_localizations.dart';
-import 'package:sales_app_mvp/pages/main_app_screen.dart';
-import 'package:sales_app_mvp/providers/app_data_provider.dart';
-import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/components/ad_placeholder_widget.dart';
+// --- THIS IS THE FIX ---
+// We import the google_mobile_ads package but explicitly hide the conflicting
+// InitializationStatus enum, as we want to use our own from app_data_provider.
+import 'package:google_mobile_ads/google_mobile_ads.dart' hide InitializationStatus;
 
-// ... (the _getTranslatedMessage function remains unchanged) ...
+import 'package:sales_app_mvp/components/preloaded_ad_widget.dart';
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+import 'package:sales_app_mvp/providers/app_data_provider.dart';
+import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/services/ad_manager.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
+
+
 String _getTranslatedMessage(String key, AppLocalizations l10n) {
-  // ... same as before ...
   switch (key) {
     case 'loadingInitializing':
       return l10n.loadingInitializing;
@@ -31,7 +36,6 @@ String _getTranslatedMessage(String key, AppLocalizations l10n) {
   }
 }
 
-
 class LoadingGate extends ConsumerStatefulWidget {
   const LoadingGate({super.key});
 
@@ -43,41 +47,26 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
   @override
   void initState() {
     super.initState();
-    // Use addPostFrameCallback to ensure the widget is built before starting.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Check if we are still mounted before triggering initialization.
       if (mounted) {
-        ref.read(appDataProvider.notifier).initialize();
+        final isPremium = ref.read(isPremiumProvider);
+        if (!isPremium) {
+          ref.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
+        }
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // --- THIS IS THE FIX ---
-    ref.listen<AppDataState>(appDataProvider, (previous, next) {
-      if (next.status == InitializationStatus.loaded) {
-        // Use Future.delayed to schedule navigation for after the current build cycle.
-        // This prevents race conditions with other widgets (like ads) that might be
-        // finishing their work during this same frame.
-        Future.delayed(Duration.zero, () {
-          if (mounted) { // Always check if the widget is still in the tree
-            Navigator.of(context)
-                .pushReplacementNamed(MainAppScreen.routeName);
-          }
-        });
-      }
-    });
-
     final appDataState = ref.watch(appDataProvider);
+    // Now that the ambiguity is resolved, this line will work correctly.
     final hasError = appDataState.status == InitializationStatus.error;
 
     return _buildLoadingScreen(appDataState, hasError: hasError);
   }
 
-  // The _buildLoadingScreen method remains completely unchanged.
   Widget _buildLoadingScreen(AppDataState state, {bool hasError = false}) {
-    // ... same as before ...
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final Color iconColor = hasError ? Colors.red : theme.secondary;
@@ -99,9 +88,14 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Spacer(flex: 3),
-                      const Flexible(
+                      Flexible(
                         flex: 5,
-                        child: AdPlaceholderWidget(adType: AdType.banner),
+                        child: ref.watch(isPremiumProvider)
+                            ? const SizedBox.shrink()
+                            : const PreloadedAdWidget(
+                          placement: AdPlacement.splashScreen,
+                          adSize: AdSize.banner,
+                        ),
                       ),
                       const Spacer(flex: 2),
                       Icon(

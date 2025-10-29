@@ -4,36 +4,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-
-// Import your other files
-import 'firebase_options.dart';
-import 'widgets/splash_screen.dart';
-import 'widgets/login_screen.dart';
-import 'pages/main_app_screen.dart';
-import 'package:sales_app_mvp/widgets/loading_gate.dart';
-
-// Required imports for the emulator setup
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+import 'firebase_options.dart';
+import 'widgets/splash_screen.dart';
+import 'widgets/login_screen.dart';
+import 'pages/main_app_screen.dart';
+import 'widgets/loading_router.dart';
+import 'providers/app_data_provider.dart';
+import 'providers/grouped_products_provider.dart'; // Import for localizationProvider
 import 'generated/app_localizations.dart';
+import 'services/ad_manager.dart';
 
-
-//============================================================================
-//  MAIN FUNCTION - The App's Entry Point
-//============================================================================
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('de_DE', null);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
 
   // START: Block to connect to Firebase Emulators in debug mode
   if (kDebugMode) {
@@ -52,20 +45,27 @@ Future<void> main() async {
 
   /// firebase emulators:start --only firestore,auth
 
-  // Initialize Hive for Flutter.
+
   await Hive.initFlutter();
 
-  // Run the app with a single, simple ProviderScope.
+  // 1. Create the single, authoritative ProviderContainer for the entire app.
+  final container = ProviderContainer();
+
+  // 2. Use THIS container to initialize and pre-load everything.
+  container.read(adManagerProvider.notifier).initialize();
+  container.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
+
+  // 3. THIS IS THE CRITICAL FIX:
+  // Use UncontrolledProviderScope to inject our pre-configured container
+  // into the widget tree. This makes it the one and only scope.
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const MyApp(),
     ),
   );
 }
 
-//============================================================================
-//  ROOT WIDGET - MyApp
-//============================================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -79,23 +79,18 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-
-      // The builder provides a context that is *inside* the MaterialApp,
-      // which is essential for AppLocalizations.of(context) to work.
+      // The builder is still required to get the context for AppLocalizations.
       builder: (context, child) {
         return ProviderScope(
-          // This links to the root ProviderScope established in main().
+          // This correctly finds the container from UncontrolledProviderScope.
           parent: ProviderScope.containerOf(context),
           overrides: [
-            // This is now safe because the builder's context is valid.
-            // It provides the l10n object for any provider that needs it.
+            // This now correctly overrides the provider in the ONE container.
             localizationProvider.overrideWithValue(AppLocalizations.of(context)!),
           ],
-          // The 'child' is whatever widget tree 'home' or 'routes' would normally build.
           child: child!,
         );
       },
-
       home: const AuthGate(),
       routes: {
         LoginScreen.routeName: (context) => const LoginScreen(),
@@ -105,10 +100,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// --- Provider definitions (Correct and Unchanged) ---
 
-//============================================================================
-//  SPLASH & AUTH PROVIDERS
-//============================================================================
 final splashControllerProvider = FutureProvider<void>((ref) async {
   await Future.delayed(const Duration(seconds: 2));
 });
@@ -117,14 +110,18 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-//============================================================================
-//  AUTH GATE WIDGET
-//============================================================================
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<User?>>(authStateChangesProvider, (previous, next) {
+      final user = next.value;
+      if (user != null && previous?.value == null) {
+        ref.read(appDataProvider.notifier).initialize();
+      }
+    });
+
     final authState = ref.watch(authStateChangesProvider);
     final splashHasFinished = ref.watch(splashControllerProvider);
 
@@ -135,7 +132,7 @@ class AuthGate extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          return const LoadingGate();
+          return const LoadingRouter();
         } else {
           return const LoginScreen();
         }

@@ -7,20 +7,26 @@ import 'package:sales_app_mvp/services/product_sync_service.dart';
 
 enum InitializationStatus { uninitialized, loading, loaded, error }
 
+// --- NEW: An enum to describe HOW the app is loading ---
+enum LoadingType { unknown, fromNetwork, fromCache }
+
 class AppDataState {
   final InitializationStatus status;
+  // --- NEW: Add the loadingType property ---
+  final LoadingType loadingType;
   final List<Product> allProducts;
   final Map<String, dynamic> metadata;
   final String? errorMessage;
-  final String loadingMessage; // This now holds a LOCALIZATION KEY
+  final String loadingMessage;
   final double loadingProgress;
 
   AppDataState({
     required this.status,
+    // --- NEW: Initialize the loadingType ---
+    this.loadingType = LoadingType.unknown,
     this.allProducts = const [],
     this.metadata = const {},
     this.errorMessage,
-    // THE DEFAULT IS NOW A KEY
     this.loadingMessage = 'loadingInitializing',
     this.loadingProgress = 0.0,
   });
@@ -31,6 +37,8 @@ class AppDataState {
 
   AppDataState copyWith({
     InitializationStatus? status,
+    // --- NEW: Add loadingType to copyWith ---
+    LoadingType? loadingType,
     List<Product>? allProducts,
     Map<String, dynamic>? metadata,
     String? errorMessage,
@@ -39,6 +47,8 @@ class AppDataState {
   }) {
     return AppDataState(
       status: status ?? this.status,
+      // --- NEW: Handle loadingType in copyWith ---
+      loadingType: loadingType ?? this.loadingType,
       allProducts: allProducts ?? this.allProducts,
       metadata: metadata ?? this.metadata,
       errorMessage: errorMessage,
@@ -55,15 +65,11 @@ class AppDataController extends StateNotifier<AppDataState> {
   AppDataController(this._ref, this._syncService)
       : super(AppDataState(status: InitializationStatus.uninitialized));
 
-  // --- ADD THIS METHOD ---
-  /// Resets the controller to its initial, uninitialized state.
-  /// This is crucial to call on user logout to clear the previous session's data.
   void reset() {
     state = AppDataState(status: InitializationStatus.uninitialized);
   }
 
   Future<void> initialize() async {
-    // This guard is now even more important.
     if (state.status != InitializationStatus.uninitialized) return;
 
     try {
@@ -77,10 +83,20 @@ class AppDataController extends StateNotifier<AppDataState> {
       Map<String, dynamic> loadedMetadata;
 
       if (needsToSync) {
-        state = state.copyWith(loadingMessage: 'loadingDownloadingDeals', loadingProgress: 0.6);
+        // --- NEW: Set loadingType to fromNetwork ---
+        state = state.copyWith(
+            loadingType: LoadingType.fromNetwork,
+            loadingMessage: 'loadingDownloadingDeals',
+            loadingProgress: 0.6
+        );
         loadedMetadata = await _syncService.syncFromFirestore();
       } else {
-        state = state.copyWith(loadingMessage: 'loadingFromCache', loadingProgress: 0.8);
+        // --- NEW: Set loadingType to fromCache ---
+        state = state.copyWith(
+            loadingType: LoadingType.fromCache,
+            loadingMessage: 'loadingFromCache',
+            loadingProgress: 0.8
+        );
         loadedMetadata = _syncService.getLocalMetadata();
       }
 
@@ -108,7 +124,6 @@ class AppDataController extends StateNotifier<AppDataState> {
   }
 }
 
-// ... (provider definition is unchanged) ...
 final appDataProvider =
 StateNotifierProvider<AppDataController, AppDataState>((ref) {
   final syncService = ref.watch(productSyncProvider);

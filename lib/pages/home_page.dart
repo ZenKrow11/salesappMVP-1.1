@@ -66,7 +66,7 @@ class _ProductList extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12.0, 0, 12.0, 16.0),
-                child: AdPlaceholderWidget(adType: AdType.banner),
+                child: AdPlaceholderWidget(),
               ),
             ),
           if ((paginationState[group.firestoreName] ?? kCollapsedItemLimit) < group.products.length)

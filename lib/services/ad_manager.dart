@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-// --- Ad Unit IDs (Unchanged) ---
+// An enum to uniquely identify ad placements for pre-loading.
+enum AdPlacement { splashScreen, productSwiper }
+
 final String bannerAdUnitId = defaultTargetPlatform == TargetPlatform.android
     ? 'ca-app-pub-3940256099942544/6300978111'
     : 'ca-app-pub-3940256099942544/2934735716';
@@ -15,20 +17,24 @@ final String interstitialAdUnitId = defaultTargetPlatform == TargetPlatform.andr
 
 final adManagerProvider = StateNotifierProvider<AdManager, AdState>((ref) {
   final adManager = AdManager();
-  ref.onDispose(() => adManager.disposeAds());
+  ref.onDispose(() => adManager.disposeAllAds());
   return adManager;
 });
 
-/// Holds the state of our loaded ads that are managed centrally (like interstitials).
 class AdState {
-  // NOTE: The BannerAd is no longer here.
   final InterstitialAd? interstitialAd;
+  // A map to hold our pre-loaded banner ads.
+  final Map<AdPlacement, BannerAd> loadedBannerAds;
 
-  AdState({this.interstitialAd});
+  AdState({this.interstitialAd, this.loadedBannerAds = const {}});
 
-  AdState copyWith({InterstitialAd? interstitialAd}) {
+  AdState copyWith({
+    InterstitialAd? interstitialAd,
+    Map<AdPlacement, BannerAd>? loadedBannerAds,
+  }) {
     return AdState(
-      interstitialAd: interstitialAd ?? this.interstitialAd,
+      interstitialAd: interstitialAd, // No ?? needed, we want to be able to clear it
+      loadedBannerAds: loadedBannerAds ?? this.loadedBannerAds,
     );
   }
 }
@@ -44,9 +50,44 @@ class AdManager extends StateNotifier<AdState> {
     _isInitialized = true;
   }
 
-  // --- THIS IS THE CORRECT METHOD ---
-  /// Creates, loads, and returns a new, unique BannerAd object.
-  /// The widget that calls this is responsible for managing the ad's lifecycle.
+  /// Pre-loads a single banner ad and stores it in the state.
+  void preloadBannerAd(AdPlacement placement, AdSize adSize) {
+    // Don't load if an ad for this placement is already loaded or being loaded.
+    if (state.loadedBannerAds.containsKey(placement)) {
+      return;
+    }
+
+    final bannerAd = BannerAd(
+      adUnitId: bannerAdUnitId,
+      request: const AdRequest(),
+      size: adSize,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          debugPrint('Pre-loaded BannerAd for $placement loaded successfully.');
+          // Ad is loaded, add it to the state map.
+          final newAds = Map<AdPlacement, BannerAd>.from(state.loadedBannerAds);
+          newAds[placement] = ad as BannerAd;
+          state = state.copyWith(loadedBannerAds: newAds);
+        },
+        onAdFailedToLoad: (ad, error) {
+          debugPrint('BannerAd for $placement failed to load: $error');
+          ad.dispose(); // Clean up the failed ad object.
+        },
+      ),
+    );
+    bannerAd.load();
+  }
+
+  /// Disposes a specific banner ad when it's no longer needed.
+  void disposeAd(AdPlacement placement) {
+    final ad = state.loadedBannerAds[placement];
+    ad?.dispose();
+    final newAds = Map<AdPlacement, BannerAd>.from(state.loadedBannerAds);
+    newAds.remove(placement);
+    state = state.copyWith(loadedBannerAds: newAds);
+  }
+
+  // This is your existing lazy-loading method for ads like the one on the home page.
   BannerAd createBannerAd(BannerAdListener listener) {
     final bannerAd = BannerAd(
       adUnitId: bannerAdUnitId,
@@ -58,10 +99,16 @@ class AdManager extends StateNotifier<AdState> {
     return bannerAd;
   }
 
-  // --- The Interstitial and Dispose logic remains the same, but note the change in disposeAds ---
+  /// Cleans up all ads when the provider is disposed.
+  void disposeAllAds() {
+    state.interstitialAd?.dispose();
+    for (var ad in state.loadedBannerAds.values) {
+      ad.dispose();
+    }
+  }
+
   void loadInterstitialAd() {
     if (state.interstitialAd != null) return;
-
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
@@ -96,12 +143,11 @@ class AdManager extends StateNotifier<AdState> {
     );
 
     state.interstitialAd!.show();
-    state = AdState(interstitialAd: null); // Clear the used ad
-    loadInterstitialAd(); // Pre-load the next one
+    state = AdState(interstitialAd: null);
+    loadInterstitialAd();
   }
 
   void disposeAds() {
-    // We only need to dispose the centrally managed ads here.
     state.interstitialAd?.dispose();
   }
 }
