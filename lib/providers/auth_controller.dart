@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-// --- 1. IMPORT YOUR DATA PROVIDER TO INVALIDATE IT ---
+import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 
@@ -114,19 +114,19 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   /// --- Sign Out ---
   Future<void> signOut() async {
     try {
-      // --- THE ROBUST FIX ---
+      // 1. Read the provider you correctly defined in storage_providers.dart.
+      final metadataBox = _ref.read(metadataBoxProvider);
 
-      // 1. Explicitly reset the state of your main data controller.
-      // This immediately puts it into a clean 'uninitialized' state.
+      // 2. Clear ONLY the metadata box. This erases the old timestamp.
+      await metadataBox.clear();
+
+      // 3. Your existing logic for resetting in-memory state is perfect.
       _ref.read(appDataProvider.notifier).reset();
-
-      // 2. Invalidate all user-specific providers to dispose them and
-      // force them to be recreated on next login.
       _ref.invalidate(appDataProvider);
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
 
-      // 3. Sign out from the services.
+      // 4. Sign out from the services.
       await _googleSignIn.signOut();
       await _auth.signOut();
 
