@@ -1,13 +1,13 @@
-// lib/pages/product_swiper_screen.dart
+// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\pages\product_swiper_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // Import for AdSize
-import 'package:sales_app_mvp/components/preloaded_ad_widget.dart'; // Import new widget
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:sales_app_mvp/components/preloaded_ad_widget.dart';
 import 'package:sales_app_mvp/components/product_details.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
-import 'package:sales_app_mvp/services/ad_manager.dart'; // Import for AdPlacement
+import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 const int _adFrequency = 8;
@@ -34,13 +34,31 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      initialPage: widget.initialIndex,
-    );
 
-    // --- Start pre-loading the swiper ad as soon as the screen is opened ---
+    // --- THIS IS THE FIX ---
+    // Calculate the correct starting page index by accounting for ads.
+    final isPremium = ref.read(isPremiumProvider);
+    final int productIndex = widget.initialIndex;
+    int initialPage;
+
+    if (isPremium) {
+      // If the user is premium, no ads are inserted, so the indices match.
+      initialPage = productIndex;
+    } else {
+      // Calculate how many ad blocks appear before the given product index.
+      // An ad is inserted after every `_adFrequency` products.
+      final int adBlocksBefore = (productIndex / _adFrequency).floor();
+      initialPage = productIndex + adBlocksBefore;
+    }
+
+    _pageController = PageController(
+      initialPage: initialPage, // Use the newly calculated page index.
+    );
+    // --- END OF FIX ---
+
+
+    // Pre-loading logic remains the same.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final isPremium = ref.read(isPremiumProvider);
       if (!isPremium) {
         ref.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.productSwiper, AdSize.largeBanner);
       }
@@ -58,6 +76,9 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(isPremiumProvider);
 
+    // This build logic is already correct and does not need to change.
+    // It correctly calculates the total number of pages and maps page indices
+    // back to product indices.
     final int adCount =
     isPremium ? 0 : (widget.products.length / _adFrequency).floor();
     final int totalPageCount = widget.products.length + adCount;
@@ -78,8 +99,7 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
             physics: const _ReelsPhysics(),
             itemCount: totalPageCount,
             itemBuilder: (context, pageIndex) {
-              if (adCount > 0 && (pageIndex + 1) % (_adFrequency + 1) == 0) {
-                // --- Use the new PreloadedAdWidget ---
+              if (!isPremium && (pageIndex + 1) % (_adFrequency + 1) == 0 && pageIndex != 0) {
                 return const Center(
                   child: PreloadedAdWidget(
                     placement: AdPlacement.productSwiper,
@@ -87,10 +107,16 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
                   ),
                 );
               } else {
-                final int adOffset = (adCount > 0)
-                    ? ((pageIndex + 1) / (_adFrequency + 1)).floor()
-                    : 0;
+                final int adOffset = isPremium
+                    ? 0
+                    : ((pageIndex + 1) / (_adFrequency + 1)).floor();
                 final int productIndex = pageIndex - adOffset;
+
+                // Safety check to prevent out-of-bounds errors if logic is ever misaligned
+                if (productIndex < 0 || productIndex >= widget.products.length) {
+                  return const Center(child: Text("Error: Product index out of bounds."));
+                }
+
                 final product = widget.products[productIndex];
 
                 return ProductDetails(

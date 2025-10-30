@@ -1,11 +1,10 @@
-// lib/components/product_tile.dart
+// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\components\product_tile.dart
+// This file is correct as provided in the previous step, with the AspectRatio fix.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -38,7 +37,6 @@ class ProductTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-
     final categorizableProduct = product as Categorizable;
     final categoryStyle = CategoryService.getStyleForCategory(categorizableProduct.category);
     final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
@@ -51,10 +49,7 @@ class ProductTile extends ConsumerWidget {
           id: product.id, store: product.store, name: product.name,
           currentPrice: product.currentPrice, normalPrice: product.normalPrice,
           discountPercentage: product.discountPercentage,
-
-          // --- ADD THIS FIX ---
           category: product.category.isEmpty ? 'categoryUncategorized' : product.category,
-
           subcategory: product.subcategory, url: product.url, imageUrl: product.imageUrl,
           nameTokens: product.nameTokens, dealStart: product.dealStart,
           specialCondition: product.specialCondition,
@@ -137,6 +132,10 @@ class ProductTile extends ConsumerWidget {
       children: [
         _buildHeaderRow(context, ref),
         const SizedBox(height: 6),
+        // --- THIS IS THE FIX ---
+        // Now that the tile has a fixed height from the parent grid,
+        // Expanded is the correct widget to use. It will fill the available
+        // space between the header and the price, preventing any overflow.
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -152,7 +151,7 @@ class ProductTile extends ConsumerWidget {
                   maxWidth: double.infinity,
                   fit: BoxFit.contain,
                 ),
-                if (product.specialCondition != null) // <-- UPDATED
+                if (product.specialCondition != null)
                   Positioned(
                     top: 0,
                     left: 6,

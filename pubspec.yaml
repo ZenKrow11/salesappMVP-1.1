@@ -43,6 +43,7 @@ dependencies:
   google_fonts: ^6.2.1
   uuid: ^4.4.0
   in_app_purchase: ^3.2.0
+  flutter_staggered_grid_view: ^0.7.0
 
   # Code Generation & Others
   freezed_annotation: ^2.4.1
