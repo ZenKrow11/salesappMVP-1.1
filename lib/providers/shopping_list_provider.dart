@@ -24,7 +24,7 @@ final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
   return firestoreService.getListedProductIdsStream();
 });
 
-const String merklisteListName = 'Merkliste';
+const String kDefaultListName = 'Shopping List'; // Changed from 'Merkliste'
 
 final initializationProvider = FutureProvider<void>((ref) async {
   final user = await ref.watch(authStateChangesProvider.future);
@@ -111,6 +111,8 @@ final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>
 
   return AsyncData(transformedList);
 });
+
+final String merklisteListName = kDefaultListName;
 
 /// Notifier responsible for actions related to shopping lists.
 class ShoppingListNotifier extends StateNotifier<void> {

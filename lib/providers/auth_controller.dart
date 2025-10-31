@@ -4,6 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+
 
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
@@ -114,19 +116,21 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   /// --- Sign Out ---
   Future<void> signOut() async {
     try {
-      // 1. Read the provider you correctly defined in storage_providers.dart.
       final metadataBox = _ref.read(metadataBoxProvider);
-
-      // 2. Clear ONLY the metadata box. This erases the old timestamp.
       await metadataBox.clear();
 
-      // 3. Your existing logic for resetting in-memory state is perfect.
       _ref.read(appDataProvider.notifier).reset();
       _ref.invalidate(appDataProvider);
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
 
-      // 4. Sign out from the services.
+      // --- THIS IS THE FIX ---
+      // Explicitly reset the active shopping list to the default.
+      // This overwrites the old user's list in SharedPreferences,
+      // ensuring the next user gets a clean state.
+      await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
+      // --- END OF FIX ---
+
       await _googleSignIn.signOut();
       await _auth.signOut();
 

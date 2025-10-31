@@ -42,6 +42,8 @@ Future<void> main() async {
     debugPrint('>>> CONNECTING TO LIVE FIREBASE PRODUCTION <<<');
   }
 
+  /// firebase emulators:start --only firestore,auth
+
   await Hive.initFlutter();
 
   final container = ProviderContainer();

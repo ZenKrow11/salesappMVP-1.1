@@ -13,7 +13,11 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 const int _adFrequency = 8;
 const double _kSwipeVelocityThreshold = 50.0;
 
+// --- DEFINE THE GRACE PERIOD THRESHOLD ---
+const int _adGracePeriodSwipes = 4; // The ad will only appear after this many swipes.
+
 class ProductSwiperScreen extends ConsumerStatefulWidget {
+  // ... (constructor is unchanged)
   final List<PlainProduct> products;
   final int initialIndex;
 
@@ -31,31 +35,27 @@ class ProductSwiperScreen extends ConsumerStatefulWidget {
 class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
   late final PageController _pageController;
 
+  // --- STEP 1: INTRODUCE STATE FOR SWIPE TRACKING ---
+  int _userSwipeCount = 0;
+
   @override
   void initState() {
     super.initState();
 
-    // --- THIS IS THE FIX ---
-    // Calculate the correct starting page index by accounting for ads.
     final isPremium = ref.read(isPremiumProvider);
     final int productIndex = widget.initialIndex;
     int initialPage;
 
     if (isPremium) {
-      // If the user is premium, no ads are inserted, so the indices match.
       initialPage = productIndex;
     } else {
-      // Calculate how many ad blocks appear before the given product index.
-      // An ad is inserted after every `_adFrequency` products.
       final int adBlocksBefore = (productIndex / _adFrequency).floor();
       initialPage = productIndex + adBlocksBefore;
     }
 
     _pageController = PageController(
-      initialPage: initialPage, // Use the newly calculated page index.
+      initialPage: initialPage,
     );
-    // --- END OF FIX ---
-
 
     // Pre-loading logic remains the same.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,9 +76,6 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
     final theme = ref.watch(themeProvider);
     final isPremium = ref.watch(isPremiumProvider);
 
-    // This build logic is already correct and does not need to change.
-    // It correctly calculates the total number of pages and maps page indices
-    // back to product indices.
     final int adCount =
     isPremium ? 0 : (widget.products.length / _adFrequency).floor();
     final int totalPageCount = widget.products.length + adCount;
@@ -98,8 +95,24 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
             scrollDirection: Axis.vertical,
             physics: const _ReelsPhysics(),
             itemCount: totalPageCount,
+
+            // --- STEP 2: UPDATE STATE ON USER INTERACTION ---
+            onPageChanged: (newPage) {
+              // We only need to increment the counter, we don't care about the direction.
+              // This ensures the grace period is "unlocked" once and stays unlocked.
+              if (mounted) {
+                setState(() {
+                  _userSwipeCount++;
+                });
+              }
+            },
             itemBuilder: (context, pageIndex) {
-              if (!isPremium && (pageIndex + 1) % (_adFrequency + 1) == 0 && pageIndex != 0) {
+              // --- STEP 3: MODIFY THE AD DISPLAY LOGIC ---
+              final bool isAdSlot = !isPremium && (pageIndex + 1) % (_adFrequency + 1) == 0 && pageIndex != 0;
+              final bool isGracePeriodOver = _userSwipeCount >= _adGracePeriodSwipes;
+
+              // Show the ad ONLY if it's an ad slot AND the grace period is over.
+              if (isAdSlot && isGracePeriodOver) {
                 return const Center(
                   child: PreloadedAdWidget(
                     placement: AdPlacement.productSwiper,
@@ -107,12 +120,14 @@ class _ProductSwiperScreenState extends ConsumerState<ProductSwiperScreen> {
                   ),
                 );
               } else {
+                // In all other cases (premium user, not an ad slot, OR during the grace period),
+                // show the product.
                 final int adOffset = isPremium
                     ? 0
+                // Calculate the number of ads that SHOULD have appeared before this page.
                     : ((pageIndex + 1) / (_adFrequency + 1)).floor();
                 final int productIndex = pageIndex - adOffset;
 
-                // Safety check to prevent out-of-bounds errors if logic is ever misaligned
                 if (productIndex < 0 || productIndex >= widget.products.length) {
                   return const Center(child: Text("Error: Product index out of bounds."));
                 }

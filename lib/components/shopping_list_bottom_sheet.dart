@@ -61,9 +61,9 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
     final l10n = AppLocalizations.of(context)!;
     if (widget.product == null) return;
     ref.read(shoppingListsProvider.notifier).addToList(widget.product!, context);
-    widget.onConfirm!(merklisteListName);
+    widget.onConfirm!(kDefaultListName);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.addedTo(merklisteListName))),
+      SnackBar(content: Text(l10n.addedTo(kDefaultListName))),
     );
     Navigator.of(context).pop();
   }
@@ -215,10 +215,12 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
 
     if (!isPremium) {
       return ListTile(
-        title: Text(merklisteListName, style: TextStyle(color: theme.inactive)),
+        // Use the constant here
+        title: Text(kDefaultListName, style: TextStyle(color: theme.inactive)),
         onTap: () {
           if (isSelectActiveMode) {
-            ref.read(activeShoppingListProvider.notifier).setActiveList(merklisteListName);
+            // And here
+            ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
             Navigator.pop(context);
           } else {
             _addAndDismiss();
@@ -243,7 +245,7 @@ class _ShoppingListBottomSheetState extends ConsumerState<ShoppingListBottomShee
         ShoppingListInfo? defaultList;
         List<ShoppingListInfo> customLists = [];
         for (var list in lists) {
-          if (list.name == merklisteListName) {
+          if (list.name == kDefaultListName) {
             defaultList = list;
           } else {
             customLists.add(list);

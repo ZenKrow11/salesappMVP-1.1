@@ -293,41 +293,45 @@ class ManageCustomItemsPage extends ConsumerWidget {
           final countText = 'Items ${items.length} / $limit';
           final isLimitReached = items.length >= limit;
 
-          return Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: BoxDecoration(
-              color: theme.primary,
-              border: Border(top: BorderSide(color: theme.background, width: 1.0)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  countText,
-                  style: TextStyle(
-                    color: theme.inactive.withOpacity(0.8),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed:
-                  isLimitReached ? null : () => _showCreateOrEditDialog(context, ref),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.add),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isLimitReached
-                        ? theme.inactive.withOpacity(0.4)
-                        : theme.secondary,
-                    foregroundColor: theme.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+          // --- THIS IS THE CORRECTED STRUCTURE ---
+          return SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: BoxDecoration(
+                color: theme.primary,
+                border: Border(top: BorderSide(color: theme.background, width: 1.0)),
+              ),
+              // The Row is now correctly placed as the child of the Container
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    countText,
+                    style: TextStyle(
+                      color: theme.inactive.withOpacity(0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                )
-              ],
+                  ElevatedButton.icon(
+                    onPressed:
+                    isLimitReached ? null : () => _showCreateOrEditDialog(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.add),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isLimitReached
+                          ? theme.inactive.withOpacity(0.4)
+                          : theme.secondary,
+                      foregroundColor: theme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
           );
         },

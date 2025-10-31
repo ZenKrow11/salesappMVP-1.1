@@ -66,15 +66,18 @@ class ShoppingListPage extends ConsumerWidget {
             .expand((groupName) => groupedProducts[groupName]!)
             .toList();
 
-        return Column(
-          children: [
-            Expanded(
-              child: isGridView
-                  ? _buildGroupedGridView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption)
-                  : _buildGroupedListView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption),
+        return SafeArea(
+            top: false, // The AppBar already handles the top safe area
+            child: Column(
+              children: [
+                Expanded( // Added closing parenthesis
+                  child: isGridView
+                      ? _buildGroupedGridView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption)
+                      : _buildGroupedListView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption),
+                ),
+                ShoppingSummaryBar(products: products),
+              ],
             ),
-            ShoppingSummaryBar(products: products),
-          ],
         );
       },
     );

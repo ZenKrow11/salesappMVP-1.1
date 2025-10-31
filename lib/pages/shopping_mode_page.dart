@@ -269,58 +269,61 @@ class ShoppingModeScreen extends ConsumerWidget {
 
     final int totalItems = products.length;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: BoxDecoration(
-        color: theme.primary,
-        border: Border(top: BorderSide(color: theme.background, width: 1.0)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                localizations.itemsLabel.toUpperCase(),
-                style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$totalItems',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                localizations.total.toUpperCase(),
-                style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${totalCost.toStringAsFixed(2)} ${localizations.currencyFrancs}',
-                style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          ElevatedButton.icon(
-            onPressed: () => _showFinishShoppingDialog(context, ref, products),
-            icon: const Icon(Icons.check_circle_outline),
-            label: Text(localizations.finish),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.secondary,
-              foregroundColor: theme.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    // --- FIX: WRAP THE CONTAINER WITH SAFEAREA ---
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: BoxDecoration(
+          color: theme.primary,
+          border: Border(top: BorderSide(color: theme.background, width: 1.0)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  localizations.itemsLabel.toUpperCase(),
+                  style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$totalItems',
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-          )
-        ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  localizations.total.toUpperCase(),
+                  style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${totalCost.toStringAsFixed(2)} ${localizations.currencyFrancs}',
+                  style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _showFinishShoppingDialog(context, ref, products),
+              icon: const Icon(Icons.check_circle_outline),
+              label: Text(localizations.finish),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.secondary,
+                foregroundColor: theme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

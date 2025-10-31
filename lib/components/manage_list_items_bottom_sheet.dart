@@ -48,9 +48,11 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
         color: theme.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-        child: Column(
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -129,6 +131,6 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
