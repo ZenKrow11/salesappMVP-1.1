@@ -2,17 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
-// 1. IMPORT THE GENERATED LOCALIZATIONS FILE
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-
 import 'package:sales_app_mvp/models/product.dart';
+import 'package:sales_app_mvp/models/user_profile.dart'; // <-- Import the UserProfile model
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:uuid/uuid.dart';
 
 class CreateCustomItemPage extends ConsumerStatefulWidget {
   final Product? productToEdit;
@@ -27,10 +26,10 @@ class CreateCustomItemPage extends ConsumerStatefulWidget {
 class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _customCategoryController;
   String? _selectedCategory;
 
   bool get _isEditing => widget.productToEdit != null;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -39,86 +38,64 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         TextEditingController(text: widget.productToEdit?.name ?? '');
 
     final initialCategory = widget.productToEdit?.category;
-    if (initialCategory != null && initialCategory != 'custom') {
+    if (initialCategory != null && initialCategory.isNotEmpty) {
       _selectedCategory = initialCategory;
     }
-
-    _customCategoryController = TextEditingController(
-        text: widget.productToEdit?.category == 'custom'
-            ? widget.productToEdit?.subcategory
-            : '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _customCategoryController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitForm() async {
-    // 2. GET LOCALIZATIONS FOR SNACKBARS
+  // --- FIX 1: CHANGE THE METHOD SIGNATURE TO ACCEPT THE LOADED PROFILE ---
+  Future<void> _submitForm(UserProfile userProfile) async {
     final l10n = AppLocalizations.of(context)!;
+    final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
 
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate() || _isSaving) {
       return;
     }
 
-    final firestoreService = ref.read(firestoreServiceProvider);
-    final userProfile = ref.read(userProfileProvider).value;
-    final customItems = ref.read(customItemsProvider).value ?? [];
+    FocusScope.of(context).unfocus();
 
-    if (userProfile == null) return;
-
-    if (!_isEditing) {
-      final limit = userProfile.isPremium ? 45 : 15;
-      if (customItems.length >= limit) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          // 3. USE LOCALIZED, PARAMETERIZED STRINGS
-          content: Text(l10n.customItemLimitReached(limit)),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ));
-        return;
-      }
-    }
-
-    // ... (rest of the logic is unchanged)
-    final String category;
-    final String subcategory;
-    bool isCustomCategoryEntered = _customCategoryController.text.isNotEmpty;
-
-    if (userProfile.isPremium && isCustomCategoryEntered) {
-      category = 'custom';
-      subcategory = _customCategoryController.text.trim();
-    } else {
-      category = _selectedCategory!;
-      subcategory = '';
-    }
-
-    final productToSave = Product(
-      id: _isEditing ? widget.productToEdit!.id : const Uuid().v4(),
-      name: _nameController.text.trim(),
-      category: category,
-      subcategory: subcategory,
-      store: 'custom',
-      isCustom: true,
-      currentPrice: 0.0,
-      normalPrice: 0.0,
-      discountPercentage: 0,
-      url: '',
-      imageUrl: '',
-      nameTokens: [],
-    );
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
+      final firestoreService = ref.read(firestoreServiceProvider);
+
+      // --- FIX 2: USE THE PASSED-IN userProfile DIRECTLY ---
+      // No need to check for null here, because the button's logic guarantees it's available.
+      if (!_isEditing) {
+        final customItems = ref.read(customItemsProvider).value ?? [];
+        final limit = userProfile.isPremium ? 45 : 15;
+        if (customItems.length >= limit) {
+          throw Exception(l10n.customItemLimitReached(limit));
+        }
+      }
+
+      final productToSave = Product(
+        id: _isEditing ? widget.productToEdit!.id : const Uuid().v4(),
+        name: _nameController.text.trim(),
+        category: _selectedCategory!,
+        subcategory: '',
+        store: 'custom',
+        isCustom: true,
+        currentPrice: 0.0,
+        normalPrice: 0.0,
+        discountPercentage: 0,
+        url: '',
+        imageUrl: '',
+        nameTokens: [],
+      );
+
       if (_isEditing) {
-        await firestoreService.updateCustomItemInStorage(productToSave);
+        await shoppingListNotifier.updateCustomItem(productToSave);
       } else {
-        await firestoreService.addCustomItemToStorage(productToSave);
-        final activeListId = ref.read(activeShoppingListProvider);
-        await ref
-            .read(shoppingListsProvider.notifier)
-            .addToSpecificList(productToSave, activeListId, context);
+        await shoppingListNotifier.createAndAddCustomItem(productToSave, context);
       }
 
       if (mounted) {
@@ -139,23 +116,47 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
           ),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
-    final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-    final allCategories = CategoryService.getAllCategories();
-    bool isCustomCategoryEntered = _customCategoryController.text.isNotEmpty;
-
-    // GET LOCALIZATIONS FOR THE BUILD METHOD
     final l10n = AppLocalizations.of(context)!;
+
+    // --- FIX 3: WATCH THE PROVIDER AND GET THE ACTUAL DATA OBJECT ---
+    final userProfileAsync = ref.watch(userProfileProvider);
+    // This will be the UserProfile object when loaded, or null otherwise.
+    final UserProfile? userProfile = userProfileAsync.value;
+
+    final allCategoriesForDropdown = CategoryService.getAllCategoriesForDropdown();
+
+    InputDecoration _buildInputDecoration(String label) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
+        filled: true,
+        fillColor: theme.background.withOpacity(0.4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: theme.secondary, width: 2),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
       appBar: AppBar(
-        // 4. REPLACE ALL HARDCODED STRINGS IN THE UI
         title: Text(_isEditing ? l10n.editCustomItem : l10n.createCustomItem),
         backgroundColor: theme.primary,
       ),
@@ -164,80 +165,75 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ... TextFormField and DropdownButtonFormField are unchanged ...
               TextFormField(
                 controller: _nameController,
                 style: TextStyle(color: theme.inactive),
-                decoration: InputDecoration(
-                  labelText: l10n.itemName,
-                  labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
-                ),
-                validator: (value) =>
-                (value == null || value.trim().isEmpty)
+                decoration: _buildInputDecoration(l10n.itemName),
+                validator: (value) => (value == null || value.trim().isEmpty)
                     ? l10n.pleaseEnterItemName
                     : null,
               ),
               const SizedBox(height: 24),
-              if (isPremium) ...[
-                TextFormField(
-                  controller: _customCategoryController,
-                  style: TextStyle(color: theme.inactive),
-                  decoration: InputDecoration(
-                    labelText: l10n.customCategoryPremium,
-                    labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
-                  ),
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Text(
-                    isCustomCategoryEntered ? l10n.usingCustomCategoryAbove : l10n.orSelectMainCategory,
-                    style: TextStyle(color: theme.inactive.withOpacity(0.7), fontSize: 14),
-                  ),
-                ),
-              ],
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 isExpanded: true,
                 dropdownColor: theme.background,
                 style: TextStyle(color: theme.inactive, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: l10n.selectCategory,
-                  labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
-                  enabled: !isCustomCategoryEntered,
-                ),
-                items: allCategories.map((categoryInfo) {
+                decoration: _buildInputDecoration(l10n.selectCategory),
+                items: allCategoriesForDropdown.map((categoryInfo) {
                   return DropdownMenuItem(
                     value: categoryInfo.firestoreName,
-                    child: Text(categoryInfo.style.displayName), // This part remains, as it comes from your CategoryService
+                    child: Text(
+                      CategoryService.getLocalizedCategoryName(
+                        categoryInfo.firestoreName,
+                        l10n,
+                      ),
+                    ),
                   );
                 }).toList(),
-                onChanged: isCustomCategoryEntered ? null : (newValue) {
+                onChanged: (newValue) {
                   setState(() {
                     _selectedCategory = newValue;
                   });
                 },
                 validator: (_) {
-                  if (isPremium && isCustomCategoryEntered) return null;
-                  if (_selectedCategory == null) return l10n.pleaseSelectCategory;
+                  if (_selectedCategory == null) {
+                    return l10n.pleaseSelectCategory;
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.check),
-                  label: Text(_isEditing ? l10n.saveChanges : l10n.createItem),
-                  onPressed: _submitForm,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+              FilledButton.icon(
+                icon: _isSaving
+                    ? Container(
+                  width: 24,
+                  height: 24,
+                  padding: const EdgeInsets.all(2.0),
+                  child: CircularProgressIndicator(
+                    color: theme.primary,
+                    strokeWidth: 3,
                   ),
+                )
+                    : Icon(Icons.check, color: theme.primary),
+                label: Text(
+                  _isEditing ? l10n.saveChanges : l10n.createItem,
+                  style: TextStyle(color: theme.primary),
+                ),
+                // --- FIX 4: THE ULTIMATE SAFETY CHECK ---
+                // The button is disabled if we are saving OR if the userProfile object is null (i.e., still loading).
+                // When pressed, it passes the guaranteed-to-be-loaded userProfile to the submit function.
+                onPressed: (_isSaving || userProfile == null)
+                    ? null
+                    : () => _submitForm(userProfile),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.secondary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

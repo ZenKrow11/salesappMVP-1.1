@@ -704,5 +704,12 @@
     "clearAllConfirmationBody": "This will permanently remove ALL items from your current list. This action cannot be undone.",
     "@clearAllConfirmationBody": { "description": "Confirmation dialog body for clearing all items." },
     "clearAllButton": "Clear All",
-    "@clearAllButton": { "description": "Text for the confirmation button to clear all items." }
-}
+    "@clearAllButton": { "description": "Text for the confirmation button to clear all items." },
+    "moreOptions": "More Options",
+    "@moreOptions": {
+      "description": "Tooltip for a button that opens a menu with more actions like Edit or Delete."
+    },
+    "customItem": "Custom Item",
+    "@customItem": {
+      "description": "A generic fallback label for a custom item when it doesn't have a specific user-defined category."}
+  }

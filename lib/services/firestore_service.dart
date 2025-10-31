@@ -3,32 +3,57 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sales_app_mvp/main.dart'; // To get the auth provider
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
+import 'package:sales_app_mvp/models/user_profile.dart';
 import '../models/product.dart';
 
+// --- THE NEW PROVIDER ---
+// It now correctly builds the service with a reference to the provider scope.
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
-  return FirestoreService(
-    FirebaseAuth.instance,
-    FirebaseFirestore.instance,
-  );
+  return FirestoreService(ref);
 });
 
 class FirestoreService {
-  final FirebaseAuth _auth;
-  final FirebaseFirestore _firestore;
+  // The service now holds a reference to the provider's scope.
+  final Ref _ref;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  FirestoreService(this._auth, this._firestore);
+  FirestoreService(this._ref);
 
-  String? get _uid => _auth.currentUser?.uid;
+  // --- THE NEW UID GETTER ---
+  // This is now robust. It reads the LATEST auth state from the provider
+  // every time it is called.
+  String? get _uid => _ref.read(authStateChangesProvider).value?.uid;
 
-  // Update user profile document
+  /// Creates a user profile document in Firestore if one doesn't already exist.
+  Future<void> createUserProfile(User user) async {
+    final userRef = _firestore.collection('users').doc(user.uid);
+
+    final profile = UserProfile(
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      isPremium: false,
+    );
+    // Use .set with merge:true to safely create without overwriting.
+    await userRef.set(profile.toFirestore(), SetOptions(merge: true));
+  }
+
+  // --- ALL OTHER METHODS ARE THE SAME, but they now use the robust _uid getter ---
+
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    await _firestore.collection('users').doc(uid).set(data, SetOptions(merge: true));
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .set(data, SetOptions(merge: true));
   }
 
-  // Firestore collection shortcuts
+  // ... (paste ALL your other methods from addItemToList down to deleteCustomItemFromStorage here, unchanged)
+  // They will automatically work with the new _uid getter.
+
   CollectionReference _shoppingListsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('shoppingLists');
 
@@ -55,7 +80,6 @@ class FirestoreService {
     await batch.commit();
   }
 
-  // Remove an item from a shopping list
   Future<void> removeItemFromList({
     required String listId,
     required String productId,
@@ -79,7 +103,6 @@ class FirestoreService {
     });
   }
 
-  // Delete a full shopping list
   Future<void> deleteList({required String listId}) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
@@ -118,7 +141,6 @@ class FirestoreService {
     }
   }
 
-  // Stream of all product IDs currently in lists
   Stream<Set<String>> getListedProductIdsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value({});
@@ -127,7 +149,6 @@ class FirestoreService {
     });
   }
 
-  // Stream of all shopping lists
   Stream<List<ShoppingListInfo>> getAllShoppingListsStream() {
     final uid = _uid;
     if (uid == null) return Stream.value([]);
@@ -136,7 +157,6 @@ class FirestoreService {
     });
   }
 
-  // Stream of all items in a list (live updates)
   Stream<List<Map<String, dynamic>>> getShoppingListItemsStream({required String listId}) {
     final uid = _uid;
     if (uid == null) return Stream.value([]);
@@ -150,7 +170,6 @@ class FirestoreService {
     });
   }
 
-  // NEW: One-time read of shopping list items (for item limit enforcement)
   Future<List<Map<String, dynamic>>> getShoppingListItemsOnce({required String listId}) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
@@ -164,7 +183,6 @@ class FirestoreService {
     }).toList();
   }
 
-  // Create a new empty shopping list
   Future<void> createNewList({required String listName}) async {
     final uid = _uid;
     if (uid == null) return;
@@ -172,7 +190,6 @@ class FirestoreService {
     await listRef.set({'createdAt': FieldValue.serverTimestamp()});
   }
 
-  // Ensure default list exists (Merkliste)
   Future<void> ensureDefaultListExists({required String listId}) async {
     final uid = _uid;
     if (uid == null) return;
@@ -186,7 +203,6 @@ class FirestoreService {
     }
   }
 
-  /// Removes a list of product IDs from a specific shopping list in a batch.
   Future<void> removeItemsFromList({
     required String listId,
     required List<String> productIds,
@@ -196,37 +212,22 @@ class FirestoreService {
     if (productIds.isEmpty) return;
 
     await _firestore.runTransaction((transaction) async {
-      // --- PHASE 1: ALL READS FIRST ---
-      // First, we gather all the document references for the index counters.
       final indexRefs = productIds
           .map((id) => _listedProductIdsRef(uid).doc(id))
           .toList();
-
-      // Now, execute all the 'get' operations for these references.
-      // This is the "read" phase of the transaction.
       final indexSnapshots = await Future.wait(
           indexRefs.map((ref) => transaction.get(ref))
       );
-
-      // --- PHASE 2: ALL WRITES LAST ---
-      // Now that all reads are complete, we can safely perform our writes.
       for (var i = 0; i < productIds.length; i++) {
         final productId = productIds[i];
         final indexSnapshot = indexSnapshots[i];
-
-        // Queue the deletion from the specific shopping list.
         final listDocRef = _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
         transaction.delete(listDocRef);
-
-        // Now, using the data we already read, decide whether to update or delete the index.
         if (indexSnapshot.exists) {
           final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
-
           if (currentCount <= 1) {
-            // This item only exists in this one list, so delete the index document.
             transaction.delete(indexSnapshot.reference);
           } else {
-            // This item exists in other lists, so just decrement the counter.
             transaction.update(indexSnapshot.reference, {'count': FieldValue.increment(-1)});
           }
         }
@@ -234,8 +235,6 @@ class FirestoreService {
     });
   }
 
-
-  // CUSTOM ITEM STORAGE (Add / Read / Update / Delete)
   Future<void> addCustomItemToStorage(Product customItem) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');

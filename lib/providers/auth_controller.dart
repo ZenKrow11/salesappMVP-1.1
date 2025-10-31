@@ -1,3 +1,5 @@
+// lib/providers/auth_controller.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,7 +7,6 @@ import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-
 
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
@@ -31,7 +32,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.loading();
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      // State is updated by the authStateChanges listener
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(e.message ?? 'Login failed', StackTrace.current);
     }
@@ -43,7 +43,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      // State is updated by the authStateChanges listener
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(e.message ?? 'Signup failed', StackTrace.current);
     }
@@ -55,8 +54,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // User cancelled the Google Sign-in
-        state = AsyncValue.data(_auth.currentUser); // Reset to current state
+        state = AsyncValue.data(_auth.currentUser);
         return;
       }
 
@@ -67,7 +65,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       );
 
       await _auth.signInWithCredential(credential);
-      // State is updated by the authStateChanges listener
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(e.message ?? 'Google Sign-In failed', StackTrace.current);
     }
@@ -79,7 +76,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       await _auth.sendPasswordResetEmail(email: email);
       return true;
     } catch (e) {
-      // Don't change the main auth state for this action
       print("Error sending password reset email: $e");
       return false;
     }
@@ -87,15 +83,16 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
 
   /// --- Change Password ---
   Future<void> changePassword(String newPassword) async {
-    // This action shouldn't put the whole auth state into loading
     try {
       final user = _auth.currentUser;
       if (user != null) {
         await user.updatePassword(newPassword);
+      } else {
+        throw Exception("Not logged in");
       }
     } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-      rethrow; // Rethrow to be caught by the UI
+      // Don't change the main auth state, but rethrow to the UI.
+      rethrow;
     }
   }
 
@@ -106,7 +103,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       final user = _auth.currentUser;
       if (user != null) {
         await user.delete();
-        // State is updated by the authStateChanges listener to null
       }
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(e.message ?? 'Failed to delete account', StackTrace.current);
@@ -116,21 +112,21 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   /// --- Sign Out ---
   Future<void> signOut() async {
     try {
+      // Clear local storage
       final metadataBox = _ref.read(metadataBoxProvider);
       await metadataBox.clear();
 
+      // Reset all in-memory user-specific state
       _ref.read(appDataProvider.notifier).reset();
       _ref.invalidate(appDataProvider);
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
+      _ref.invalidate(listedProductIdsProvider);
 
-      // --- THIS IS THE FIX ---
-      // Explicitly reset the active shopping list to the default.
-      // This overwrites the old user's list in SharedPreferences,
-      // ensuring the next user gets a clean state.
+      // Reset the active list to default in SharedPreferences
       await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
-      // --- END OF FIX ---
 
+      // Sign out from the services
       await _googleSignIn.signOut();
       await _auth.signOut();
 

@@ -789,4 +789,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get clearAllButton => 'Clear All';
+
+  @override
+  String get moreOptions => 'More Options';
+
+  @override
+  String get customItem => 'Custom Item';
 }

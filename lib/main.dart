@@ -1,24 +1,22 @@
 // lib/main.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sales_app_mvp/providers/auth_wrapper.dart';
+import 'package:sales_app_mvp/generated/app_localizations.dart';
+import 'package:sales_app_mvp/pages/main_app_screen.dart';
+import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
+import 'package:sales_app_mvp/services/ad_manager.dart';
+import 'package:sales_app_mvp/services/firestore_service.dart';
+import 'package:sales_app_mvp/widgets/login_screen.dart';
 
 import 'firebase_options.dart';
-import 'widgets/splash_screen.dart';
-import 'widgets/login_screen.dart';
-import 'pages/main_app_screen.dart';
-import 'widgets/loading_router.dart';
-import 'providers/app_data_provider.dart';
-import 'providers/grouped_products_provider.dart';
-import 'generated/app_localizations.dart';
-import 'services/ad_manager.dart';
 
 const bool USE_EMULATOR = bool.fromEnvironment('USE_EMULATOR');
 
@@ -46,10 +44,13 @@ Future<void> main() async {
 
   await Hive.initFlutter();
 
+  // Pre-initialize providers that need to start work before the UI is built.
   final container = ProviderContainer();
   container.read(adManagerProvider.notifier).initialize();
-  if(!USE_EMULATOR) {
-    container.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
+  if (!USE_EMULATOR) {
+    container
+        .read(adManagerProvider.notifier)
+        .preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
   }
 
   runApp(
@@ -60,11 +61,14 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget { // <-- Changed to ConsumerWidget
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // <-- Added WidgetRef
+    // This line ensures our new observer is active as soon as the app starts.
+    ref.watch(authStateObserverProvider);
+
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -77,12 +81,15 @@ class MyApp extends StatelessWidget {
         return ProviderScope(
           parent: ProviderScope.containerOf(context),
           overrides: [
-            localizationProvider.overrideWithValue(AppLocalizations.of(context)!),
+            localizationProvider
+                .overrideWithValue(AppLocalizations.of(context)!),
           ],
           child: child!,
         );
       },
-      home: const AuthGate(),
+      // The AuthWrapper is the single entry point and gatekeeper for the app.
+      home: const AuthWrapper(),
+      // Named routes for easy navigation.
       routes: {
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),
@@ -91,55 +98,28 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// --- THIS PROVIDER IS REMOVED ---
-// The artificial 2-second delay is no longer needed. The app's loading
-// is now tied to the real-time check of the Firebase auth state.
-/*
-final splashControllerProvider = FutureProvider<void>((ref) async {
-  await Future.delayed(const Duration(seconds: 2));
-});
-*/
+// -----------------------------------------------------------------------------
+// Core Application Providers defined in main.dart
+// -----------------------------------------------------------------------------
 
+/// Streams the current Firebase Authentication user state (logged in or out).
+/// This is the primary source of truth for the user's auth status.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-//============================================================================
-//  AUTH GATE WIDGET - OPTIMIZED VERSION
-//============================================================================
-class AuthGate extends ConsumerWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // This listener correctly triggers data loading ONLY upon a successful login event.
-    ref.listen<AsyncValue<User?>>(authStateChangesProvider, (previous, next) {
-      final user = next.value;
-      if (user != null && previous?.value == null) {
-        ref.read(appDataProvider.notifier).initialize();
-      }
-    });
-
-    final authState = ref.watch(authStateChangesProvider);
-
-    // This is the new, streamlined logic.
-    return authState.when(
-      data: (user) {
-        // If we have an answer from Firebase...
+/// An observer that watches the authentication state. When a user logs in,
+/// it triggers the creation of their Firestore profile document if it doesn't exist.
+/// This is a "fire-and-forget" provider that runs a crucial background task.
+final authStateObserverProvider = Provider<void>((ref) {
+  ref.listen<AsyncValue<User?>>(authStateChangesProvider,
+          (previous, next) async {
+        final user = next.value;
+        // When the state changes TO a logged-in user...
         if (user != null) {
-          // ...and the user is logged in, show the data loading flow.
-          return const LoadingRouter();
-        } else {
-          // ...and the user is logged out, go IMMEDIATELY to the LoginScreen.
-          return const LoginScreen();
+          // ...trigger the profile creation. The FirestoreService handles the
+          // "create if not exists" logic.
+          await ref.read(firestoreServiceProvider).createUserProfile(user);
         }
-      },
-      // The ONLY time we show the SplashScreen is while we are waiting
-      // for that first answer from Firebase.
-      loading: () => const SplashScreen(),
-      error: (err, stack) => Scaffold(
-        body: Center(child: Text("Authentication Error: $err")),
-      ),
-    );
-  }
-}
+      });
+});

@@ -11,6 +11,7 @@ import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/auth_controller.dart';
 import 'package:sales_app_mvp/components/upgrade_dialog.dart';
+import 'package:sales_app_mvp/providers/auth_wrapper.dart';
 
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
@@ -23,13 +24,11 @@ class AccountPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        // --- THIS IS THE FIX: RESTORE THESE MISSING PROPERTIES ---
         backgroundColor: theme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(l10n.logout,
             style: TextStyle(fontWeight: FontWeight.bold, color: theme.secondary)),
         content: Text(l10n.logoutConfirmation, style: TextStyle(color: theme.inactive)),
-        // --- END OF FIX ---
         actions: [
           TextButton(
             child: Text(l10n.cancel, style: TextStyle(color: theme.inactive.withOpacity(0.7))),
@@ -40,11 +39,12 @@ class AccountPage extends ConsumerWidget {
             child: Text(l10n.logout),
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              ref.read(appDataProvider.notifier).reset();
+              // No need to reset appDataProvider here, signOut does it.
               await ref.read(authControllerProvider.notifier).signOut();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const AuthGate()),
+                  // --- 2. REPLACE AuthGate WITH AuthWrapper ---
+                  MaterialPageRoute(builder: (context) => const AuthWrapper()),
                       (_) => false,
                 );
               }

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:sales_app_mvp/models/category_style.dart';
 
+
 const String _iconBasePath = 'assets/images/category_icons/';
 
 // UPDATED: 'non-alcoholic-beverages' is now 'beverages'
@@ -17,6 +18,7 @@ const List<String> categoryDisplayOrder = [
   'special-diet',
   'pantry',
   'custom',
+  'categoryUncategorized',
   'other',
 ];
 
@@ -138,11 +140,17 @@ final List<MainCategory> allCategories = [
     ),
   ),
   MainCategory(
+    firestoreName: 'categoryUncategorized',
+    style: const CategoryStyle(
+        displayName: 'categoryUncategorized', // Use its own name for translation
+        color: Color(0xFFB0BEC5), // A neutral grey color
+        iconAssetPath: '${_iconBasePath}default_icon.svg'
+    ),
+  ),
+  MainCategory(
       firestoreName: 'other',
       style: defaultCategoryStyle,
-      subcategories: const [
-        SubCategory(name: 'categoryUncategorized', iconAssetPath: '${_iconBasePath}default_icon.svg')
-      ]
+      subcategories: const [] // It no longer needs subcategories
   )
 ];
 

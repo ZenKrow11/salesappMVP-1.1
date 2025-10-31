@@ -123,7 +123,8 @@ class ShoppingListNotifier extends StateNotifier<void> {
 
   Future<void> initialize() async {
     try {
-      await _firestoreService.ensureDefaultListExists(listId: merklisteListName);
+      // Use the constant directly for initialization
+      await _firestoreService.ensureDefaultListExists(listId: kDefaultListName);
     } catch (e) {
       print("Error ensuring default list exists: $e");
     }
@@ -176,6 +177,29 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
+  // --- NEW METHOD FOR UPDATING AN EXISTING CUSTOM ITEM ---
+  Future<void> updateCustomItem(Product product) async {
+    await _firestoreService.updateCustomItemInStorage(product);
+  }
+
+  // --- NEW, CENTRALIZED METHOD FOR CREATING A CUSTOM ITEM ---
+  Future<void> createAndAddCustomItem(Product customProduct, BuildContext context) async {
+    // 1. Check the item limit first.
+    final canAdd = await _checkItemLimit(context);
+    if (!canAdd) return;
+
+    // 2. Save the new item to the main 'customItems' collection.
+    await _firestoreService.addCustomItemToStorage(customProduct);
+
+    // 3. Add the new item's ID to the currently active shopping list.
+    final activeListId = _ref.read(activeShoppingListProvider);
+    await _firestoreService.addItemToList(
+      listId: activeListId,
+      productId: customProduct.id,
+      productData: customProduct.toJson(), // Pass the full data
+    );
+  }
+
   Future<void> removeItemFromList(Product product) async {
     final activeListId = _ref.read(activeShoppingListProvider);
     await _firestoreService.removeItemFromList(
@@ -183,20 +207,6 @@ class ShoppingListNotifier extends StateNotifier<void> {
       productId: product.id,
     );
   }
-
-  Future<void> addCustomItemToList(Product customProduct, BuildContext context) async {
-    final canAdd = await _checkItemLimit(context);
-    if (!canAdd) return;
-
-    final activeListId = _ref.read(activeShoppingListProvider);
-    await _firestoreService.addItemToList(
-      listId: activeListId,
-      productId: customProduct.id,
-      productData: customProduct.toJson(),
-    );
-  }
-
-  // --- THIS IS THE FIX: The methods are now INSIDE the class ---
 
   /// Removes all products from the currently active list where isOnSale is false.
   Future<void> purgeExpiredItems() async {
@@ -237,7 +247,7 @@ class ShoppingListNotifier extends StateNotifier<void> {
       );
     }
   }
-} // <-- IMPORTANT: The methods are now above this closing brace.
+}
 
 final shoppingListsProvider =
 StateNotifierProvider<ShoppingListNotifier, void>((ref) {

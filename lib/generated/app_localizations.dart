@@ -1513,6 +1513,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear All'**
   String get clearAllButton;
+
+  /// Tooltip for a button that opens a menu with more actions like Edit or Delete.
+  ///
+  /// In en, this message translates to:
+  /// **'More Options'**
+  String get moreOptions;
+
+  /// A generic fallback label for a custom item when it doesn't have a specific user-defined category.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Item'**
+  String get customItem;
 }
 
 class _AppLocalizationsDelegate
