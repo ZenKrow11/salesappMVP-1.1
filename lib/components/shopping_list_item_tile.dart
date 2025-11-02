@@ -10,7 +10,9 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
-import 'dart:math' as math; // --- STEP 1: ADD THIS IMPORT FOR ROTATION ---
+import 'dart:math' as math;
+import 'package:sales_app_mvp/services/notification_manager.dart';
+
 
 class ShoppingListItemTile extends ConsumerWidget {
   final Product product;
@@ -68,14 +70,7 @@ class ShoppingListItemTile extends ConsumerWidget {
   void _onDoubleTap(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
-    ScaffoldMessenger.of(context)
-      ..removeCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(l10n.removedItem(product.name)),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+    NotificationManager.show(context, l10n.removedItem(product.name));
   }
 
   // --- STEP 3: CREATE THE REUSABLE "EXPIRED" BADGE WIDGET ---

@@ -5,7 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 // An enum to uniquely identify ad placements for pre-loading.
-enum AdPlacement { splashScreen, productSwiper }
+enum AdPlacement {
+  splashScreen,
+  productSwiper,
+  inlineBanner,
+}
 
 final String bannerAdUnitId = defaultTargetPlatform == TargetPlatform.android
     ? 'ca-app-pub-3940256099942544/6300978111'

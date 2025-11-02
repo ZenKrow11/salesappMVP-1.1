@@ -56,7 +56,7 @@ class Product extends HiveObject implements Categorizable {
     required this.imageUrl,
     required this.nameTokens,
     this.dealStart,
-    this.specialCondition, // <-- RENAMED from sonderkondition
+    this.specialCondition,
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,

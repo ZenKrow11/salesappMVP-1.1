@@ -12,6 +12,8 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
+import 'package:sales_app_mvp/services/notification_manager.dart';
+
 
 class CreateCustomItemPage extends ConsumerStatefulWidget {
   final Product? productToEdit;
@@ -100,12 +102,8 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.itemSavedSuccessfully(productToSave.name)),
-            backgroundColor: Colors.green,
-          ),
-        );
+        NotificationManager.show(context, l10n.itemSavedSuccessfully(productToSave.name));
+        // ========================================================
       }
     } catch (e) {
       if (mounted) {

@@ -14,7 +14,7 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sales_app_mvp/widgets/notification_helper.dart';
+import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 class ProductDetails extends ConsumerWidget {
@@ -81,18 +81,18 @@ class ProductDetails extends ConsumerWidget {
     shoppingListProducts.any((item) => item.id == product.id);
     if (isItemInList) {
       notifier.removeItemFromList(hiveProduct);
-      showTopNotification(context,
-          message: l10n.removedFrom(activeList), theme: theme);
+      // 2. UPDATE THIS LINE
+      NotificationManager.show(context, l10n.removedFrom(activeList));
     } else {
       notifier.addToList(hiveProduct, context);
-      showTopNotification(context,
-          message: l10n.addedTo(activeList), theme: theme);
+      // 3. UPDATE THIS LINE
+      NotificationManager.show(context, l10n.addedTo(activeList));
     }
   }
 
   void _launchURL(BuildContext context, WidgetRef ref, String url) async {
     final uri = Uri.parse(url);
-    final theme = ref.read(themeProvider);
+    // theme is no longer needed here
     final l10n = AppLocalizations.of(context)!;
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -101,11 +101,8 @@ class ProductDetails extends ConsumerWidget {
     } catch (e) {
       debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        showTopNotification(
-          context,
-          message: l10n.couldNotOpenProductLink,
-          theme: theme,
-        );
+        // 4. UPDATE THIS LINE
+        NotificationManager.show(context, l10n.couldNotOpenProductLink);
       }
     }
   }

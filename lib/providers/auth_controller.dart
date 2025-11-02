@@ -123,12 +123,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
       _ref.invalidate(listedProductIdsProvider);
-
-      // --- THIS IS THE FIX ---
-      // Explicitly invalidate the settings provider. This will force it to be
-      // destroyed and recreated on the next login, triggering _loadSettings() again.
       _ref.invalidate(settingsProvider);
-      // --- END OF FIX ---
 
       // Reset the active list to default in SharedPreferences
       await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);

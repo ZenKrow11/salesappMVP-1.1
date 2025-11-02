@@ -29,7 +29,7 @@ class CategoryService {
   static List<MainCategory> getAllCategoriesForDropdown() {
     return allCategories
         .where((cat) =>
-    cat.firestoreName != 'custom' && cat.firestoreName != 'other')
+    cat.firestoreName != 'other')
         .toList();
   }
 
@@ -110,9 +110,10 @@ class CategoryService {
   /// Gets the style for a category, but with the display name already localized.
   /// This is ideal for UI components like grouped list headers.
   static CategoryStyle getLocalizedStyleForGroupingName(String firestoreName, AppLocalizations l10n) {
-    // Default to the 'uncategorized' style if the name is not found.
-    final mainCat = _mainCategoryMap[firestoreName] ?? _mainCategoryMap['categoryUncategorized']!;
-    final originalStyle = mainCat.style;
+    final MainCategory? mainCat = _mainCategoryMap[firestoreName];
+    final originalStyle = mainCat?.style ??
+        _mainCategoryMap['categoryUncategorized']?.style ??
+        defaultCategoryStyle;
     final localizedName = getLocalizedCategoryName(firestoreName, l10n);
 
     return originalStyle.copyWith(displayName: localizedName);

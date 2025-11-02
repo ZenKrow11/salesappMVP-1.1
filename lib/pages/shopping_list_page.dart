@@ -17,12 +17,24 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
 
-
-class ShoppingListPage extends ConsumerWidget {
+class ShoppingListPage extends ConsumerStatefulWidget {
   const ShoppingListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShoppingListPage> createState() => _ShoppingListPageState();
+}
+
+class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final theme = ref.watch(themeProvider);
     final isGridView = ref.watch(settingsProvider).isGridView;
@@ -30,18 +42,24 @@ class ShoppingListPage extends ConsumerWidget {
 
     return asyncShoppingList.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text(l10n.errorLoadingList(err.toString()))),
+      error: (err, stack) =>
+          Center(child: Text(l10n.errorLoadingList(err.toString()))),
       data: (products) {
         if (products.isEmpty) {
-          final isFilterActive = ref.read(homePageFilterStateProvider).isFilterActiveForShoppingList;
+          final isFilterActive =
+              ref.read(homePageFilterStateProvider).isFilterActiveForShoppingList;
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Text(
-                isFilterActive ? l10n.noProductsMatchFilter : l10n.listIsEmpty,
+                isFilterActive
+                    ? l10n.noProductsMatchFilter
+                    : l10n.listIsEmpty,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    color: theme.inactive.withOpacity(0.7), fontSize: 16),
+                  color: theme.inactive.withOpacity(0.7),
+                  fontSize: 16,
+                ),
               ),
             ),
           );
@@ -67,17 +85,44 @@ class ShoppingListPage extends ConsumerWidget {
             .toList();
 
         return SafeArea(
-            top: false, // The AppBar already handles the top safe area
-            child: Column(
-              children: [
-                Expanded( // Added closing parenthesis
-                  child: isGridView
-                      ? _buildGroupedGridView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption)
-                      : _buildGroupedListView(context, flatSortedProducts, groupedProducts, orderedGroupNames, theme, sortOption),
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: ScrollbarTheme(
+                  data: ScrollbarThemeData(
+                    thumbColor: MaterialStateProperty.all(
+                        theme.secondary.withOpacity(0.7)),
+                    radius: const Radius.circular(4),
+                    thickness: MaterialStateProperty.all(6.0),
+                  ),
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: false, // only visible on user interaction
+                    interactive: true,
+                    child: isGridView
+                        ? _buildGroupedGridView(
+                      context,
+                      flatSortedProducts,
+                      groupedProducts,
+                      orderedGroupNames,
+                      theme,
+                      sortOption,
+                    )
+                        : _buildGroupedListView(
+                      context,
+                      flatSortedProducts,
+                      groupedProducts,
+                      orderedGroupNames,
+                      theme,
+                      sortOption,
+                    ),
+                  ),
                 ),
-                ShoppingSummaryBar(products: products),
-              ],
-            ),
+              ),
+              ShoppingSummaryBar(products: products),
+            ],
+          ),
         );
       },
     );
@@ -89,8 +134,11 @@ class ShoppingListPage extends ConsumerWidget {
       Map<String, List<Product>> groupedProducts,
       List<String> orderedGroupNames,
       AppThemeData theme,
-      SortOption sortOption) {
+      SortOption sortOption,
+      ) {
     return CustomScrollView(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
       slivers: [
         for (final groupName in orderedGroupNames) ...[
           SliverToBoxAdapter(
@@ -102,8 +150,12 @@ class ShoppingListPage extends ConsumerWidget {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 24.0),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 10.0, mainAxisSpacing: 10.0, childAspectRatio: 0.85,
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10.0,
+                mainAxisSpacing: 10.0,
+                childAspectRatio: 0.85,
               ),
               delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -129,8 +181,11 @@ class ShoppingListPage extends ConsumerWidget {
       Map<String, List<Product>> groupedProducts,
       List<String> orderedGroupNames,
       AppThemeData theme,
-      SortOption sortOption) {
+      SortOption sortOption,
+      ) {
     return CustomScrollView(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
       slivers: [
         for (final groupName in orderedGroupNames) ...[
           SliverToBoxAdapter(
@@ -157,7 +212,12 @@ class ShoppingListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildGroupHeader(String groupName, AppThemeData theme, BuildContext context, SortOption sortOption) {
+  Widget _buildGroupHeader(
+      String groupName,
+      AppThemeData theme,
+      BuildContext context,
+      SortOption sortOption,
+      ) {
     if (sortOption == SortOption.storeAlphabetical) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -167,13 +227,18 @@ class ShoppingListPage extends ConsumerWidget {
         ),
         child: Text(
           groupName,
-          style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       );
     }
 
     final l10n = AppLocalizations.of(context)!;
-    final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
+    final style =
+    CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -185,13 +250,20 @@ class ShoppingListPage extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           SvgPicture.asset(
-            style.iconAssetPath, height: 20, width: 20,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            style.iconAssetPath,
+            height: 20,
+            width: 20,
+            colorFilter:
+            const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
           const SizedBox(width: 8),
           Text(
             style.displayName,
-            style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

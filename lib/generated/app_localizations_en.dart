@@ -177,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryFrozenProductsSoups => 'Frozen Products & Soups';
 
   @override
-  String get categoryCustom => 'My Items';
+  String get categoryCustom => 'Custom Items';
 
   @override
   String get categoryOther => 'Other';

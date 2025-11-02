@@ -22,8 +22,11 @@ class CategoriesFilterTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 2. GET THE LOCALIZATIONS OBJECT from the context.
     final l10n = AppLocalizations.of(context)!;
+
+    final categoriesForFilterGrid = allCategories
+        .where((cat) => cat.firestoreName != 'custom')
+        .toList();
 
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -33,22 +36,16 @@ class CategoriesFilterTab extends ConsumerWidget {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: allCategories.length,
+      // Use the new filtered list for the item count and builder
+      itemCount: categoriesForFilterGrid.length,
       itemBuilder: (context, index) {
-        final mainCategory = allCategories[index];
+        // Get the category from the new filtered list
+        final mainCategory = categoriesForFilterGrid[index];
         final isSelected =
         selectedCategories.contains(mainCategory.firestoreName);
 
-        // ======================= THE FIX IS THIS ONE LINE =======================
-        // OLD LINE:
-        // final localizedName = CategoryService.getLocalizedCategoryName(
-        //   mainCategory.style.displayName, // This is the wrong key
-        //   l10n,
-        // );
-
-        // NEW, CORRECT LINE:
         final localizedName = CategoryService.getLocalizedCategoryName(
-          mainCategory.firestoreName, // This is the correct key ("beverages")
+          mainCategory.firestoreName,
           l10n,
         );
         // ========================================================================

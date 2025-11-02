@@ -61,12 +61,11 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends ConsumerWidget { // <-- Changed to ConsumerWidget
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // <-- Added WidgetRef
-    // This line ensures our new observer is active as soon as the app starts.
+  Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(authStateObserverProvider);
 
     return MaterialApp(
@@ -87,9 +86,7 @@ class MyApp extends ConsumerWidget { // <-- Changed to ConsumerWidget
           child: child!,
         );
       },
-      // The AuthWrapper is the single entry point and gatekeeper for the app.
       home: const AuthWrapper(),
-      // Named routes for easy navigation.
       routes: {
         LoginScreen.routeName: (context) => const LoginScreen(),
         MainAppScreen.routeName: (context) => const MainAppScreen(),
@@ -115,10 +112,7 @@ final authStateObserverProvider = Provider<void>((ref) {
   ref.listen<AsyncValue<User?>>(authStateChangesProvider,
           (previous, next) async {
         final user = next.value;
-        // When the state changes TO a logged-in user...
         if (user != null) {
-          // ...trigger the profile creation. The FirestoreService handles the
-          // "create if not exists" logic.
           await ref.read(firestoreServiceProvider).createUserProfile(user);
         }
       });

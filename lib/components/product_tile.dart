@@ -13,7 +13,7 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
-import 'package:sales_app_mvp/widgets/notification_helper.dart';
+import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:sales_app_mvp/models/categorizable.dart';
 
@@ -62,15 +62,17 @@ class ProductTile extends ConsumerWidget {
       onTap: onTap,
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
-        final theme = ref.read(themeProvider);
+        // theme is no longer needed here
         final hiveProduct = createHiveProduct();
 
         if (isInShoppingList) {
           notifier.removeItemFromList(hiveProduct);
-          showTopNotification(context, message: l10n.removedFromList, theme: theme);
+          // 2. UPDATE THIS LINE
+          NotificationManager.show(context, l10n.removedFromList);
         } else {
           notifier.addToList(hiveProduct, context);
-          showTopNotification(context, message: l10n.addedToActiveList, theme: theme);
+          // 3. UPDATE THIS LINE
+          NotificationManager.show(context, l10n.addedToActiveList);
         }
       },
       onLongPress: () {
@@ -89,11 +91,8 @@ class ProductTile extends ConsumerWidget {
                     .read(shoppingListsProvider.notifier)
                     .addToSpecificList(hiveProduct, selectedListId, context);
                 Navigator.of(ctx).pop();
-                showTopNotification(
-                  context,
-                  message: l10n.addedTo(selectedListId),
-                  theme: theme,
-                );
+                // 4. UPDATE THIS LINE
+                NotificationManager.show(context, l10n.addedTo(selectedListId));
               },
             );
           },

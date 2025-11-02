@@ -12,6 +12,8 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/services/notification_manager.dart';
+
 
 class ManageCustomItemsPage extends ConsumerWidget {
   const ManageCustomItemsPage({super.key});
@@ -57,12 +59,7 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     .deleteCustomItemFromStorage(item.id);
                 ref.invalidate(customItemsProvider);
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.itemDeleted(item.name)),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                NotificationManager.show(context, l10n.itemDeleted(item.name));
               },
               child: Text(l10n.delete),
             ),
@@ -125,15 +122,7 @@ class ManageCustomItemsPage extends ConsumerWidget {
       builder: (ctx) => ShoppingListBottomSheet(
         product: product,
         onConfirm: (selectedListName) {
-          ScaffoldMessenger.of(context)
-            ..removeCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(l10n.itemAddedToList(selectedListName)),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
+          NotificationManager.show(context, l10n.itemAddedToList(selectedListName));
           Navigator.pop(ctx);
         },
       ),

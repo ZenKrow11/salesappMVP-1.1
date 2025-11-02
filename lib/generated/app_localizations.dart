@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @categoryCustom.
   ///
   /// In en, this message translates to:
-  /// **'My Items'**
+  /// **'Custom Items'**
   String get categoryCustom;
 
   /// No description provided for @categoryOther.

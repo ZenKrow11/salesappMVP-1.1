@@ -133,21 +133,10 @@ final List<MainCategory> allCategories = [
   ),
   MainCategory(
     firestoreName: 'custom',
-    style: const CategoryStyle(
-        displayName: 'categoryCustom', // This will be the key for translation
-        color: Color(0xFF42A5F5), // A distinct blue color
-        iconAssetPath: '${_iconBasePath}edit_icon.svg' // Assuming you have or will create this icon
-    ),
+    style: const CategoryStyle(displayName: 'categoryCustom', color: Color(0xFF000000), iconAssetPath: '${_iconBasePath}default_icon.svg'),
+    subcategories: const []
   ),
-  MainCategory(
-    firestoreName: 'categoryUncategorized',
-    style: const CategoryStyle(
-        displayName: 'categoryUncategorized', // Use its own name for translation
-        color: Color(0xFFB0BEC5), // A neutral grey color
-        iconAssetPath: '${_iconBasePath}default_icon.svg'
-    ),
-  ),
-  MainCategory(
+    MainCategory(
       firestoreName: 'other',
       style: defaultCategoryStyle,
       subcategories: const [] // It no longer needs subcategories

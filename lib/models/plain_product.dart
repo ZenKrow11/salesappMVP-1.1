@@ -17,7 +17,7 @@ class PlainProduct implements Categorizable {
   final String imageUrl;
   final List<String> nameTokens;
   final DateTime? dealStart;
-  final String? specialCondition; // <-- RENAMED from sonderkondition
+  final String? specialCondition;
   final DateTime? dealEnd;
   final bool isCustom;
   final bool isOnSale;
@@ -35,11 +35,33 @@ class PlainProduct implements Categorizable {
     required this.imageUrl,
     required this.nameTokens,
     this.dealStart,
-    this.specialCondition, // <-- RENAMED from sonderkondition
+    this.specialCondition,
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,
   });
+
+  // ✅ Factory constructor must be inside the class
+  factory PlainProduct.fromProduct(dynamic product) {
+    return PlainProduct(
+      id: product.id,
+      store: product.store,
+      name: product.name,
+      currentPrice: product.currentPrice,
+      normalPrice: product.normalPrice,
+      discountPercentage: product.discountPercentage,
+      category: product.category,
+      subcategory: product.subcategory,
+      url: product.url,
+      imageUrl: product.imageUrl,
+      nameTokens: product.nameTokens ?? [],
+      dealStart: product.dealStart,
+      specialCondition: product.specialCondition,
+      dealEnd: product.dealEnd,
+      isCustom: product.isCustom ?? false,
+      isOnSale: product.isOnSale ?? true,
+    );
+  }
 
   // A helper getter for sorting, same as in the original Product class.
   double get discountRate {
