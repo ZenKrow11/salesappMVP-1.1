@@ -7,6 +7,7 @@ import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/providers/app_data_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
+import 'package:sales_app_mvp/providers/settings_provider.dart';
 
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
@@ -122,6 +123,12 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
       _ref.invalidate(listedProductIdsProvider);
+
+      // --- THIS IS THE FIX ---
+      // Explicitly invalidate the settings provider. This will force it to be
+      // destroyed and recreated on the next login, triggering _loadSettings() again.
+      _ref.invalidate(settingsProvider);
+      // --- END OF FIX ---
 
       // Reset the active list to default in SharedPreferences
       await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);

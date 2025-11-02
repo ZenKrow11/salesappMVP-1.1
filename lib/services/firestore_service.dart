@@ -29,15 +29,19 @@ class FirestoreService {
   /// Creates a user profile document in Firestore if one doesn't already exist.
   Future<void> createUserProfile(User user) async {
     final userRef = _firestore.collection('users').doc(user.uid);
+    final doc = await userRef.get();
 
-    final profile = UserProfile(
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      isPremium: false,
-    );
-    // Use .set with merge:true to safely create without overwriting.
-    await userRef.set(profile.toFirestore(), SetOptions(merge: true));
+    // Only create the document if it does not exist.
+    if (!doc.exists) {
+      final profile = UserProfile(
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        isPremium: false, // New users always start as free.
+      );
+      // Use a simple .set() because we know the document is new.
+      await userRef.set(profile.toFirestore());
+    }
   }
 
   // --- ALL OTHER METHODS ARE THE SAME, but they now use the robust _uid getter ---
