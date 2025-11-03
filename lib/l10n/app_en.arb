@@ -712,4 +712,17 @@
     "customItem": "Custom Item",
     "@customItem": {
       "description": "A generic fallback label for a custom item when it doesn't have a specific user-defined category."}
+    ,
+    "reauthenticateWithGoogle": "Re-authenticate with Google",
+    "@reauthenticateWithGoogle": { "description": "Button text for re-authenticating with Google, typically for sensitive actions." },
+    "deleteAccountGooglePrompt": "To delete your account, you must re-authenticate with Google.",
+    "@deleteAccountGooglePrompt": { "description": "Instructional text in the delete account dialog for users who signed in with Google." },
+    "continueWithGoogleForDelete": "Continue with Google",
+    "@continueWithGoogleForDelete": { "description": "Button text on the delete account confirmation for Google users." },
+
+    "confirm": "Confirm",
+    "@confirm": {
+      "description": "Generic confirm button"
+    }
   }
+

@@ -795,4 +795,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get customItem => 'Custom Item';
+
+  @override
+  String get reauthenticateWithGoogle => 'Re-authenticate with Google';
+
+  @override
+  String get deleteAccountGooglePrompt =>
+      'To delete your account, you must re-authenticate with Google.';
+
+  @override
+  String get continueWithGoogleForDelete => 'Continue with Google';
+
+  @override
+  String get confirm => 'Confirm';
 }

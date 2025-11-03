@@ -1525,6 +1525,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom Item'**
   String get customItem;
+
+  /// Button text for re-authenticating with Google, typically for sensitive actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authenticate with Google'**
+  String get reauthenticateWithGoogle;
+
+  /// Instructional text in the delete account dialog for users who signed in with Google.
+  ///
+  /// In en, this message translates to:
+  /// **'To delete your account, you must re-authenticate with Google.'**
+  String get deleteAccountGooglePrompt;
+
+  /// Button text on the delete account confirmation for Google users.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogleForDelete;
+
+  /// Generic confirm button
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
 }
 
 class _AppLocalizationsDelegate
