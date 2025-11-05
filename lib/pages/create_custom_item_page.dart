@@ -155,8 +155,17 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
     return Scaffold(
       backgroundColor: theme.pageBackground,
       appBar: AppBar(
-        title: Text(_isEditing ? l10n.editCustomItem : l10n.createCustomItem),
         backgroundColor: theme.primary,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          _isEditing ? l10n.editCustomItem : l10n.createCustomItem,
+          style: TextStyle(color: theme.secondary),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

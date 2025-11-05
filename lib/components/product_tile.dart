@@ -12,7 +12,7 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:sales_app_mvp/models/categorizable.dart';
@@ -84,7 +84,7 @@ class ProductTile extends ConsumerWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (ctx) {
             final hiveProduct = createHiveProduct();
-            return ShoppingListBottomSheet(
+            return ManageShoppingListsPage(
               product: hiveProduct,
               onConfirm: (selectedListId) {
                 ref

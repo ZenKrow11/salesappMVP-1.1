@@ -1,4 +1,4 @@
-// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\pages\home_page.dart
+// lib/pages/home_page.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,7 +45,9 @@ final unifiedListProvider = Provider.autoDispose<List<ListItem>>((ref) {
         }
       }
       if (group.products.length > itemsToShowCount) {
-        unifiedItems.add(ShowMoreListItem(group));
+        unifiedItems.add(ShowMoreListItem(group, canLoadMore: true));
+      } else if (itemsToShowCount > kCollapsedItemLimit) {
+        unifiedItems.add(ShowMoreListItem(group, canLoadMore: false));
       }
     }
     return unifiedItems;
@@ -84,10 +86,6 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Refactored _ProductList with linked Scrollbar
-// ---------------------------------------------------------------------------
-
 class _ProductList extends ConsumerStatefulWidget {
   final List<ProductGroup> allProductGroups;
   const _ProductList({required this.allProductGroups});
@@ -98,6 +96,15 @@ class _ProductList extends ConsumerStatefulWidget {
 
 class _ProductListState extends ConsumerState<_ProductList> {
   final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _headerKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final group in widget.allProductGroups) {
+      _headerKeys[group.firestoreName] = GlobalKey();
+    }
+  }
 
   @override
   void dispose() {
@@ -105,8 +112,25 @@ class _ProductListState extends ConsumerState<_ProductList> {
     super.dispose();
   }
 
+  // --- REVERTED TO A SIMPLER "SCROLL-TO-TOP" METHOD ---
+  // This is now acceptable because the collapse action is more drastic.
+  void _scrollToHeader(GlobalKey headerKey) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = headerKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.05, // Aligns to the top with a small padding
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // The ref.listen block has been removed as it's no longer needed.
     final unifiedList = ref.watch(unifiedListProvider);
     final l10n = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
@@ -123,7 +147,7 @@ class _ProductListState extends ConsumerState<_ProductList> {
       ),
       child: Scrollbar(
         controller: _scrollController,
-        thumbVisibility: false, // visible only when user scrolls
+        thumbVisibility: false,
         interactive: true,
         child: CustomScrollView(
           controller: _scrollController,
@@ -134,9 +158,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
       ),
     );
   }
-  // ---------------------------------------------------------------------------
-  // Sliver builders remain identical
-  // ---------------------------------------------------------------------------
 
   List<Widget> _buildSlivers(
       BuildContext context,
@@ -144,6 +165,7 @@ class _ProductListState extends ConsumerState<_ProductList> {
       List<ListItem> unifiedList,
       List<PlainProduct> allProductsForSwiper,
       AppLocalizations l10n) {
+    // This method's implementation remains the same...
     final List<Widget> slivers = [];
     if (unifiedList.isEmpty) return slivers;
 
@@ -171,11 +193,13 @@ class _ProductListState extends ConsumerState<_ProductList> {
 
   Widget _buildHeaderSliver(HeaderListItem item, AppLocalizations l10n) {
     return SliverToBoxAdapter(
+      key: _headerKeys[item.group.firestoreName],
       child: _GroupHeader(group: item.group, l10n: l10n),
     );
   }
 
   Widget _buildAdSliver() {
+    // ... implementation remains the same
     return const SliverPadding(
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       sliver: SliverToBoxAdapter(child: AdPlaceholderWidget()),
@@ -183,26 +207,26 @@ class _ProductListState extends ConsumerState<_ProductList> {
   }
 
   Widget _buildShowMoreSliver(WidgetRef ref, ShowMoreListItem item) {
+    final categoryKey = item.group.firestoreName;
+    final headerKey = _headerKeys[categoryKey]!;
+
     return SliverToBoxAdapter(
-      child: _ShowMoreButton(
+      child: _LoadMoreControl(
         totalItemCount: item.group.products.length,
-        showingItemCount: ref.watch(
-            categoryPaginationProvider)[item.group.firestoreName] ??
-            kCollapsedItemLimit,
-        onPressed: () {
-          ref.read(categoryPaginationProvider.notifier).update((state) {
-            final categoryKey = item.group.firestoreName;
-            final newCount =
-                (state[categoryKey] ?? kCollapsedItemLimit) +
-                    kPaginationIncrement;
-            return {...state, categoryKey: newCount};
-          });
+        showingItemCount: ref.watch(categoryPaginationProvider)[categoryKey] ?? kCollapsedItemLimit,
+        canLoadMore: item.canLoadMore,
+        // --- THE onCollapse ACTION IS NOW USED FOR THE SINGLE TAP ---
+        onCollapse: () {
+          _scrollToHeader(headerKey); // Scroll to the top of the section
+          ref.read(categoryPaginationProvider.notifier).reset(categoryKey); // Reset the state
         },
+        onShowMore: () => ref.read(categoryPaginationProvider.notifier).increase(categoryKey),
       ),
     );
   }
 
   int _buildProductGridSliver(
+      // ... implementation remains the same
       BuildContext context,
       List<Widget> slivers,
       List<ListItem> unifiedList,
@@ -250,10 +274,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
     return productChunk.length;
   }
 }
-
-// ---------------------------------------------------------------------------
-// UI Components (headers, show more button) unchanged
-// ---------------------------------------------------------------------------
 
 class _GroupHeader extends ConsumerWidget {
   final ProductGroup group;
@@ -313,39 +333,91 @@ class _GroupHeader extends ConsumerWidget {
   }
 }
 
-class _ShowMoreButton extends ConsumerWidget {
+// The button widget itself does not need any changes.
+class _LoadMoreControl extends ConsumerWidget {
   final int totalItemCount;
   final int showingItemCount;
-  final VoidCallback onPressed;
-  const _ShowMoreButton({
+  final bool canLoadMore;
+  final VoidCallback onShowMore;
+  final VoidCallback onCollapse; // The only "show less" action now
+
+  const _LoadMoreControl({
     required this.totalItemCount,
     required this.showingItemCount,
-    required this.onPressed,
+    required this.canLoadMore,
+    required this.onShowMore,
+    required this.onCollapse,
   });
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    final remainingCount = totalItemCount - showingItemCount;
     final l10n = AppLocalizations.of(context)!;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-        child: TextButton.icon(
-          icon: Icon(Icons.expand_more, color: theme.secondary),
-          label: Text(
-            l10n.showMore(remainingCount),
-            style: TextStyle(
-              color: theme.secondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          onPressed: onPressed,
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-              side: BorderSide(color: theme.secondary, width: 1.5),
-            ),
+    final remainingCount = totalItemCount - showingItemCount;
+    final bool canShowLess = showingItemCount > kCollapsedItemLimit;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12.0, 16.0, 12.0, 8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30.0),
+          // This border is now handled by the inner elements
+          // to achieve the desired visual separation without an outer frame.
+          border: Border.all(color: Colors.transparent, width: 1.5),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30.0),
+          child: Row(
+            children: [
+              if (canShowLess)
+                Expanded(
+                  flex: 1,
+                  child: Material(
+                    color: theme.accent,
+                    child: InkWell(
+                      // --- A SIMPLE TAP NOW TRIGGERS THE FULL COLLAPSE ---
+                      onTap: onCollapse,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(color: theme.secondary.withOpacity(0.5), width: 1.5),
+                          ),
+                        ),
+                        child: Icon(Icons.expand_less, color: theme.primary),
+                      ),
+                    ),
+                  ),
+                ),
+              if (canLoadMore)
+                Expanded(
+                  flex: 4,
+                  child: Material(
+                    color: theme.secondary,
+                    child: InkWell(
+                      onTap: onShowMore,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              l10n.showMore(remainingCount.clamp(0, 1000)),
+                              style: TextStyle(
+                                color: theme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.expand_more, color: theme.primary),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

@@ -524,7 +524,7 @@ abstract class AppLocalizations {
   /// **'CREATE ITEM'**
   String get createItem;
 
-  /// Tab title for creating a new item or list.
+  /// Button and tab text for creating a new item or list.
   ///
   /// In en, this message translates to:
   /// **'Create New'**
@@ -1250,7 +1250,7 @@ abstract class AppLocalizations {
   /// **'Show checked items'**
   String get showCheckedItems;
 
-  /// Button text to paginate and show more items in a category.
+  /// Button text to show more items, with a placeholder for the count.
   ///
   /// In en, this message translates to:
   /// **'Show {count} more'**
@@ -1549,6 +1549,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// Tooltip text for the 'show less' button, indicating that a long press will reset the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press to collapse list'**
+  String get tooltipCollapseList;
+
+  /// Label indicating where a product can be bought.
+  ///
+  /// In en, this message translates to:
+  /// **'Available at'**
+  String get availableAt;
+
+  /// Message displayed when the user has not created any custom shopping lists.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any custom lists yet.'**
+  String get shoppingListsEmpty;
+
+  /// Label for the count of shopping lists in the management page.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get listsLabel;
 }
 
 class _AppLocalizationsDelegate

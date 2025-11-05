@@ -2,25 +2,31 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Manages the UI state for the HomePage.
-
-/// The single source of truth for the index of the category
-/// currently at the top of the HomePage's scroll view.
+// This provider remains the same
 final currentCategoryIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
 
-
-// =========================================================================
-// === NEW PAGINATION LOGIC
-// =========================================================================
-
-// The number of items to show in a collapsed category.
+// Constants remain the same (20 items)
 const int kCollapsedItemLimit = 20;
-// The number of items to add with each press of "Show More".
 const int kPaginationIncrement = 20;
 
-/// This provider holds a map of {CategoryName: NumberOfItemsToShow}.
-/// This is the new state management for the collapsible/paginated categories.
-final categoryPaginationProvider = StateProvider<Map<String, int>>((ref) {
-  // Starts as an empty map. The UI will use kCollapsedItemLimit as the default.
-  return {};
+/// StateNotifier to manage the pagination state for each category.
+class CategoryPaginationNotifier extends StateNotifier<Map<String, int>> {
+  CategoryPaginationNotifier() : super({});
+
+  /// Shows more items for a given category.
+  void increase(String categoryKey) {
+    final currentCount = state[categoryKey] ?? kCollapsedItemLimit;
+    state = {...state, categoryKey: currentCount + kPaginationIncrement};
+  }
+
+  /// Resets the item count for a given category back to the initial collapsed state.
+  void reset(String categoryKey) {
+    state = {...state, categoryKey: kCollapsedItemLimit};
+  }
+}
+
+/// Provider for the pagination logic.
+final categoryPaginationProvider =
+StateNotifierProvider<CategoryPaginationNotifier, Map<String, int>>((ref) {
+  return CategoryPaginationNotifier();
 });

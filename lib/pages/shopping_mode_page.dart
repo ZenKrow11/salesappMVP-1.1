@@ -17,6 +17,10 @@ import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
+import 'package:sales_app_mvp/widgets/store_logo.dart';
+import 'package:auto_size_text/auto_size_text.dart';
+
+
 
 class ShoppingModeScreen extends ConsumerStatefulWidget {
   const ShoppingModeScreen({super.key});
@@ -50,6 +54,13 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
         backgroundColor: theme.primary,
         elevation: 0,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
+          onPressed: () {
+            ref.read(shoppingModeProvider.notifier).resetState();
+            Navigator.of(context).pop();
+          },
+        ),
         title: Text(
           localizations.shoppingMode,
           style: TextStyle(color: theme.secondary),
@@ -67,14 +78,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                 : "Hide checked items",
             onPressed: () => settingsNotifier.toggleHideCheckedItems(),
           ),
-          IconButton(
-            icon: Icon(Icons.close, color: theme.accent),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () {
-              ref.read(shoppingModeProvider.notifier).resetState();
-              Navigator.of(context).pop();
-            },
-          ),
         ],
       ),
       bottomNavigationBar: asyncShoppingList.when(
@@ -82,7 +85,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
           final activeProducts =
           products.where((product) => product.isOnSale).toList();
           return activeProducts.isNotEmpty
-              ? _buildSummaryBar(context, ref, activeProducts, shoppingModeState)
+              ? _buildSummaryBar(context, ref, activeProducts, shoppingModeState) // This method is now restored
               : const SizedBox.shrink();
         },
         loading: () => const SizedBox.shrink(),
@@ -136,7 +139,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             orderedGroupNames.addAll(remainingGroups);
           }
 
-          // ✅ Added Scrollbar identical to ShoppingListPage
           return ScrollbarTheme(
             data: ScrollbarThemeData(
               thumbColor: MaterialStateProperty.all(
@@ -146,7 +148,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             ),
             child: Scrollbar(
               controller: _scrollController,
-              thumbVisibility: false, // visible only when user interacts
+              thumbVisibility: false,
               interactive: true,
               child: CustomScrollView(
                 controller: _scrollController,
@@ -182,7 +184,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                             onCheckTap: () =>
                                 shoppingModeNotifier.toggleChecked(product.id),
                             onInfoTap: () =>
-                                _showItemDetailsBottomSheet(context, ref, product),
+                                _showItemDetailsBottomSheet(context, ref, product), // This now calls the modernized version
                           );
                         },
                         childCount: groupedProducts[groupName]!.length,
@@ -231,12 +233,15 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
+  // --- THIS IS THE NEW MODERNIZED BOTTOM SHEET METHOD ---
   void _showItemDetailsBottomSheet(
       BuildContext context, WidgetRef ref, Product product) {
     final theme = ref.read(themeProvider);
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Allows the sheet to take up more height
       backgroundColor: theme.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -247,67 +252,107 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             final state = ref.watch(shoppingModeProvider);
             final notifier = ref.read(shoppingModeProvider.notifier);
             final currentQuantity = state.productQuantities[product.id] ?? 1;
+            final totalPrice = product.currentPrice * currentQuantity;
 
-            return ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.75,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        product.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22,
-                            color: Colors.white),
-                      ),
-                      if (product.store.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            product.store,
-                            style: TextStyle(
-                                fontSize: 16,
-                                color: theme.inactive.withOpacity(0.7)),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: ImageWithAspectRatio(
+            // Use a container that takes up 70% of the screen height.
+            // This gives the Expanded widget inside a defined space to work with.
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+              // The main layout is a Column.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // --- 1. PRODUCT NAME ---
+                  AutoSizeText(
+                    product.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: Colors.white),
+                    maxLines: 2,
+                    minFontSize: 18,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // --- 2. IMAGE (RESPONSIVE) ---
+                  // ** THIS IS THE CRITICAL FIX **
+                  // Expanded allows the image to shrink vertically on smaller screens,
+                  // ensuring the buttons below are never pushed off-screen.
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // White background
+                          Container(color: Colors.white),
+                          // Image
+                          ImageWithAspectRatio(
                             imageUrl: product.imageUrl,
-                            maxWidth: 200,
-                            maxHeight: 200,
+                            maxHeight: 400, // It can be this tall...
+                            maxWidth: double.infinity,
+                            fit: BoxFit.contain,
                           ),
+                          // Store Logo Overlay
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child:
+                            StoreLogo(storeName: product.store, height: 28),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- 3. PRICE x QUANTITY = TOTAL ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('${product.currentPrice.toStringAsFixed(2)} Fr.', style: TextStyle(color: theme.inactive, fontSize: 16)),
+                        Text('x $currentQuantity', style: TextStyle(color: theme.inactive, fontSize: 16)),
+                        Text('= ${totalPrice.toStringAsFixed(2)} Fr.', style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // --- 4. BUTTONS ---
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: currentQuantity > 1
+                              ? () => notifier.decrementQuantity(product.id)
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: theme.accent),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Icon(Icons.remove, color: theme.accent, size: 28),
                         ),
                       ),
-                      Text(
-                        '${product.currentPrice.toStringAsFixed(2)} Fr.',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: theme.secondary),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => notifier.incrementQuantity(product.id),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: theme.secondary),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Icon(Icons.add, color: theme.secondary, size: 28),
+                        ),
                       ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      QuantityStepper(
-                        quantity: currentQuantity,
-                        onIncrement: () =>
-                            notifier.incrementQuantity(product.id),
-                        onDecrement: () =>
-                            notifier.decrementQuantity(product.id),
-                      ),
-                      const SizedBox(height: 16),
                     ],
                   ),
-                ),
+                ],
               ),
             );
           },
@@ -316,6 +361,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
+  // --- THIS METHOD IS NOW RESTORED ---
   Widget _buildSummaryBar(BuildContext context, WidgetRef ref,
       List<Product> products, ShoppingModeState shoppingModeState) {
     final theme = ref.watch(themeProvider);
@@ -326,7 +372,11 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
       return sum + (product.currentPrice * quantity);
     });
 
-    final int totalItems = products.length;
+    // --- FIX: Sum the quantities instead of just counting the products ---
+    final int totalItems = products.fold(0, (sum, product) {
+      final quantity = shoppingModeState.productQuantities[product.id] ?? 1;
+      return sum + quantity;
+    });
 
     return SafeArea(
       child: Container(
@@ -401,6 +451,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
+  // --- THIS METHOD IS NOW RESTORED ---
   Future<void> _showFinishShoppingDialog(
       BuildContext context, WidgetRef ref, List<Product> allProducts) async {
     final theme = ref.read(themeProvider);
@@ -480,6 +531,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
   }
 }
 
+// This class does not need changes, but is required for the screen to build.
 class _SliverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;

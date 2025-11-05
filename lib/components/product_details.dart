@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -44,7 +44,7 @@ class ProductDetails extends ConsumerWidget {
             backgroundColor: theme.background,
             shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            builder: (ctx) => const ShoppingListBottomSheet(),
+            builder: (ctx) => const ManageShoppingListsPage(),
           );
         },
         child: _buildCardContent(context, ref),
@@ -143,94 +143,12 @@ class ProductDetails extends ConsumerWidget {
                   _buildPriceRow(ref),
                   _buildAvailabilityInfo(context, theme),
                   const Spacer(),
-                  _buildActionRow(context, ref, theme, isInShoppingList),
+                  // REMOVED the action row from here
                 ]),
           ),
         );
       }),
     );
-  }
-
-  Widget _buildActionRow(BuildContext context, WidgetRef ref, AppThemeData theme,
-      bool isInShoppingList) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(child: _buildCloseButton(context, theme, l10n)),
-          const SizedBox(width: 16),
-          Expanded(
-              child: _buildAddToListButton(
-                  context, ref, theme, isInShoppingList, l10n)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCloseButton(
-      BuildContext context, AppThemeData theme, AppLocalizations l10n) {
-    return TextButton.icon(
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        side: BorderSide(color: theme.accent, width: 2.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      onPressed: () => Navigator.of(context).pop(),
-      icon: Icon(Icons.close, color: theme.accent),
-      label: Text(
-        l10n.close,
-        style: TextStyle(
-          color: theme.accent,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddToListButton(BuildContext context, WidgetRef ref,
-      AppThemeData theme, bool isInShoppingList, AppLocalizations l10n) {
-    if (isInShoppingList) {
-      return TextButton.icon(
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          backgroundColor: theme.secondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: () => _toggleItemInList(context, ref),
-        icon: Icon(Icons.remove, color: theme.primary),
-        label: Text(
-          l10n.remove, // Assumes 'remove' key exists in your l10n file
-          style: TextStyle(
-            color: theme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    } else {
-      return TextButton.icon(
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          side: BorderSide(color: theme.secondary, width: 2.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: () => _toggleItemInList(context, ref),
-        icon: Icon(Icons.add, color: theme.secondary),
-        label: Text(
-          l10n.add,
-          style: TextStyle(
-            color: theme.secondary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    }
   }
 
   Widget _buildImageContainer(BuildContext context, WidgetRef ref,
@@ -254,28 +172,31 @@ class ProductDetails extends ConsumerWidget {
                 imageUrl: product.imageUrl,
                 maxWidth: double.infinity,
                 maxHeight: imageMaxHeight),
-            if (isInShoppingList)
-              Positioned(
-                top: 8,
-                right: 8,
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => _toggleItemInList(context, ref),
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                      color: theme.secondary,
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1))
-                      ]),
-                  child: Icon(
+                    color: isInShoppingList ? theme.secondary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: !isInShoppingList
+                        ? Border.all(color: theme.secondary, width: 2.5)
+                        : null,
+                  ),
+                  child: isInShoppingList
+                      ? Icon(
                     Icons.check,
                     color: theme.primary,
-                    size: 20,
-                  ),
+                    size: 24,
+                  )
+                      : null,
                 ),
               ),
+            ),
             Positioned(
               bottom: 8,
               right: 8,
@@ -379,17 +300,32 @@ class ProductDetails extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        StoreLogo(storeName: product.store, height: 40),
+        // Left side: Back button
+        IconButton(
+          padding: const EdgeInsets.only(right: 8.0),
+          constraints: const BoxConstraints(),
+          icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+
+        // Center: Logo and Item Count (takes up the available space)
         Expanded(
-          child: Text(
-            '$currentIndex / $totalItems',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                color: theme.inactive.withAlpha(180),
-                fontSize: 16,
-                fontWeight: FontWeight.w500),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              StoreLogo(storeName: product.store, height: 28),
+              const SizedBox(width: 12),
+              Text(
+                '$currentIndex / $totalItems',
+                style: TextStyle(
+                    color: theme.inactive.withAlpha(180), fontSize: 16, fontWeight: FontWeight.w500),
+              )
+            ],
           ),
         ),
+
+        // Right side: Shopping list selector
         _buildSelectListButton(context, ref, theme),
       ],
     );
@@ -413,8 +349,6 @@ class ProductDetails extends ConsumerWidget {
 
   Widget _buildSelectListButton(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
-    final activeList = ref.watch(activeShoppingListProvider);
-    final buttonText = activeList;
     return InkWell(
       onTap: () => showModalBottomSheet(
         context: context,
@@ -423,22 +357,21 @@ class ProductDetails extends ConsumerWidget {
         backgroundColor: theme.background,
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (ctx) => const ShoppingListBottomSheet(),
+        builder: (ctx) => const ManageShoppingListsPage(),
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-            color: theme.primary, borderRadius: BorderRadius.circular(10)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.playlist_add_check, color: theme.secondary, size: 20.0),
-          const SizedBox(width: 8),
-          Text(buttonText,
-              style: TextStyle(
-                  color: theme.inactive,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14),
-              overflow: TextOverflow.ellipsis),
-        ]),
+            border: Border.all(color: theme.inactive.withOpacity(0.3), width: 1.5),
+            borderRadius: BorderRadius.circular(10)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.list_alt, color: theme.secondary, size: 22.0),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down, color: theme.inactive, size: 22.0),
+          ],
+        ),
       ),
     );
   }

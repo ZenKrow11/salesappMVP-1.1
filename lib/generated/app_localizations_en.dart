@@ -797,4 +797,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String get tooltipCollapseList => 'Long-press to collapse list';
+
+  @override
+  String get availableAt => 'Available at';
+
+  @override
+  String get shoppingListsEmpty => 'You haven\'t created any custom lists yet.';
+
+  @override
+  String get listsLabel => 'Lists';
 }

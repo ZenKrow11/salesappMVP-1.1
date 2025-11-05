@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/pages/create_custom_item_page.dart';
@@ -119,7 +119,7 @@ class ManageCustomItemsPage extends ConsumerWidget {
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => ShoppingListBottomSheet(
+      builder: (ctx) => ManageShoppingListsPage(
         product: product,
         onConfirm: (selectedListName) {
           NotificationManager.show(context, l10n.itemAddedToList(selectedListName));
@@ -143,17 +143,14 @@ class ManageCustomItemsPage extends ConsumerWidget {
         backgroundColor: theme.primary,
         elevation: 0,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           l10n.manageCustomItemsTitle,
           style: TextStyle(color: theme.secondary),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.close, color: theme.accent),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
       ),
       body: customItemsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

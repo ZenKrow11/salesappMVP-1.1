@@ -15,13 +15,12 @@ import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/widgets/search_button.dart';
 import 'package:sales_app_mvp/widgets/filter_button.dart';
 import 'package:sales_app_mvp/widgets/sort_button.dart';
-import 'package:sales_app_mvp/components/shopping_list_bottom_sheet.dart';
+import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/components/manage_list_items_bottom_sheet.dart';
-
 
 
 // --- FIX: IMPORT THE NEW WIDGET ---
@@ -133,8 +132,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   PreferredSizeWidget _buildShoppingListPageAppBar(BuildContext context, AppThemeData theme, WidgetRef ref) {
-    // ======================= STEP 1: GET THE STATE OBJECT =======================
-    // This line is correct, but we'll rename the variable for clarity.
     final settingsState = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -160,7 +157,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         ),
         IconButton(
           icon: Icon(Icons.delete, color: theme.inactive),
-          tooltip: l10n.tooltipManageListItems, // Use a proper l10n key
+          tooltip: l10n.tooltipManageListItems,
           onPressed: () {
             showModalBottomSheet(
               context: context,
@@ -201,8 +198,11 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: InkWell(
+                    // --- NAVIGATION CHANGE #1 ---
                     onTap: isDataLoaded
-                        ? () => _showModalSheet((_) => const ShoppingListBottomSheet(), isScrollControlled: true)
+                        ? () => Navigator.of(context, rootNavigator: true).push(
+                      SlideUpPageRoute(page: const ManageShoppingListsPage()),
+                    )
                         : null,
                     borderRadius: BorderRadius.circular(12.0),
                     child: Padding(
@@ -249,8 +249,10 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: InkWell(
-            onTap: () => _showModalSheet(
-                    (_) => const ShoppingListBottomSheet(), isScrollControlled: true),
+            // --- NAVIGATION CHANGE #2 ---
+            onTap: () => Navigator.of(context, rootNavigator: true).push(
+              SlideUpPageRoute(page: const ManageShoppingListsPage()),
+            ),
             borderRadius: BorderRadius.circular(12.0),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
@@ -276,21 +278,13 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
   }
 
   Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n) {
-    // This correctly watches the shopping list's specific filter provider.
     final isFilterActive = ref.watch(shoppingListPageFilterStateProvider.select((f) => f.isFilterActiveForShoppingList));
 
     return IconButton(
       icon: Badge(
-        // This correctly controls when the dot is visible.
         isLabelVisible: isFilterActive,
-
-        // --- ADD THIS LINE ---
-        // Set the background color of the dot to your app's secondary color.
         backgroundColor: theme.secondary,
-
-        // Ensure the badge is a small dot by having no label.
         label: null,
-
         child: Icon(Icons.filter_list_alt, color: theme.inactive),
       ),
       tooltip: l10n.organizeList,
@@ -307,12 +301,9 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: IconButton(
-        // OPTIONAL: You might want to change this icon to Icons.add_box_outlined
-        // since it now only goes to "Custom items", but keeping it as settings works too.
         icon: Icon(Icons.add_box, color: theme.inactive),
-        tooltip: "Manage custom items", // Helpful tooltip since behavior changed
+        tooltip: "Manage custom items",
         onPressed: () {
-          // --- CHANGED: Navigate directly to ManageCustomItemsPage ---
           Navigator.of(context, rootNavigator: true).push(
             SlideUpPageRoute(page: const ManageCustomItemsPage()),
           );
@@ -339,6 +330,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
+  // This helper is still useful for other bottom sheets in the app
   void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
     showModalBottomSheet(
       context: context,

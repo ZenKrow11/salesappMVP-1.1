@@ -721,8 +721,39 @@
     "@continueWithGoogleForDelete": { "description": "Button text on the delete account confirmation for Google users." },
 
     "confirm": "Confirm",
-    "@confirm": {
-      "description": "Generic confirm button"
-    }
-  }
+        "@confirm": {
+          "description": "Generic confirm button"
+        },
+
+        "showMore": "Show {count} more",
+                "@showMore": {
+                    "description": "Button text to show more items, with a placeholder for the count.",
+                    "placeholders": {
+                        "count": {
+                            "type": "int",
+                            "example": "20"
+                        }
+                    }
+                },
+                "tooltipCollapseList": "Long-press to collapse list",
+                "@tooltipCollapseList": {
+                    "description": "Tooltip text for the 'show less' button, indicating that a long press will reset the list."
+                },
+                "availableAt": "Available at",
+                "@availableAt": {
+                    "description": "Label indicating where a product can be bought."
+                },
+                "shoppingListsEmpty": "You haven't created any custom lists yet.",
+                "@shoppingListsEmpty": {
+                    "description": "Message displayed when the user has not created any custom shopping lists."
+                },
+                "listsLabel": "Lists",
+                "@listsLabel": {
+                    "description": "Label for the count of shopping lists in the management page."
+                },
+                "createNew": "Create New",
+                "@createNew": {
+                    "description": "Button and tab text for creating a new item or list."
+                }
+        }
 
