@@ -8,6 +8,9 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 // --- ADDED IMPORT ---
 import 'package:sales_app_mvp/generated/app_localizations.dart';
+import 'package:sales_app_mvp/pages/search_page.dart';
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+
 
 class SearchButton extends ConsumerWidget {
   const SearchButton({super.key});
@@ -40,12 +43,8 @@ class SearchButton extends ConsumerWidget {
         ],
       ),
       onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          useRootNavigator: true,
-          backgroundColor: Colors.transparent,
-          isScrollControlled: true,
-          builder: (_) => const SearchBottomSheet(),
+        Navigator.of(context, rootNavigator: true).push(
+          SlideUpPageRoute(page: const SearchPage()), // Using your custom transition
         );
       },
       style: ElevatedButton.styleFrom(

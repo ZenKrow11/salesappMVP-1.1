@@ -16,6 +16,7 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
+import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 
 class ShoppingListPage extends ConsumerStatefulWidget {
   const ShoppingListPage({super.key});
@@ -35,10 +36,78 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
-    final theme = ref.watch(themeProvider);
-    final isGridView = ref.watch(settingsProvider).isGridView;
+    final activeListId = ref.watch(activeShoppingListProvider);
     final l10n = AppLocalizations.of(context)!;
+    // We need to get the theme here to use it in the empty state.
+    final theme = ref.watch(themeProvider);
+
+    // ================================================================
+    // === THIS ENTIRE BLOCK IS REPLACED FOR AESTHETIC CONSISTENCY ===
+    // ================================================================
+    if (activeListId == null) {
+      return Scaffold(
+        // 1. Set the background color to match the rest of the app.
+        backgroundColor: theme.pageBackground,
+        // 2. The redundant AppBar has been removed. The main screen's AppBar is used instead.
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  l10n.welcome, // Using l10n string
+                  // 3. Style the text to be visible on a dark background.
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: theme.inactive,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.createFirstListPrompt, // Using l10n string
+                  textAlign: TextAlign.center,
+                  // 4. Style the text to be visible on a dark background.
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: theme.inactive.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.createListButton), // Using l10n string
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ManageShoppingListsPage(),
+                      ),
+                    );
+                  },
+                  // 5. Style the button to match the primary action buttons elsewhere.
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.secondary,
+                    foregroundColor: theme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    // ================================================================
+    // === END OF REPLACEMENT =========================================
+    // ================================================================
+
+    final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
+    final isGridView = ref.watch(settingsProvider).isGridView;
 
     return asyncShoppingList.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -47,14 +116,14 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
       data: (products) {
         if (products.isEmpty) {
           final isFilterActive =
-              ref.read(homePageFilterStateProvider).isFilterActiveForShoppingList;
+              ref.read(shoppingListPageFilterStateProvider).isFilterActive;
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Text(
                 isFilterActive
                     ? l10n.noProductsMatchFilter
-                    : l10n.listIsEmpty,
+                    : l10n.listIsEmpty, // This message is now for an existing, but empty, list.
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: theme.inactive.withOpacity(0.7),
@@ -65,20 +134,13 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
           );
         }
 
-        final sortOption = ref.watch(homePageFilterStateProvider).sortOption;
+        final sortOption = ref.watch(shoppingListPageFilterStateProvider).sortOption;
 
-        final Map<String, List<Product>> groupedProducts;
-        final List<String> orderedGroupNames;
+        final Map<String, List<Product>> groupedProducts = groupBy(products, (Product p) => p.category);
 
-        if (sortOption == SortOption.storeAlphabetical) {
-          groupedProducts = groupBy(products, (Product p) => p.store);
-          orderedGroupNames = groupedProducts.keys.toList()..sort();
-        } else {
-          groupedProducts = groupBy(products, (Product p) => p.category);
-          orderedGroupNames = categoryDisplayOrder
-              .where((name) => groupedProducts.containsKey(name))
-              .toList();
-        }
+        final List<String> orderedGroupNames = categoryDisplayOrder
+            .where((name) => groupedProducts.containsKey(name))
+            .toList();
 
         final List<Product> flatSortedProducts = orderedGroupNames
             .expand((groupName) => groupedProducts[groupName]!)
@@ -98,7 +160,7 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
                   ),
                   child: Scrollbar(
                     controller: _scrollController,
-                    thumbVisibility: false, // only visible on user interaction
+                    thumbVisibility: false,
                     interactive: true,
                     child: isGridView
                         ? _buildGroupedGridView(
@@ -218,49 +280,29 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
       BuildContext context,
       SortOption sortOption,
       ) {
-    if (sortOption == SortOption.storeAlphabetical) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.accent.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(5.0),
-        ),
-        child: Text(
-          groupName,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    }
-
     final l10n = AppLocalizations.of(context)!;
-    final style =
-    CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
+    final style = CategoryService.getLocalizedStyleForGroupingName(groupName, l10n);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: style.color,
-        borderRadius: BorderRadius.circular(5.0),
+        borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           SvgPicture.asset(
             style.iconAssetPath,
-            height: 20,
-            width: 20,
-            colorFilter:
-            const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            height: 24,
+            width: 24,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Text(
             style.displayName,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),

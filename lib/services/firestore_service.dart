@@ -8,43 +8,32 @@ import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/models/user_profile.dart';
 import '../models/product.dart';
 
-// --- THE NEW PROVIDER ---
-// It now correctly builds the service with a reference to the provider scope.
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService(ref);
 });
 
 class FirestoreService {
-  // The service now holds a reference to the provider's scope.
   final Ref _ref;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   FirestoreService(this._ref);
 
-  // --- THE NEW UID GETTER ---
-  // This is now robust. It reads the LATEST auth state from the provider
-  // every time it is called.
   String? get _uid => _ref.read(authStateChangesProvider).value?.uid;
 
-  /// Creates a user profile document in Firestore if one doesn't already exist.
   Future<void> createUserProfile(User user) async {
     final userRef = _firestore.collection('users').doc(user.uid);
     final doc = await userRef.get();
 
-    // Only create the document if it does not exist.
     if (!doc.exists) {
       final profile = UserProfile(
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
-        isPremium: false, // New users always start as free.
+        isPremium: false,
       );
-      // Use a simple .set() because we know the document is new.
       await userRef.set(profile.toFirestore());
     }
   }
-
-  // --- ALL OTHER METHODS ARE THE SAME, but they now use the robust _uid getter ---
 
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     final uid = _uid;
@@ -55,9 +44,6 @@ class FirestoreService {
         .set(data, SetOptions(merge: true));
   }
 
-  // ... (paste ALL your other methods from addItemToList down to deleteCustomItemFromStorage here, unchanged)
-  // They will automatically work with the new _uid getter.
-
   CollectionReference _shoppingListsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('shoppingLists');
 
@@ -66,6 +52,73 @@ class FirestoreService {
 
   CollectionReference _customItemsRef(String uid) =>
       _firestore.collection('users').doc(uid).collection('customItems');
+
+  // =======================================================================
+  // === CORE CHANGES FOR NEW ARCHITECTURE ARE HERE ========================
+  // =======================================================================
+
+  /// Creates a new shopping list with a unique ID.
+  Future<void> createNewList({required String listName}) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+
+    // Get a reference to a new document with an AUTO-GENERATED ID.
+    final listRef = _shoppingListsRef(uid).doc();
+
+    // Set the data inside the document, including the 'name'.
+    await listRef.set({
+      'name': listName,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // NOTE: The `ensureDefaultListExists` method has been completely removed.
+  // It is no longer needed in the new architecture.
+
+  // =======================================================================
+  // === NO OTHER CHANGES ARE NEEDED BELOW THIS LINE =======================
+  // =======================================================================
+
+  Future<void> deleteList({required String listId}) async {
+    final uid = _uid;
+    if (uid == null) throw Exception('User not logged in.');
+
+    final listDocRef = _shoppingListsRef(uid).doc(listId);
+    final listItemsColRef = listDocRef.collection('items');
+
+    final listItemsSnapshot = await listItemsColRef.get();
+    final itemIds = listItemsSnapshot.docs.map((doc) => doc.id).toList();
+
+    // First, delete all items within the list subcollection
+    if (listItemsSnapshot.docs.isNotEmpty) {
+      final batch = _firestore.batch();
+      for (final doc in listItemsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+
+    // Next, update the listedProductIds index in a transaction
+    await _firestore.runTransaction((transaction) async {
+      final indexRefs = itemIds.map((id) => _listedProductIdsRef(uid).doc(id)).toList();
+      final indexSnapshots = await Future.wait(indexRefs.map((ref) => transaction.get(ref)));
+
+      for (var i = 0; i < indexSnapshots.length; i++) {
+        final indexSnapshot = indexSnapshots[i];
+        final indexDocRef = indexRefs[i];
+        if (indexSnapshot.exists) {
+          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
+          if (currentCount <= 1) {
+            transaction.delete(indexDocRef);
+          } else {
+            transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
+          }
+        }
+      }
+      // Finally, delete the main list document
+      transaction.delete(listDocRef);
+    });
+  }
 
   Future<void> addItemToList({
     required String listId,
@@ -105,44 +158,6 @@ class FirestoreService {
         }
       }
     });
-  }
-
-  Future<void> deleteList({required String listId}) async {
-    final uid = _uid;
-    if (uid == null) throw Exception('User not logged in.');
-
-    final listDocRef = _shoppingListsRef(uid).doc(listId);
-    final listItemsColRef = listDocRef.collection('items');
-
-    final listItemsSnapshot = await listItemsColRef.get();
-    final itemIds = listItemsSnapshot.docs.map((doc) => doc.id).toList();
-
-    await _firestore.runTransaction((transaction) async {
-      final indexRefs = itemIds.map((id) => _listedProductIdsRef(uid).doc(id)).toList();
-      final indexSnapshots = await Future.wait(indexRefs.map((ref) => transaction.get(ref)));
-
-      for (var i = 0; i < indexSnapshots.length; i++) {
-        final indexSnapshot = indexSnapshots[i];
-        final indexDocRef = indexRefs[i];
-        if (indexSnapshot.exists) {
-          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
-          if (currentCount <= 1) {
-            transaction.delete(indexDocRef);
-          } else {
-            transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
-          }
-        }
-      }
-      transaction.delete(listDocRef);
-    });
-
-    if (listItemsSnapshot.docs.isNotEmpty) {
-      final batch = _firestore.batch();
-      for (final doc in listItemsSnapshot.docs) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
-    }
   }
 
   Stream<Set<String>> getListedProductIdsStream() {
@@ -185,26 +200,6 @@ class FirestoreService {
       data['id'] = doc.id;
       return data;
     }).toList();
-  }
-
-  Future<void> createNewList({required String listName}) async {
-    final uid = _uid;
-    if (uid == null) return;
-    final listRef = _shoppingListsRef(uid).doc(listName);
-    await listRef.set({'createdAt': FieldValue.serverTimestamp()});
-  }
-
-  Future<void> ensureDefaultListExists({required String listId}) async {
-    final uid = _uid;
-    if (uid == null) return;
-    final listRef = _shoppingListsRef(uid).doc(listId);
-    final doc = await listRef.get();
-    if (!doc.exists) {
-      await listRef.set({
-        'name': listId,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-    }
   }
 
   Future<void> removeItemsFromList({

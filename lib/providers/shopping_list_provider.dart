@@ -3,20 +3,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/providers/storage_providers.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
+import 'package:sales_app_mvp/main.dart'; // Needed for authStateChangesProvider
 
 // ======================= DEPRECATED PROVIDER =======================
 final shoppingListViewModeProvider = StateProvider<bool>((ref) => true);
 // ==================================================================
 
+// --- This provider is unchanged ---
 final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) return Stream.value({});
@@ -24,32 +24,76 @@ final listedProductIdsProvider = StreamProvider<Set<String>>((ref) {
   return firestoreService.getListedProductIdsStream();
 });
 
-const String kDefaultListName = 'Shopping List'; // Changed from 'Merkliste'
+// === DELETED: kDefaultListName constant ===
+// === DELETED: initializationProvider ===
 
-final initializationProvider = FutureProvider<void>((ref) async {
-  final user = await ref.watch(authStateChangesProvider.future);
-  if (user == null) return;
-  await ref.read(shoppingListsProvider.notifier).initialize();
-});
-
+// --- This provider is now simpler ---
 final allShoppingListsProvider = StreamProvider<List<ShoppingListInfo>>((ref) {
   final authState = ref.watch(authStateChangesProvider);
-  ref.watch(initializationProvider);
+  // The watch to initializationProvider has been removed.
   if (authState.value == null) {
     return Stream.value([]);
   }
-
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getAllShoppingListsStream();
 });
 
+
+// === NEW ActiveListNotifier ===
+// It automatically figures out the active list. Its state is String? (nullable).
+final activeShoppingListProvider = StateNotifierProvider<ActiveListNotifier, String?>((ref) {
+  // Watch the stream of all shopping lists.
+  final allListsAsync = ref.watch(allShoppingListsProvider);
+
+  // When the lists load, pick the first one as the default active list.
+  final firstListId = allListsAsync.whenOrNull(data: (lists) => lists.isNotEmpty ? lists.first.id : null);
+
+  return ActiveListNotifier(ref, firstListId);
+});
+
+class ActiveListNotifier extends StateNotifier<String?> {
+  final Ref _ref;
+
+  // The initial state is passed in from the provider definition above.
+  ActiveListNotifier(this._ref, String? initialState) : super(initialState);
+
+  void setActiveList(String listId) {
+    state = listId;
+  }
+
+  // This method is crucial for a good UX when a list is deleted.
+  void handleListDeletion(String deletedListId) {
+    // If the list that was deleted was the one we were viewing...
+    if (state == deletedListId) {
+      // ...we need to find a new list to view.
+      final allLists = _ref.read(allShoppingListsProvider).value ?? [];
+      if (allLists.isNotEmpty) {
+        // Set the new active list to the first one available.
+        state = allLists.first.id;
+      } else {
+        // If no lists are left, the active list becomes null.
+        state = null;
+      }
+    }
+    // If a different list was deleted, we don't need to do anything.
+  }
+}
+
+
+// --- This provider is MODIFIED ---
+// It now requires the activeListId to be non-null.
 final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   final activeListId = ref.watch(activeShoppingListProvider);
-  if (user == null) return Stream.value([]);
+
+  // If there is no user or NO active list, return an empty stream.
+  if (user == null || activeListId == null) {
+    return Stream.value([]);
+  }
 
   final firestoreService = ref.watch(firestoreServiceProvider);
   final productsBox = ref.watch(productsBoxProvider);
+  // The 'listId' parameter is now guaranteed to be a valid, non-null String.
   final itemsStream = firestoreService.getShoppingListItemsStream(listId: activeListId);
 
   return itemsStream.map((itemMaps) {
@@ -67,6 +111,8 @@ final shoppingListWithDetailsProvider = StreamProvider<List<Product>>((ref) {
   });
 });
 
+
+// --- This provider is unchanged ---
 final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>>((ref) {
   final asyncShoppingList = ref.watch(shoppingListWithDetailsProvider);
   final filterState = ref.watch(shoppingListPageFilterStateProvider);
@@ -78,19 +124,16 @@ final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>
   final products = List<Product>.from(asyncShoppingList.value);
   List<Product> transformedList = List.from(products);
 
-  // Store filter
   if (filterState.selectedStores.isNotEmpty) {
     transformedList =
         transformedList.where((p) => filterState.selectedStores.contains(p.store)).toList();
   }
 
-  // Category filter
   if (filterState.selectedCategories.isNotEmpty) {
     transformedList =
         transformedList.where((p) => filterState.selectedCategories.contains(p.category)).toList();
   }
 
-  // Sorting
   transformedList.sort((a, b) {
     switch (filterState.sortOption) {
       case SortOption.priceLowToHigh:
@@ -112,7 +155,7 @@ final filteredAndSortedShoppingListProvider = Provider<AsyncValue<List<Product>>
   return AsyncData(transformedList);
 });
 
-final String merklisteListName = kDefaultListName;
+// === DELETED: merklisteListName string ===
 
 /// Notifier responsible for actions related to shopping lists.
 class ShoppingListNotifier extends StateNotifier<void> {
@@ -121,17 +164,25 @@ class ShoppingListNotifier extends StateNotifier<void> {
 
   ShoppingListNotifier(this._firestoreService, this._ref) : super(null);
 
-  Future<void> initialize() async {
-    try {
-      // Use the constant directly for initialization
-      await _firestoreService.ensureDefaultListExists(listId: kDefaultListName);
-    } catch (e) {
-      print("Error ensuring default list exists: $e");
+  // === DELETED: initialize() method ===
+
+  // === MODIFIED: Now checks for list limits ===
+  Future<void> createNewList(String listName) async {
+    final isPremium = _ref.read(userProfileProvider).value?.isPremium ?? false;
+    final currentListCount = _ref.read(allShoppingListsProvider).value?.length ?? 0;
+    final limit = isPremium ? 6 : 2;
+
+    if (currentListCount >= limit) {
+      throw Exception('List limit reached. Upgrade to create more.');
     }
+    await _firestoreService.createNewList(listName: listName);
   }
 
-  Future<void> createNewList(String listName) async {
-    await _firestoreService.createNewList(listName: listName);
+  // === NEW: Method to delete a list ===
+  Future<void> deleteList(String listId) async {
+    await _firestoreService.deleteList(listId: listId);
+    // Notify the active list provider to handle UI changes.
+    _ref.read(activeShoppingListProvider.notifier).handleListDeletion(listId);
   }
 
   Future<bool> _checkItemLimit(BuildContext context) async {
@@ -159,6 +210,10 @@ class ShoppingListNotifier extends StateNotifier<void> {
     if (!canAdd) return;
 
     final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) {
+      // TODO: Handle this case - maybe show a dialog to create a list first.
+      return;
+    }
     await _firestoreService.addItemToList(
       listId: activeListId,
       productId: product.id,
@@ -177,46 +232,44 @@ class ShoppingListNotifier extends StateNotifier<void> {
     );
   }
 
-  // --- NEW METHOD FOR UPDATING AN EXISTING CUSTOM ITEM ---
   Future<void> updateCustomItem(Product product) async {
     await _firestoreService.updateCustomItemInStorage(product);
   }
 
-  // --- NEW, CENTRALIZED METHOD FOR CREATING A CUSTOM ITEM ---
   Future<void> createAndAddCustomItem(Product customProduct, BuildContext context) async {
-    // 1. Check the item limit first.
     final canAdd = await _checkItemLimit(context);
     if (!canAdd) return;
 
-    // 2. Save the new item to the main 'customItems' collection.
     await _firestoreService.addCustomItemToStorage(customProduct);
 
-    // 3. Add the new item's ID to the currently active shopping list.
     final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) {
+      // TODO: Handle this case.
+      return;
+    }
     await _firestoreService.addItemToList(
       listId: activeListId,
       productId: customProduct.id,
-      productData: customProduct.toJson(), // Pass the full data
+      productData: customProduct.toJson(),
     );
   }
 
   Future<void> removeItemFromList(Product product) async {
     final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
     await _firestoreService.removeItemFromList(
       listId: activeListId,
       productId: product.id,
     );
   }
 
-  /// Removes all products from the currently active list where isOnSale is false.
   Future<void> purgeExpiredItems() async {
     final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
     final asyncShoppingList = _ref.read(shoppingListWithDetailsProvider);
-
     if (asyncShoppingList.value == null) return;
 
-    final allProducts = asyncShoppingList.value!;
-    final expiredProductIds = allProducts
+    final expiredProductIds = asyncShoppingList.value!
         .where((product) => !product.isOnSale)
         .map((product) => product.id)
         .toList();
@@ -229,11 +282,10 @@ class ShoppingListNotifier extends StateNotifier<void> {
     }
   }
 
-  /// Removes ALL products from the currently active list.
   Future<void> clearActiveList() async {
     final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) return;
     final asyncShoppingList = _ref.read(shoppingListWithDetailsProvider);
-
     if (asyncShoppingList.value == null) return;
 
     final allProductIds = asyncShoppingList.value!
@@ -255,34 +307,9 @@ StateNotifierProvider<ShoppingListNotifier, void>((ref) {
   return ShoppingListNotifier(firestoreService, ref);
 });
 
-class ActiveListNotifier extends StateNotifier<String> {
-  static const _activeListKey = 'active_shopping_list_key';
+// === DELETED: The old ActiveListNotifier class ===
 
-  ActiveListNotifier() : super(merklisteListName) {
-    _loadInitial();
-  }
-
-  Future<void> _loadInitial() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedList = prefs.getString(_activeListKey);
-    if (savedList != null && savedList != state) {
-      state = savedList;
-    }
-  }
-
-  Future<void> setActiveList(String listName) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_activeListKey, listName);
-    if (state != listName) {
-      state = listName;
-    }
-  }
-}
-
-final activeShoppingListProvider =
-StateNotifierProvider<ActiveListNotifier, String>(
-        (ref) => ActiveListNotifier());
-
+// --- This provider is unchanged ---
 final customItemsProvider = StreamProvider<List<Product>>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getCustomItemsStream();

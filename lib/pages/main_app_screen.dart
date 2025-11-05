@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
+import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
 import 'package:sales_app_mvp/pages/home_page.dart';
 import 'package:sales_app_mvp/pages/shopping_list_page.dart';
@@ -21,9 +22,6 @@ import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/components/manage_list_items_bottom_sheet.dart';
-
-
-// --- FIX: IMPORT THE NEW WIDGET ---
 import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 
@@ -173,14 +171,31 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
+  // --- THIS WIDGET HAS BEEN FIXED ---
   Widget _buildInfoBar() {
     return Consumer(
       builder: (context, ref, child) {
         final theme = ref.watch(themeProvider);
-        final activeList = ref.watch(activeShoppingListProvider);
+        final l10n = AppLocalizations.of(context)!;
+
+        // 1. Get the active list ID and all lists.
+        final activeListId = ref.watch(activeShoppingListProvider);
+        final allLists = ref.watch(allShoppingListsProvider).value ?? [];
+        String buttonText;
+
+        // 2. Determine the correct display name.
+        if (activeListId == null) {
+          buttonText = l10n.noListsExist; // Example: "No Lists"
+        } else {
+          final activeListInfo = allLists.firstWhere(
+                (list) => list.id == activeListId,
+            orElse: () => ShoppingListInfo(id: '', name: l10n.list), // Fallback
+          );
+          buttonText = activeListInfo.name;
+        }
+
         final appData = ref.watch(appDataProvider);
         final bool isDataLoaded = appData.status == InitializationStatus.loaded;
-        final buttonText = activeList;
 
         final totalCount = appData.grandTotal;
         final filteredCount = ref.watch(homePageProductsProvider).whenData((groups) {
@@ -198,7 +213,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: InkWell(
-                    // --- NAVIGATION CHANGE #1 ---
                     onTap: isDataLoaded
                         ? () => Navigator.of(context, rootNavigator: true).push(
                       SlideUpPageRoute(page: const ManageShoppingListsPage()),
@@ -214,7 +228,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              buttonText,
+                              buttonText, // 3. Use the safe, non-nullable name.
                               style: TextStyle(color: theme.inactive, fontSize: 16),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -238,8 +252,26 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
+  // --- THIS WIDGET HAS BEEN FIXED ---
   Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
-    final activeList = ref.watch(activeShoppingListProvider);
+    final l10n = AppLocalizations.of(context)!;
+
+    // 1. Get the active list ID and all lists.
+    final activeListId = ref.watch(activeShoppingListProvider);
+    final allLists = ref.watch(allShoppingListsProvider).value ?? [];
+    String activeListName;
+
+    // 2. Determine the correct display name.
+    if (activeListId == null) {
+      activeListName = l10n.noListsExist; // Example: "No Lists"
+    } else {
+      final activeListInfo = allLists.firstWhere(
+            (list) => list.id == activeListId,
+        orElse: () => ShoppingListInfo(id: '', name: l10n.list), // Fallback
+      );
+      activeListName = activeListInfo.name;
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(left: 12.0),
@@ -249,7 +281,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: InkWell(
-            // --- NAVIGATION CHANGE #2 ---
             onTap: () => Navigator.of(context, rootNavigator: true).push(
               SlideUpPageRoute(page: const ManageShoppingListsPage()),
             ),
@@ -262,7 +293,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      activeList,
+                      activeListName, // 3. Use the safe, non-nullable name.
                       style: TextStyle(color: theme.inactive, fontSize: 16),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -330,7 +361,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // This helper is still useful for other bottom sheets in the app
   void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
     showModalBottomSheet(
       context: context,

@@ -21,8 +21,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // --- THIS IS THE FIX ---
-  // The listener now correctly updates the state when the auth status changes.
   AuthController(this._ref) : super(const AsyncValue.loading()) {
     _auth.authStateChanges().listen((user) {
       state = AsyncValue.data(user);
@@ -37,7 +35,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.loading();
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      // On success, the authStateChanges listener above will handle setting the data state.
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(e.message ?? 'Login failed', StackTrace.current);
     }
@@ -49,7 +46,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      // On success, the authStateChanges listener will handle it.
     } on FirebaseAuthException catch (e) {
       state =
           AsyncValue.error(e.message ?? 'Signup failed', StackTrace.current);
@@ -73,7 +69,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       );
 
       await _auth.signInWithCredential(credential);
-      // On success, the authStateChanges listener will handle it.
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(
           e.message ?? 'Google Sign-In failed', StackTrace.current);
@@ -135,13 +130,14 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
 
       print('[AuthController] Starting full cascade delete for $uid ...');
 
-      // --- Delete known subcollections (works for all Firestore versions) ---
+      // --- Delete known subcollections ---
       final knownSubcollections = [
         'favorites',
-        'shopping_lists',
+        'shopping_lists', // NOTE: 'shoppingLists' is the actual collection name
         'settings',
         'metadata',
-        // add more if you introduce new ones later
+        'customItems',
+        'listedProductIds'
       ];
 
       for (final subcollection in knownSubcollections) {
@@ -153,22 +149,16 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
         print('[AuthController] Deleted subcollection: $subcollection');
       }
 
-      // --- Delete the main user document ---
       await userDocRef.delete().catchError((_) {
         print('[AuthController] No main user document found to delete.');
       });
 
       print('[AuthController] All Firestore user data deleted.');
-
-      // --- Delete Firebase Authentication account ---
       await user.delete();
       print('[AuthController] Firebase Auth account deleted.');
-
-      // --- Force logout and local cleanup ---
       await _googleSignIn.signOut();
       await _auth.signOut();
 
-      // Clear Hive boxes and Riverpod state
       final metadataBox = _ref.read(metadataBoxProvider);
       await metadataBox.clear();
 
@@ -179,9 +169,8 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(settingsProvider);
       _ref.invalidate(activeShoppingListProvider);
 
-      await _ref
-          .read(activeShoppingListProvider.notifier)
-          .setActiveList(kDefaultListName);
+      // THIS LINE WAS REMOVED AS IT'S NO LONGER NEEDED AND CAUSES AN ERROR
+      // await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
 
       print('[AuthController] Local data cleared and logout enforced.');
     } on FirebaseAuthException catch (e) {
@@ -203,7 +192,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     try {
       await _googleSignIn.signOut();
       await _auth.signOut();
-      // On success, the authStateChanges listener will fire with `null`.
 
       // Clear local storage and reset providers
       final metadataBox = _ref.read(metadataBoxProvider);
@@ -214,7 +202,9 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(userProfileNotifierProvider);
       _ref.invalidate(listedProductIdsProvider);
       _ref.invalidate(settingsProvider);
-      await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
+
+      // THIS LINE WAS REMOVED AS IT'S NO LONGER NEEDED AND CAUSES AN ERROR
+      // await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
 
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);

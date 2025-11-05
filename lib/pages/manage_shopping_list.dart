@@ -6,7 +6,6 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
-import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/components/upgrade_dialog.dart';
@@ -30,6 +29,8 @@ class ManageShoppingListsPage extends ConsumerStatefulWidget {
 class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPage> {
   final TextEditingController _newListController = TextEditingController();
 
+  // This logic remains the same: it determines if we are just managing lists
+  // or selecting a list to add an item to.
   bool get isSelectActiveMode => widget.product == null;
 
   @override
@@ -38,34 +39,29 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
     super.dispose();
   }
 
-  void _addAndDismiss() {
-    final l10n = AppLocalizations.of(context)!;
-    if (widget.product == null) return;
-    ref.read(shoppingListsProvider.notifier).addToList(widget.product!, context);
-    widget.onConfirm!(kDefaultListName);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.addedTo(kDefaultListName))),
-    );
-    Navigator.of(context).pop();
-  }
 
-  void _createAndSetActive(String listName) {
-    final l10n = AppLocalizations.of(context)!;
+  // === REFACTORED: This method is now simpler and more robust. ===
+  void _createNewList(String listName) {
     if (listName.trim().isEmpty) return;
 
     final trimmedName = listName.trim();
-    ref.read(shoppingListsProvider.notifier).createNewList(trimmedName);
-    ref.read(activeShoppingListProvider.notifier).setActiveList(trimmedName);
+    // We call the notifier to create the list. The notifier itself handles
+    // the business logic (like checking limits).
+    ref.read(shoppingListsProvider.notifier).createNewList(trimmedName).catchError((e) {
+      // If the notifier throws an error (e.g., limit reached), show it to the user.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    });
 
-    if(Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
+    // Close the dialog. The UI will update automatically when the provider state changes.
+    // We no longer manually set the active list here. The provider handles it.
+    if(Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.createdAndSelectedList(trimmedName))),
-    );
   }
 
+  // === REFACTORED: Now calls the correct notifier method for deletion. ===
   void _showDeleteConfirmationDialog(
       BuildContext context, String listId, String listName) {
     final l10n = AppLocalizations.of(context)!;
@@ -85,11 +81,11 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               child: Text(l10n.delete),
-              onPressed: () async {
+              onPressed: () {
                 Navigator.of(dialogContext).pop();
-                await ref
-                    .read(firestoreServiceProvider)
-                    .deleteList(listId: listId);
+                // CORRECT: Call the notifier, not FirestoreService directly.
+                // This ensures all app state (like the active list) is updated correctly.
+                ref.read(shoppingListsProvider.notifier).deleteList(listId);
               },
             ),
           ],
@@ -114,7 +110,7 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
             controller: _newListController,
             autofocus: true,
             style: TextStyle(color: theme.inactive),
-            onSubmitted: _createAndSetActive,
+            onSubmitted: _createNewList, // Use the new, corrected method
             decoration: InputDecoration(
               labelText: l10n.enterNewListName,
               labelStyle: TextStyle(color: theme.inactive),
@@ -132,8 +128,8 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
             ),
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: theme.secondary),
-              onPressed: () => _createAndSetActive(_newListController.text),
-              child: Text(l10n.createAndSelect, style: TextStyle(color: theme.primary)),
+              onPressed: () => _createNewList(_newListController.text), // Use the new, corrected method
+              child: Text(l10n.create, style: TextStyle(color: theme.primary)), // Changed text to be more generic
             )
           ],
         );
@@ -162,24 +158,28 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
           style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
+      // === REFACTORED: Body logic is now much simpler. ===
       body: allListsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.error(err.toString()))),
         data: (lists) {
-          final customLists = lists.where((list) => list.name != kDefaultListName).toList();
-          if (customLists.isEmpty && lists.length <= 1) {
+          // If there are no lists at all, show the empty state.
+          if (lists.isEmpty) {
             return _buildEmptyState(l10n, theme);
           }
+          // Otherwise, build the list of lists.
           return _buildSelectList(l10n, lists);
         },
       ),
+      // === REFACTORED: Bottom bar uses the new architecture rules. ===
       bottomNavigationBar: allListsAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
           data: (lists) {
             final isPremium = ref.watch(userProfileProvider).value?.isPremium ?? false;
-            const int maxPremiumLists = 9;
-            final bool canCreateMore = isPremium && lists.length < maxPremiumLists;
+            // CORRECT: Use the new limits defined in our project plan.
+            final listLimit = isPremium ? 6 : 2;
+            final canCreateMore = lists.length < listLimit;
 
             return SafeArea(
               child: Container(
@@ -193,7 +193,7 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      '${l10n.listsLabel} ${lists.length} / ${isPremium ? maxPremiumLists : 1}',
+                      '${l10n.listsLabel} ${lists.length} / $listLimit',
                       style: TextStyle(
                         color: theme.inactive.withOpacity(0.8),
                         fontSize: 14,
@@ -201,13 +201,20 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: !isPremium
-                          ? () => showUpgradeDialog(context, ref)
-                          : (canCreateMore ? _showCreateListDialog : null),
-                      icon: Icon(isPremium ? Icons.add : Icons.lock),
+                      // The button is enabled if the user can create more.
+                      // If they are a free user at their limit, prompt them to upgrade.
+                      onPressed: () {
+                        if (canCreateMore) {
+                          _showCreateListDialog();
+                        } else if (!isPremium) {
+                          showUpgradeDialog(context, ref);
+                        }
+                        // If they are premium and at the limit, onPressed will be null, disabling the button.
+                      },
+                      icon: Icon(canCreateMore ? Icons.add : Icons.lock),
                       label: Text(l10n.createNew),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: (isPremium && canCreateMore)
+                        backgroundColor: canCreateMore
                             ? theme.secondary
                             : theme.inactive.withOpacity(0.4),
                         foregroundColor: theme.primary,
@@ -231,7 +238,7 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Text(
-          l10n.shoppingListsEmpty,
+          l10n.shoppingListsEmpty, // You might want a new l10n string like "You have no lists yet."
           textAlign: TextAlign.center,
           style: TextStyle(
               color: theme.inactive.withOpacity(0.7), fontSize: 16),
@@ -240,33 +247,23 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
     );
   }
 
+  // === REFACTORED: This widget is now clean and simple. ===
   Widget _buildSelectList(AppLocalizations l10n, List<ShoppingListInfo> lists) {
     final theme = ref.watch(themeProvider);
     final activeListId = ref.watch(activeShoppingListProvider);
 
-    ShoppingListInfo? defaultList;
-    List<ShoppingListInfo> customLists = [];
-    for (var list in lists) {
-      if (list.name == kDefaultListName) {
-        defaultList = list;
-      } else {
-        customLists.add(list);
-      }
-    }
-    customLists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    final orderedLists = <ShoppingListInfo>[];
-    if (defaultList != null) {
-      orderedLists.add(defaultList);
-    }
-    orderedLists.addAll(customLists);
+    // All special logic for a "default list" is gone.
+    // We just sort all lists alphabetically.
+    lists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      itemCount: orderedLists.length,
+      itemCount: lists.length,
       itemBuilder: (context, index) {
-        final list = orderedLists[index];
+        final list = lists[index];
         final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
-        final isDefaultList = list.name == merklisteListName;
+
+        // The check for `isDefaultList` is gone.
 
         return ListTile(
           leading: isCurrentlyActive
@@ -281,16 +278,17 @@ class _ManageShoppingListsPageState extends ConsumerState<ManageShoppingListsPag
           ),
           onTap: () {
             if (isSelectActiveMode) {
+              // Set the tapped list as the new active list.
               ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
               Navigator.pop(context);
             } else {
+              // This is the "select a list" mode.
               ref.read(shoppingListsProvider.notifier).addToSpecificList(widget.product!, list.id, context);
               widget.onConfirm!(list.name);
             }
           },
-          trailing: isDefaultList
-              ? null
-              : IconButton(
+          // ALL lists are now deletable. The trailing icon is always a delete button.
+          trailing: IconButton(
             icon: Icon(Icons.delete_outline, color: theme.accent),
             onPressed: () => _showDeleteConfirmationDialog(context, list.id, list.name),
           ),

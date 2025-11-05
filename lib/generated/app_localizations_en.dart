@@ -21,9 +21,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adPlaceholder => 'Ad Placeholder\n300 x 250';
 
   @override
-  String get add => 'Add';
-
-  @override
   String get added => 'ADDED';
 
   @override
@@ -195,6 +192,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remove => 'Remove';
 
   @override
+  String get add => 'Add';
+
+  @override
   String get close => 'CLOSE';
 
   @override
@@ -227,9 +227,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createItem => 'CREATE ITEM';
-
-  @override
-  String get createNew => 'Create New';
 
   @override
   String get currencyFrancs => 'Fr.';
@@ -408,8 +405,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keepAllItems => 'Keep All Items';
 
   @override
-  String get listIsEmpty =>
-      'This list is empty.\nDouble-tap an item on the sales page to add it.';
+  String get listIsEmpty => 'This list is empty.';
 
   @override
   String get listOptions => 'List Options';
@@ -809,4 +805,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listsLabel => 'Lists';
+
+  @override
+  String get createNew => 'Create New';
+
+  @override
+  String get noListsExist => 'No Lists';
+
+  @override
+  String get list => 'List';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get welcome => 'Welcome!';
+
+  @override
+  String get createFirstListPrompt =>
+      'Create your first shopping list to get started.';
+
+  @override
+  String get createListButton => 'Create a List';
 }

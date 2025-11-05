@@ -21,9 +21,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adPlaceholder => 'Werbeplatzhalter\n300 x 250';
 
   @override
-  String get add => 'HINZUFÜGEN';
-
-  @override
   String get added => 'HINZUGEFÜGT';
 
   @override
@@ -196,6 +193,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get remove => 'Remove';
 
   @override
+  String get add => 'HINZUFÜGEN';
+
+  @override
   String get close => 'SCHLIESSEN';
 
   @override
@@ -229,9 +229,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get createItem => 'ARTIKEL ERSTELLEN';
-
-  @override
-  String get createNew => 'Neu erstellen';
 
   @override
   String get currencyFrancs => 'Fr.';
@@ -820,4 +817,26 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get listsLabel => 'Lists';
+
+  @override
+  String get createNew => 'Neu erstellen';
+
+  @override
+  String get noListsExist => 'No Lists';
+
+  @override
+  String get list => 'List';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get welcome => 'Welcome!';
+
+  @override
+  String get createFirstListPrompt =>
+      'Create your first shopping list to get started.';
+
+  @override
+  String get createListButton => 'Create a List';
 }

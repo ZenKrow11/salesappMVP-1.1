@@ -122,12 +122,6 @@ abstract class AppLocalizations {
   /// **'Ad Placeholder\n300 x 250'**
   String get adPlaceholder;
 
-  /// Button text to add an item to a list.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get add;
-
   /// Button text indicating an item has already been added to a list.
   ///
   /// In en, this message translates to:
@@ -464,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get remove;
 
+  /// Button text to add an item to a list.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
   /// Button text to close a dialog or screen.
   ///
   /// In en, this message translates to:
@@ -523,12 +523,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CREATE ITEM'**
   String get createItem;
-
-  /// Button and tab text for creating a new item or list.
-  ///
-  /// In en, this message translates to:
-  /// **'Create New'**
-  String get createNew;
 
   /// Abbreviation for the currency Swiss Francs.
   ///
@@ -827,7 +821,7 @@ abstract class AppLocalizations {
   /// Message shown on the shopping list page when it contains no items.
   ///
   /// In en, this message translates to:
-  /// **'This list is empty.\nDouble-tap an item on the sales page to add it.'**
+  /// **'This list is empty.'**
   String get listIsEmpty;
 
   /// Header title for the list options bottom sheet.
@@ -1250,7 +1244,7 @@ abstract class AppLocalizations {
   /// **'Show checked items'**
   String get showCheckedItems;
 
-  /// Button text to show more items, with a placeholder for the count.
+  /// Button text to paginate and show more items in a category.
   ///
   /// In en, this message translates to:
   /// **'Show {count} more'**
@@ -1573,6 +1567,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lists'**
   String get listsLabel;
+
+  /// Button and tab text for creating a new item or list.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New'**
+  String get createNew;
+
+  /// Short text displayed in the app bar when the user has created zero shopping lists.
+  ///
+  /// In en, this message translates to:
+  /// **'No Lists'**
+  String get noListsExist;
+
+  /// A generic fallback name for a shopping list if its name cannot be found.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get list;
+
+  /// A short label for a button that creates a new item, like a shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// A generic welcome message for a new user.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome!'**
+  String get welcome;
+
+  /// Instructional text prompting a new user to create their first shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first shopping list to get started.'**
+  String get createFirstListPrompt;
+
+  /// Button text for creating a new shopping list from an empty state.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a List'**
+  String get createListButton;
 }
 
 class _AppLocalizationsDelegate

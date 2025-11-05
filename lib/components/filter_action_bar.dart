@@ -26,51 +26,56 @@ class FilterActionBar extends ConsumerWidget {
     // 2. GET THE LOCALIZATIONS OBJECT
     final l10n = AppLocalizations.of(context)!;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: theme.inactive),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      child: Padding(
+        // Adjust padding slightly to account for SafeArea
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: theme.inactive),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              onPressed: onReset,
-              // 3. REPLACE HARDCODED TEXT
-              child: Text(
-                l10n.reset,
-                style: TextStyle(
-                  color: theme.inactive,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.secondary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: isLoading ? null : onApply,
-              child: Text(
-                l10n.apply,
-                style: TextStyle(
-                  color: theme.primary,
-                  fontWeight: FontWeight.bold,
+                onPressed: onReset,
+                child: Text(
+                  l10n.reset,
+                  style: TextStyle(
+                    color: theme.inactive,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.secondary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: isLoading ? null : onApply,
+                child: Text(
+                  l10n.apply,
+                  style: TextStyle(
+                    color: theme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/components/category_chip.dart';
+import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
@@ -16,6 +17,9 @@ import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+
+// --- ADD THIS IMPORT FOR THE PAGE TRANSITION ---
+import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 
 class ProductDetails extends ConsumerWidget {
   final PlainProduct product;
@@ -31,20 +35,14 @@ class ProductDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The theme is no longer needed here, it's fetched within the methods that use it.
     return SafeArea(
-      // Using `SafeArea` at the top level is good practice
       child: GestureDetector(
         onDoubleTap: () => _toggleItemInList(context, ref),
+        // === CHANGE #1: Use Navigator.push instead of a bottom sheet ===
         onLongPress: () {
-          final theme = ref.read(themeProvider);
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            useRootNavigator: true,
-            backgroundColor: theme.background,
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            builder: (ctx) => const ManageShoppingListsPage(),
+          Navigator.of(context, rootNavigator: true).push(
+            SlideUpPageRoute(page: const ManageShoppingListsPage()),
           );
         },
         child: _buildCardContent(context, ref),
@@ -54,10 +52,21 @@ class ProductDetails extends ConsumerWidget {
 
   void _toggleItemInList(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final activeList = ref.read(activeShoppingListProvider);
+    final activeListId = ref.read(activeShoppingListProvider);
+
+    if (activeListId == null) {
+      NotificationManager.show(context, "Please create a shopping list first.");
+      return;
+    }
+
+    final allLists = ref.read(allShoppingListsProvider).value ?? [];
+    final activeListInfo = allLists.firstWhere(
+          (list) => list.id == activeListId,
+      orElse: () => ShoppingListInfo(id: '', name: 'Shopping List'),
+    );
+    final activeListName = activeListInfo.name;
 
     final notifier = ref.read(shoppingListsProvider.notifier);
-    final theme = ref.read(themeProvider);
     final hiveProduct = Product(
         id: product.id,
         store: product.store,
@@ -75,24 +84,21 @@ class ProductDetails extends ConsumerWidget {
         dealEnd: product.dealEnd,
         isCustom: product.isCustom,
         isOnSale: product.isOnSale);
-    final shoppingListProducts =
-        ref.read(shoppingListWithDetailsProvider).value ?? [];
-    final isItemInList =
-    shoppingListProducts.any((item) => item.id == product.id);
+
+    final shoppingListProducts = ref.read(shoppingListWithDetailsProvider).value ?? [];
+    final isItemInList = shoppingListProducts.any((item) => item.id == product.id);
+
     if (isItemInList) {
       notifier.removeItemFromList(hiveProduct);
-      // 2. UPDATE THIS LINE
-      NotificationManager.show(context, l10n.removedFrom(activeList));
+      NotificationManager.show(context, l10n.removedFrom(activeListName));
     } else {
       notifier.addToList(hiveProduct, context);
-      // 3. UPDATE THIS LINE
-      NotificationManager.show(context, l10n.addedTo(activeList));
+      NotificationManager.show(context, l10n.addedTo(activeListName));
     }
   }
 
   void _launchURL(BuildContext context, WidgetRef ref, String url) async {
     final uri = Uri.parse(url);
-    // theme is no longer needed here
     final l10n = AppLocalizations.of(context)!;
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -101,7 +107,6 @@ class ProductDetails extends ConsumerWidget {
     } catch (e) {
       debugPrint('Error launching URL: $e');
       if (context.mounted) {
-        // 4. UPDATE THIS LINE
         NotificationManager.show(context, l10n.couldNotOpenProductLink);
       }
     }
@@ -114,17 +119,13 @@ class ProductDetails extends ConsumerWidget {
     final isInShoppingList =
     shoppingListProducts.any((item) => item.id == product.id);
 
-    // --- The changes are in this Container and the removed ClipRRect ---
     return Container(
-      // REMOVED: margin, boxShadow, and borderRadius.
-      // The color now acts as the page's background.
       color: theme.primary,
       child: LayoutBuilder(builder: (context, constraints) {
         return SingleChildScrollView(
           physics: const NeverScrollableScrollPhysics(),
           child: Container(
             height: constraints.maxHeight,
-            // The padding is kept to prevent content from touching the screen edges.
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,13 +138,11 @@ class ProductDetails extends ConsumerWidget {
                   const Spacer(),
                   _buildSpecialConditionInfo(theme),
                   const SizedBox(height: 8),
-                  // The image container itself still has rounded corners, which looks nice.
                   _buildImageContainer(context, ref, theme, isInShoppingList),
                   const SizedBox(height: 12),
                   _buildPriceRow(ref),
                   _buildAvailabilityInfo(context, theme),
                   const Spacer(),
-                  // REMOVED the action row from here
                 ]),
           ),
         );
@@ -184,7 +183,7 @@ class ProductDetails extends ConsumerWidget {
                     color: isInShoppingList ? theme.secondary : Colors.transparent,
                     borderRadius: BorderRadius.circular(4),
                     border: !isInShoppingList
-                        ? Border.all(color: theme.secondary, width: 2.5)
+                        ? Border.all(color: Colors.black.withOpacity(0.4), width: 2.5)
                         : null,
                   ),
                   child: isInShoppingList
@@ -300,15 +299,12 @@ class ProductDetails extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        // Left side: Back button
         IconButton(
           padding: const EdgeInsets.only(right: 8.0),
           constraints: const BoxConstraints(),
           icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
           onPressed: () => Navigator.of(context).pop(),
         ),
-
-        // Center: Logo and Item Count (takes up the available space)
         Expanded(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -324,8 +320,6 @@ class ProductDetails extends ConsumerWidget {
             ],
           ),
         ),
-
-        // Right side: Shopping list selector
         _buildSelectListButton(context, ref, theme),
       ],
     );
@@ -350,14 +344,9 @@ class ProductDetails extends ConsumerWidget {
   Widget _buildSelectListButton(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
     return InkWell(
-      onTap: () => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useRootNavigator: true,
-        backgroundColor: theme.background,
-        shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (ctx) => const ManageShoppingListsPage(),
+      // === CHANGE #2: Use Navigator.push instead of a bottom sheet ===
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        SlideUpPageRoute(page: const ManageShoppingListsPage()),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
