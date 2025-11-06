@@ -8,8 +8,6 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-
-// --- IMPORT THE CATEGORY SERVICE ---
 import 'package:sales_app_mvp/services/category_service.dart';
 
 class SubcategoriesFilterTab extends ConsumerWidget {
@@ -29,7 +27,6 @@ class SubcategoriesFilterTab extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // This section is already correct.
     if (localFilterState.selectedCategories.isEmpty) {
       return Center(
         child: Padding(
@@ -43,7 +40,6 @@ class SubcategoriesFilterTab extends ConsumerWidget {
       );
     }
 
-    // This logic is also correct.
     final availableSubcategories = <SubCategory>[];
     for (var mainCategory in allCategories) {
       if (localFilterState.selectedCategories
@@ -76,55 +72,49 @@ class SubcategoriesFilterTab extends ConsumerWidget {
         final sub = uniqueSubcategories[index];
         final isSelected =
         localFilterState.selectedSubcategories.contains(sub.name);
+        final localizedName =
+        CategoryService.getLocalizedCategoryName(sub.name, l10n);
 
-        // ======================= THE FIX IS HERE =======================
-        // Use the CategoryService to translate the subcategory key.
-        final localizedName = CategoryService.getLocalizedCategoryName(sub.name, l10n);
-        // ================================================================
+        // --- CHANGE: Define colors based on selection state for a cleaner look ---
+        final bgColor = isSelected ? theme.secondary : theme.primary;
+        final contentColor = isSelected ? theme.primary : theme.inactive;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: GestureDetector(
-            onTap: () => onToggleSubcategory(sub.name), // Correctly uses the raw key
+            onTap: () => onToggleSubcategory(sub.name),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.primary,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isSelected ? theme.secondary : Colors.transparent,
-                  width: 2.0,
-                ),
+                // --- CHANGE: Background color now reflects selection state ---
+                color: bgColor,
+                // --- CHANGE: Updated border radius for consistency ---
+                borderRadius: BorderRadius.circular(12),
+                // --- CHANGE: Border removed for a solid, modern look ---
               ),
               child: Row(
                 children: [
                   SvgPicture.asset(
                     sub.iconAssetPath,
-                    colorFilter: ColorFilter.mode(
-                        theme.secondary, BlendMode.srcIn),
+                    // --- CHANGE: Icon color is now dynamic ---
+                    colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
                     height: 32,
                     width: 32,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    // --- USE THE TRANSLATED NAME IN THE UI ---
                     child: Text(
-                      localizedName, // <-- Use the translated name here
+                      localizedName,
                       style: TextStyle(
-                        color: theme.secondary,
+                        // --- CHANGE: Text color is now dynamic ---
+                        color: contentColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
                     ),
                   ),
-                  Icon(
-                    isSelected
-                        ? Icons.check_box
-                        : Icons.check_box_outline_blank,
-                    color: isSelected ? theme.secondary : theme.inactive,
-                    size: 32,
-                  ),
+                  // --- CHANGE: Checkbox has been removed ---
                 ],
               ),
             ),

@@ -535,8 +535,26 @@
     "@create": { "description": "A short label for a button that creates a new item, like a shopping list." },
     "welcome": "Welcome!",
     "@welcome": { "description": "A generic welcome message for a new user." },
-    "createFirstListPrompt": "Create your first shopping list to get started.",
-    "@createFirstListPrompt": { "description": "Instructional text prompting a new user to create their first shopping list." },
-    "createListButton": "Create a List",
-    "@createListButton": { "description": "Button text for creating a new shopping list from an empty state." }
+    "renameListTitle": "Rename List",
+      "@renameListTitle": {
+        "description": "The title for the dialog where a user can rename a shopping list."
+      },
+      "listNameLabel": "List Name",
+      "@listNameLabel": {
+        "description": "The label for the text field where a user enters the name of a shopping list."
+      },
+      "save": "Save",
+      "@save": {
+        "description": "A common button label for saving changes."
+      },
+      "createFirstListPrompt": "Create your first shopping list to get started.",
+      "@createFirstListPrompt": {
+        "description": "Instructional text prompting a new user to create their first shopping list."
+      },
+      "createListButton": "Create a List",
+      "@createListButton": {
+        "description": "Button text for creating a new shopping list from an empty state."
+      }
+
+
 }

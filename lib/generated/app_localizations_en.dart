@@ -822,6 +822,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome => 'Welcome!';
 
   @override
+  String get renameListTitle => 'Rename List';
+
+  @override
+  String get listNameLabel => 'List Name';
+
+  @override
   String get createFirstListPrompt =>
       'Create your first shopping list to get started.';
 

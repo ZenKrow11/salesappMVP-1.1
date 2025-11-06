@@ -1160,7 +1160,7 @@ abstract class AppLocalizations {
   /// **'Enter your email address and we will send you a link to reset your password.'**
   String get resetPasswordInstructions;
 
-  /// Button text for saving changes.
+  /// A common button label for saving changes.
   ///
   /// In en, this message translates to:
   /// **'Save'**
@@ -1597,6 +1597,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome!'**
   String get welcome;
+
+  /// The title for the dialog where a user can rename a shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename List'**
+  String get renameListTitle;
+
+  /// The label for the text field where a user enters the name of a shopping list.
+  ///
+  /// In en, this message translates to:
+  /// **'List Name'**
+  String get listNameLabel;
 
   /// Instructional text prompting a new user to create their first shopping list.
   ///

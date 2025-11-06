@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sales_app_mvp/components/filter_action_bar.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
-// --- CHANGE: IMPORT THE NEW PROVIDERS ---
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -32,7 +32,6 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // --- CHANGE: Clone the Shopping List's global state to a local state. ---
     _localFilterState = ref.read(shoppingListPageFilterStateProvider);
   }
 
@@ -47,8 +46,8 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final asyncStoreOptions = ref.watch(storeOptionsProvider);
-    // --- CHANGE: Get the Shopping List's filter notifier. ---
-    final filterNotifier = ref.read(shoppingListPageFilterStateProvider.notifier);
+    final filterNotifier =
+    ref.read(shoppingListPageFilterStateProvider.notifier);
 
     return Container(
       constraints: BoxConstraints(
@@ -73,7 +72,8 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
                 children: [
                   asyncStoreOptions.when(
                     data: (stores) => _buildStoresTab(stores, theme),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                    const Center(child: CircularProgressIndicator()),
                     error: (e, s) => Center(child: Text('Error: $e')),
                   ),
                   _buildCategoriesTab(theme, l10n),
@@ -84,12 +84,11 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
             FilterActionBar(
               onReset: () {
                 setState(() {
-                  // --- CHANGE: Reset to a default state suitable for the shopping list. ---
-                  _localFilterState = const FilterState(sortOption: SortOption.storeAlphabetical);
+                  _localFilterState =
+                  const FilterState(sortOption: SortOption.storeAlphabetical);
                 });
               },
               onApply: () {
-                // Apply local changes to the Shopping List's global state provider
                 filterNotifier.state = _localFilterState;
                 Navigator.pop(context);
               },
@@ -186,20 +185,26 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
   Widget _buildCategoriesTab(AppThemeData theme, AppLocalizations l10n) {
     final selectedCategories = _localFilterState.selectedCategories.toSet();
     return GridView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 3.5,
+        crossAxisCount: 3,
+        childAspectRatio: 3 / 2.5,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
       itemCount: allCategories.length,
       itemBuilder: (context, index) {
         final category = allCategories[index];
         final isSelected = selectedCategories.contains(category.firestoreName);
-        final style = CategoryService.getLocalizedStyleForGroupingName(category.firestoreName, l10n);
+        final style = CategoryService.getLocalizedStyleForGroupingName(
+            category.firestoreName, l10n);
 
-        return InkWell(
+        return _buildCategoryChip(
+          theme: theme,
+          name: style.displayName,
+          iconAssetPath: category.style.iconAssetPath,
+          color: category.style.color,
+          isSelected: isSelected,
           onTap: () {
             final current = _localFilterState.selectedCategories.toSet();
             if (current.contains(category.firestoreName)) {
@@ -208,31 +213,67 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
               current.add(category.firestoreName);
             }
             setState(() {
-              _localFilterState = _localFilterState.copyWith(selectedCategories: current.toList());
+              _localFilterState = _localFilterState.copyWith(
+                  selectedCategories: current.toList());
             });
           },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected ? style.color : theme.primary,
-              borderRadius: BorderRadius.circular(12),
-              border: isSelected ? Border.all(color: theme.secondary, width: 2) : null,
-            ),
-            child: Center(
-              child: Text(
-                style.displayName,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : theme.inactive,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         );
       },
     );
   }
 
+  Widget _buildCategoryChip({
+    required AppThemeData theme,
+    required String name,
+    required String iconAssetPath,
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final contentColor = Colors.white;
+    final selectionColor = theme.secondary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? selectionColor : Colors.transparent,
+            width: 2.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: SvgPicture.asset(
+                iconAssetPath,
+                colorFilter: ColorFilter.mode(contentColor, BlendMode.srcIn),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              style: TextStyle(
+                color: contentColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- CHANGE: This entire method has been updated to use the new style ---
   Widget _buildSortTab(AppLocalizations l10n, AppThemeData theme) {
     final relevantSortOptions = [
       SortOption.storeAlphabetical,
@@ -247,10 +288,11 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
         final isSelected = option == _localFilterState.sortOption;
         return Card(
           elevation: 0,
-          color: isSelected ? theme.secondary : Colors.transparent,
+          // Use theme.primary for inactive background color
+          color: isSelected ? theme.secondary : theme.primary,
+          // Remove the border for a cleaner look
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.primary, width: 1.5),
           ),
           margin: const EdgeInsets.symmetric(vertical: 4),
           child: ListTile(
@@ -263,7 +305,8 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
             ),
             onTap: () {
               setState(() {
-                _localFilterState = _localFilterState.copyWith(sortOption: option);
+                _localFilterState =
+                    _localFilterState.copyWith(sortOption: option);
               });
             },
           ),

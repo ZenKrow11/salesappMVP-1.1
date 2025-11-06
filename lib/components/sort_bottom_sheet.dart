@@ -45,11 +45,10 @@ class SortBottomSheet extends ConsumerWidget {
             topRight: Radius.circular(24),
           ),
         ),
-        // --- WRAP THIS WIDGET WITH SAFEAREA ---
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), // Give a little bottom padding
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -73,37 +72,40 @@ class SortBottomSheet extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-              ...SortOption.values.map((option) {
-                final bool isSelected = option == currentSortOption;
+                  ...SortOption.values.map((option) {
+                    final bool isSelected = option == currentSortOption;
 
-                return Card(
-                  elevation: 0,
-                  color: isSelected ? theme.secondary : Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: isSelected
-                        ? BorderSide.none
-                        : BorderSide(color: theme.primary, width: 1.5),
-                  ),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  child: ListTile(
-                    title: Text(
-                      option.getLocalizedDisplayName(l10n),
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? theme.primary : theme.inactive,
+                    return Card(
+                      elevation: 0,
+                      // --- CHANGE: Use theme.primary for inactive background color ---
+                      color: isSelected ? theme.secondary : theme.primary,
+                      // --- CHANGE: Remove the border entirely for a cleaner look ---
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                    onTap: () {
-                      filterNotifier.update((state) => state.copyWith(sortOption: option));
-                      Navigator.pop(context);
-                    },
-                  ),
-                );
-              }),
-            ],
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      child: ListTile(
+                        title: Text(
+                          option.getLocalizedDisplayName(l10n),
+                          style: TextStyle(
+                            fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                            // This text color logic remains correct.
+                            color: isSelected ? theme.primary : theme.inactive,
+                          ),
+                        ),
+                        onTap: () {
+                          filterNotifier.update(
+                                  (state) => state.copyWith(sortOption: option));
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ),
-        ),
-      )));
+        ));
   }
 }

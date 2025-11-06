@@ -18,8 +18,6 @@ import 'package:sales_app_mvp/services/notification_manager.dart';
 class ManageCustomItemsPage extends ConsumerWidget {
   const ManageCustomItemsPage({super.key});
 
-  // The old _showCreateItemDialog method has been completely removed.
-
   Future<void> _showDeleteConfirmation(
       BuildContext context,
       WidgetRef ref,
@@ -147,9 +145,10 @@ class ManageCustomItemsPage extends ConsumerWidget {
           icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        // --- CHANGE: Updated title style to match the other page ---
         title: Text(
           l10n.manageCustomItemsTitle,
-          style: TextStyle(color: theme.secondary),
+          style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
       body: customItemsAsync.when(
@@ -180,7 +179,8 @@ class ManageCustomItemsPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final item = items[index];
               return Card(
-                color: theme.background,
+                // --- CHANGE: Updated color to match the other page's inactive state ---
+                color: theme.primary,
                 margin:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 shape: RoundedRectangleBorder(
@@ -188,8 +188,9 @@ class ManageCustomItemsPage extends ConsumerWidget {
                 child: ListTile(
                   title: Text(
                     item.name,
+                    // --- CHANGE: Updated text color for consistency ---
                     style: TextStyle(
-                        color: theme.secondary, fontWeight: FontWeight.bold),
+                        color: theme.inactive, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     item.category == 'custom' && item.subcategory.isNotEmpty
@@ -238,7 +239,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     ),
                   ),
                   ElevatedButton.icon(
-                    // --- FIX: THIS NOW NAVIGATES DIRECTLY TO THE FULL PAGE ---
                     onPressed: isLimitReached
                         ? null
                         : () => Navigator.of(context, rootNavigator: true)

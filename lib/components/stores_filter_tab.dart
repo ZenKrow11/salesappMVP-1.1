@@ -38,17 +38,20 @@ class StoresFilterTab extends ConsumerWidget {
       data: (storeOptions) {
         return GridView.builder(
           padding: const EdgeInsets.all(20),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 100,
-            childAspectRatio: 1,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+          // --- CHANGE: Updated grid delegate to match the 'Organize List' style ---
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.5,
           ),
-          itemCount: storeOptions.length + 1,
+          // --- CHANGE: Removed the '+ 1' to hide the toggle button ---
+          itemCount: storeOptions.length,
           itemBuilder: (context, index) {
-            if (index == storeOptions.length) {
-              return _buildModeToggleTile(theme);
-            }
+            // --- CHANGE: Commented out the logic for the toggle button ---
+            // if (index == storeOptions.length) {
+            //   return _buildModeToggleTile(theme);
+            // }
 
             final store = storeOptions[index];
             final isSelected = tappedStores.contains(store);
@@ -64,11 +67,11 @@ class StoresFilterTab extends ConsumerWidget {
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       color: theme.primary,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12), // Adjusted for consistency
                       border: Border.all(
                         color:
                         isSelected ? selectionColor : Colors.transparent,
-                        width: 2.5,
+                        width: 3, // Adjusted for consistency
                       ),
                     ),
                     child: Center(
@@ -95,6 +98,7 @@ class StoresFilterTab extends ConsumerWidget {
     );
   }
 
+  // --- CHANGE: This helper method is now unused, but kept for potential future use ---
   // This helper method has no text, so it remains unchanged.
   Widget _buildModeToggleTile(AppThemeData theme) {
     final iconData = isIncludeMode ? Icons.add_circle : Icons.remove_circle;
