@@ -63,7 +63,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
         ),
         title: Text(
           localizations.shoppingMode,
-          style: TextStyle(color: theme.secondary),
+          style: TextStyle(
+              color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         actions: [
           IconButton(

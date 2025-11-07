@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
-// --- CHANGE: IMPORT THE NEW PROVIDERS ---
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/filter_options_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -15,25 +14,18 @@ import 'categories_filter_tab.dart';
 import 'subcategories_filter_tab.dart';
 import 'filter_action_bar.dart';
 
-// --- Providers for the local "draft" state of the filter sheet ---
+// --- Providers are unchanged ---
 
-/// Holds the temporary filter state while the user is making changes.
 final _localFilterStateProvider = StateProvider.autoDispose<FilterState>((ref) {
-  // --- CHANGE: Initialize with the HomePage's global filter state. ---
   return ref.watch(homePageFilterStateProvider);
 });
 
-/// Manages the temporary set of stores tapped by the user.
 final _tappedStoresProvider = StateProvider.autoDispose<Set<String>>((ref) {
-  // --- CHANGE: Initialize with the HomePage's current selection. ---
   return ref.watch(homePageFilterStateProvider).selectedStores.toSet();
 });
 
-/// Manages the include/exclude toggle for the stores tab.
 final _isIncludeModeProvider = StateProvider.autoDispose<bool>((ref) => true);
 
-
-// --- The Refactored Widget ---
 
 class FilterBottomSheet extends ConsumerWidget {
   const FilterBottomSheet({super.key});
@@ -70,7 +62,7 @@ class FilterBottomSheet extends ConsumerWidget {
               Expanded(
                 child: TabBarView(
                   children: [
-                    // Stores Tab
+                    // ... (TabBarView children are unchanged)
                     StoresFilterTab(
                       isIncludeMode: ref.watch(_isIncludeModeProvider),
                       tappedStores: ref.watch(_tappedStoresProvider),
@@ -81,7 +73,6 @@ class FilterBottomSheet extends ConsumerWidget {
                         ref.read(_tappedStoresProvider.notifier).state = {};
                       },
                     ),
-                    // Categories Tab
                     CategoriesFilterTab(
                       selectedCategories: ref.watch(_localFilterStateProvider).selectedCategories,
                       onToggleCategory: (category) {
@@ -95,7 +86,6 @@ class FilterBottomSheet extends ConsumerWidget {
                             ));
                       },
                     ),
-                    // Subcategories Tab
                     SubcategoriesFilterTab(
                       localFilterState: ref.watch(_localFilterStateProvider),
                       subCategoryColorMap: subCategoryColorMap,
@@ -114,6 +104,12 @@ class FilterBottomSheet extends ConsumerWidget {
               ),
               FilterActionBar(
                 onReset: () {
+                  ref.read(homePageFilterStateProvider.notifier).update((state) => state.copyWith(
+                    selectedStores: [],
+                    selectedCategories: [],
+                    selectedSubcategories: [],
+                  ));
+
                   ref.invalidate(_localFilterStateProvider);
                   ref.invalidate(_tappedStoresProvider);
                   ref.invalidate(_isIncludeModeProvider);
@@ -128,6 +124,8 @@ class FilterBottomSheet extends ConsumerWidget {
     );
   }
 
+  // --- Other methods are unchanged ---
+
   void _toggleSetOption(WidgetRef ref, AutoDisposeStateProvider<Set<String>> provider, String option) {
     final currentSet = ref.read(provider);
     if (currentSet.contains(option)) {
@@ -137,7 +135,6 @@ class FilterBottomSheet extends ConsumerWidget {
     }
   }
 
-  /// Logic for applying the final filter to the global state.
   void _onApply(BuildContext context, WidgetRef ref) {
     final allStores = ref.read(storeOptionsProvider).value ?? [];
     final tappedStores = ref.read(_tappedStoresProvider);
@@ -151,7 +148,6 @@ class FilterBottomSheet extends ConsumerWidget {
       selectedStores: finalSelectedStores,
     );
 
-    // --- CHANGE: Update the HomePage's state provider. ---
     ref.read(homePageFilterStateProvider.notifier).state = finalState;
     Navigator.pop(context);
   }
@@ -179,12 +175,17 @@ class FilterBottomSheet extends ConsumerWidget {
     );
   }
 
+  // --- THIS IS THE FIX ---
   Widget _buildTabBar(AppThemeData theme, AppLocalizations l10n) {
     return TabBar(
+      isScrollable: true,
+      // Add this line to align the tabs to the left
+      tabAlignment: TabAlignment.start,
       labelColor: theme.secondary,
       unselectedLabelColor: theme.inactive,
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       tabs: [
         Tab(text: l10n.stores),
         Tab(text: l10n.categories),

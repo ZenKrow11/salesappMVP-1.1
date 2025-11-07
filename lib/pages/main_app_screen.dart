@@ -20,11 +20,10 @@ import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/pages/manage_custom_items_page.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/components/manage_list_items_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
-
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
@@ -101,7 +100,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  PreferredSizeWidget? _buildAppBarForIndex(BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
+  PreferredSizeWidget? _buildAppBarForIndex(
+      BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
     switch (index) {
       case 0:
         return _buildHomePageAppBar(theme);
@@ -129,9 +129,16 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  PreferredSizeWidget _buildShoppingListPageAppBar(BuildContext context, AppThemeData theme, WidgetRef ref) {
+  // --- REFACTORED METHOD ---
+  PreferredSizeWidget _buildShoppingListPageAppBar(
+      BuildContext context, AppThemeData theme, WidgetRef ref) {
     final settingsState = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
+
+    // Check if there is an active shopping list.
+    final activeListId = ref.watch(activeShoppingListProvider);
+    final isListActive = activeListId != null;
+    final disabledColor = theme.inactive.withOpacity(0.4);
 
     return AppBar(
       backgroundColor: theme.primary,
@@ -145,62 +152,63 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       actions: [
         IconButton(
           icon: Icon(
-            settingsState.isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-            color: theme.inactive,
+            settingsState.isGridView
+                ? Icons.view_list_rounded
+                : Icons.grid_view_rounded,
+            color: isListActive ? theme.inactive : disabledColor,
           ),
-          tooltip: settingsState.isGridView ? l10n.tooltipShowAsList : l10n.tooltipShowAsGrid,
-          onPressed: () {
-            ref.read(settingsProvider.notifier).toggleGridView();
-          },
+          tooltip: settingsState.isGridView
+              ? l10n.tooltipShowAsList
+              : l10n.tooltipShowAsGrid,
+          onPressed: isListActive
+              ? () => ref.read(settingsProvider.notifier).toggleGridView()
+              : null,
         ),
         IconButton(
-          icon: Icon(Icons.delete, color: theme.inactive),
+          icon: Icon(Icons.delete,
+              color: isListActive ? theme.inactive : disabledColor),
           tooltip: l10n.tooltipManageListItems,
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              useRootNavigator: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => const ManageListItemsBottomSheet(),
-            );
-          },
+          onPressed: isListActive
+              ? () => _showModalSheet(
+                (_) => const ManageListItemsBottomSheet(),
+          )
+              : null,
         ),
-        _buildOrganizeListAction(theme, l10n),
-        _buildShoppingListSettingsAction(theme),
+        _buildOrganizeListAction(theme, l10n, isEnabled: isListActive),
+        _buildShoppingListSettingsAction(theme, isEnabled: isListActive),
       ],
     );
   }
 
-  // --- THIS WIDGET HAS BEEN FIXED ---
   Widget _buildInfoBar() {
     return Consumer(
       builder: (context, ref, child) {
         final theme = ref.watch(themeProvider);
         final l10n = AppLocalizations.of(context)!;
-
-        // 1. Get the active list ID and all lists.
         final activeListId = ref.watch(activeShoppingListProvider);
         final allLists = ref.watch(allShoppingListsProvider).value ?? [];
         String buttonText;
-
-        // 2. Determine the correct display name.
         if (activeListId == null) {
-          buttonText = l10n.noListsExist; // Example: "No Lists"
+          buttonText = l10n.noListsExist;
         } else {
           final activeListInfo = allLists.firstWhere(
                 (list) => list.id == activeListId,
-            orElse: () => ShoppingListInfo(id: '', name: l10n.list), // Fallback
+            orElse: () =>
+                ShoppingListInfo(id: '', name: l10n.list, itemCount: 0),
           );
           buttonText = activeListInfo.name;
         }
-
         final appData = ref.watch(appDataProvider);
         final bool isDataLoaded = appData.status == InitializationStatus.loaded;
-
         final totalCount = appData.grandTotal;
-        final filteredCount = ref.watch(homePageProductsProvider).whenData((groups) {
-          return groups.fold<int>(0, (sum, group) => sum + group.products.length);
-        }).value ?? 0;
+        final filteredCount = ref
+            .watch(homePageProductsProvider)
+            .whenData((groups) {
+          return groups.fold<int>(
+              0, (sum, group) => sum + group.products.length);
+        })
+            .value ??
+            0;
 
         return Row(
           children: [
@@ -215,21 +223,27 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                   child: InkWell(
                     onTap: isDataLoaded
                         ? () => Navigator.of(context, rootNavigator: true).push(
-                      SlideUpPageRoute(page: const ManageShoppingListsPage()),
+                      SlidePageRoute(
+                        page: const ManageShoppingListsPage(),
+                        direction: SlideDirection.rightToLeft,
+                      ),
                     )
                         : null,
                     borderRadius: BorderRadius.circular(12.0),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 8.0),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.list_alt_rounded, color: theme.secondary, size: 22.0),
+                          Icon(Icons.list_alt_rounded,
+                              color: theme.secondary, size: 22.0),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              buttonText, // 3. Use the safe, non-nullable name.
-                              style: TextStyle(color: theme.inactive, fontSize: 16),
+                              buttonText,
+                              style:
+                              TextStyle(color: theme.inactive, fontSize: 16),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -252,22 +266,17 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // --- THIS WIDGET HAS BEEN FIXED ---
   Widget _buildListSelectorWidget(WidgetRef ref, AppThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
-
-    // 1. Get the active list ID and all lists.
     final activeListId = ref.watch(activeShoppingListProvider);
     final allLists = ref.watch(allShoppingListsProvider).value ?? [];
     String activeListName;
-
-    // 2. Determine the correct display name.
     if (activeListId == null) {
-      activeListName = l10n.noListsExist; // Example: "No Lists"
+      activeListName = l10n.noListsExist;
     } else {
       final activeListInfo = allLists.firstWhere(
             (list) => list.id == activeListId,
-        orElse: () => ShoppingListInfo(id: '', name: l10n.list), // Fallback
+        orElse: () => ShoppingListInfo(id: '', name: l10n.list, itemCount: 0),
       );
       activeListName = activeListInfo.name;
     }
@@ -282,18 +291,23 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           ),
           child: InkWell(
             onTap: () => Navigator.of(context, rootNavigator: true).push(
-              SlideUpPageRoute(page: const ManageShoppingListsPage()),
+              SlidePageRoute(
+                page: const ManageShoppingListsPage(),
+                direction: SlideDirection.rightToLeft,
+              ),
             ),
             borderRadius: BorderRadius.circular(12.0),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
               child: Row(
                 children: [
-                  Icon(Icons.list_alt_rounded, color: theme.secondary, size: 22.0),
+                  Icon(Icons.list_alt_rounded,
+                      color: theme.secondary, size: 22.0),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      activeListName, // 3. Use the safe, non-nullable name.
+                      activeListName,
                       style: TextStyle(color: theme.inactive, fontSize: 16),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -308,37 +322,50 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n) {
-    final isFilterActive = ref.watch(shoppingListPageFilterStateProvider.select((f) => f.isFilterActiveForShoppingList));
+  // --- REFACTORED HELPER WIDGET ---
+  Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n,
+      {required bool isEnabled}) {
+    final isFilterActive = ref.watch(shoppingListPageFilterStateProvider
+        .select((f) => f.isFilterActiveForShoppingList));
+    final disabledColor = theme.inactive.withOpacity(0.4);
 
     return IconButton(
       icon: Badge(
-        isLabelVisible: isFilterActive,
+        isLabelVisible: isEnabled && isFilterActive,
         backgroundColor: theme.secondary,
         label: null,
-        child: Icon(Icons.filter_list_alt, color: theme.inactive),
+        child: Icon(Icons.filter_list_alt,
+            color: isEnabled ? theme.inactive : disabledColor),
       ),
       tooltip: l10n.organizeList,
-      onPressed: () {
-        _showModalSheet(
-              (_) => const OrganizeListBottomSheet(),
-          isScrollControlled: true,
-        );
-      },
+      onPressed: isEnabled
+          ? () => _showModalSheet(
+            (_) => const OrganizeListBottomSheet(),
+        isScrollControlled: true,
+      )
+          : null,
     );
   }
 
-  Widget _buildShoppingListSettingsAction(AppThemeData theme) {
+  // --- REFACTORED HELPER WIDGET ---
+  Widget _buildShoppingListSettingsAction(AppThemeData theme,
+      {required bool isEnabled}) {
+    final disabledColor = theme.inactive.withOpacity(0.4);
+
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: IconButton(
-        icon: Icon(Icons.add_box, color: theme.inactive),
+        icon: Icon(Icons.add_box,
+            color: isEnabled ? theme.inactive : disabledColor),
         tooltip: "Manage custom items",
-        onPressed: () {
-          Navigator.of(context, rootNavigator: true).push(
-            SlideUpPageRoute(page: const ManageCustomItemsPage()),
-          );
-        },
+        onPressed: isEnabled
+            ? () => Navigator.of(context, rootNavigator: true).push(
+          SlidePageRoute(
+            page: const ManageCustomItemsPage(),
+            direction: SlideDirection.rightToLeft,
+          ),
+        )
+            : null,
       ),
     );
   }
@@ -361,7 +388,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  void _showModalSheet(Widget Function(BuildContext) builder, {bool isScrollControlled = false}) {
+  void _showModalSheet(Widget Function(BuildContext) builder,
+      {bool isScrollControlled = false}) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,

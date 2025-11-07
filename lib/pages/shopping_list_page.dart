@@ -17,6 +17,8 @@ import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
 import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+
 
 class ShoppingListPage extends ConsumerStatefulWidget {
   const ShoppingListPage({super.key});
@@ -75,15 +77,16 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: Text(l10n.createListButton), // Using l10n string
+                  label: Text(l10n.createListButton),
+                  // --- THIS IS THE FIX ---
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ManageShoppingListsPage(),
+                      SlidePageRoute(
+                        page: const ManageShoppingListsPage(),
+                        direction: SlideDirection.rightToLeft,
                       ),
                     );
                   },
-                  // 5. Style the button to match the primary action buttons elsewhere.
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.secondary,
                     foregroundColor: theme.primary,

@@ -18,8 +18,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
-// --- ADD THIS IMPORT FOR THE PAGE TRANSITION ---
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+// --- CLEANED UP IMPORTS ---
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+
 
 class ProductDetails extends ConsumerWidget {
   final PlainProduct product;
@@ -35,14 +36,16 @@ class ProductDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The theme is no longer needed here, it's fetched within the methods that use it.
     return SafeArea(
       child: GestureDetector(
         onDoubleTap: () => _toggleItemInList(context, ref),
-        // === CHANGE #1: Use Navigator.push instead of a bottom sheet ===
+        // This one is correct
         onLongPress: () {
           Navigator.of(context, rootNavigator: true).push(
-            SlideUpPageRoute(page: const ManageShoppingListsPage()),
+            SlidePageRoute(
+              page: const ManageShoppingListsPage(),
+              direction: SlideDirection.rightToLeft,
+            ),
           );
         },
         child: _buildCardContent(context, ref),
@@ -50,6 +53,7 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
+  // ... (code for _toggleItemInList, _launchURL, etc. is unchanged)
   void _toggleItemInList(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final activeListId = ref.read(activeShoppingListProvider);
@@ -62,7 +66,7 @@ class ProductDetails extends ConsumerWidget {
     final allLists = ref.read(allShoppingListsProvider).value ?? [];
     final activeListInfo = allLists.firstWhere(
           (list) => list.id == activeListId,
-      orElse: () => ShoppingListInfo(id: '', name: 'Shopping List'),
+      orElse: () => ShoppingListInfo(id: '', name: 'Shopping List', itemCount: 0),
     );
     final activeListName = activeListInfo.name;
 
@@ -341,12 +345,16 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
+  // --- THIS IS THE FIX ---
   Widget _buildSelectListButton(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
     return InkWell(
-      // === CHANGE #2: Use Navigator.push instead of a bottom sheet ===
+      // === CHANGE: Use SlidePageRoute to match the desired animation ===
       onTap: () => Navigator.of(context, rootNavigator: true).push(
-        SlideUpPageRoute(page: const ManageShoppingListsPage()),
+        SlidePageRoute(
+          page: const ManageShoppingListsPage(),
+          direction: SlideDirection.rightToLeft,
+        ),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

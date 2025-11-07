@@ -60,6 +60,8 @@ class FirestoreService {
     await listRef.set({
       'name': listName,
       'createdAt': FieldValue.serverTimestamp(),
+      // --- FIX #1: Initialize the itemCount field when a new list is created ---
+      'itemCount': 0,
     });
   }
 
@@ -122,15 +124,19 @@ class FirestoreService {
   }) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    final listDocRef =
-    _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
+    final listDocRef = _shoppingListsRef(uid).doc(listId); // Reference to the parent list document
+    final itemDocRef = listDocRef.collection('items').doc(productId); // Reference to the item in the subcollection
     final indexDocRef = _listedProductIdsRef(uid).doc(productId);
 
     final batch = _firestore.batch();
+
     final dataToSet = productData ?? {'addedAt': FieldValue.serverTimestamp()};
-    batch.set(listDocRef, dataToSet);
-    batch.set(
-        indexDocRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+    batch.set(itemDocRef, dataToSet);
+    batch.set(indexDocRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+
+    // --- FIX #2: Atomically increment the itemCount on the parent document ---
+    batch.update(listDocRef, {'itemCount': FieldValue.increment(1)});
+
     await batch.commit();
   }
 
@@ -140,13 +146,18 @@ class FirestoreService {
   }) async {
     final uid = _uid;
     if (uid == null) throw Exception('User not logged in.');
-    final listDocRef =
-    _shoppingListsRef(uid).doc(listId).collection('items').doc(productId);
+    final listDocRef = _shoppingListsRef(uid).doc(listId); // Reference to the parent list document
+    final itemDocRef = listDocRef.collection('items').doc(productId); // Reference to the item in the subcollection
     final indexDocRef = _listedProductIdsRef(uid).doc(productId);
 
     await _firestore.runTransaction((transaction) async {
       final indexSnapshot = await transaction.get(indexDocRef);
-      transaction.delete(listDocRef);
+
+      transaction.delete(itemDocRef);
+
+      // --- FIX #3: Atomically decrement the itemCount on the parent document ---
+      transaction.update(listDocRef, {'itemCount': FieldValue.increment(-1)});
+
       if (indexSnapshot.exists) {
         final currentCount =
             (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
@@ -215,22 +226,21 @@ class FirestoreService {
     if (uid == null) throw Exception('User not logged in.');
     if (productIds.isEmpty) return;
 
+    final listDocRef = _shoppingListsRef(uid).doc(listId); // Reference to the parent list document
+
     await _firestore.runTransaction((transaction) async {
-      final indexRefs =
-      productIds.map((id) => _listedProductIdsRef(uid).doc(id)).toList();
-      final indexSnapshots =
-      await Future.wait(indexRefs.map((ref) => transaction.get(ref)));
+      final indexRefs = productIds.map((id) => _listedProductIdsRef(uid).doc(id)).toList();
+      final indexSnapshots = await Future.wait(indexRefs.map((ref) => transaction.get(ref)));
+
       for (var i = 0; i < productIds.length; i++) {
         final productId = productIds[i];
         final indexSnapshot = indexSnapshots[i];
-        final listDocRef = _shoppingListsRef(uid)
-            .doc(listId)
-            .collection('items')
-            .doc(productId);
-        transaction.delete(listDocRef);
+        final itemDocRef = listDocRef.collection('items').doc(productId);
+
+        transaction.delete(itemDocRef);
+
         if (indexSnapshot.exists) {
-          final currentCount =
-              (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+          final currentCount = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
           if (currentCount <= 1) {
             transaction.delete(indexSnapshot.reference);
           } else {
@@ -239,6 +249,9 @@ class FirestoreService {
           }
         }
       }
+
+      // --- FIX #4: Decrement the itemCount by the number of items being removed ---
+      transaction.update(listDocRef, {'itemCount': FieldValue.increment(-productIds.length)});
     });
   }
 

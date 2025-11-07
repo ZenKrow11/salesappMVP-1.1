@@ -38,6 +38,7 @@ class _ManageShoppingListsPageState
     super.dispose();
   }
 
+  // ... (All methods like _createNewList, _showCreateListSheet, etc. are unchanged)
   void _createNewList(String listName) {
     if (listName.trim().isEmpty) return;
     final trimmedName = listName.trim();
@@ -106,36 +107,41 @@ class _ManageShoppingListsPageState
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20,
-              MediaQuery.of(ctx).viewInsets.bottom + 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.createNew, style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _listNameController,
-                autofocus: true,
-                style: TextStyle(color: theme.inactive),
-                onSubmitted: _createNewList,
-                decoration: InputDecoration(
-                  labelText: l10n.enterNewListName,
-                  labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
-                  filled: true,
-                  fillColor: theme.primary,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        // --- THIS IS THE FIX ---
+        // Wrap the content in a SafeArea to respect the system navigation bar.
+        return SafeArea(
+          child: Padding(
+            // The bottom padding now correctly combines the keyboard inset AND the safe area.
+            padding: EdgeInsets.fromLTRB(20, 20, 20,
+                MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l10n.createNew, style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _listNameController,
+                  autofocus: true,
+                  style: TextStyle(color: theme.inactive),
+                  onSubmitted: _createNewList,
+                  decoration: InputDecoration(
+                    labelText: l10n.enterNewListName,
+                    labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
+                    filled: true,
+                    fillColor: theme.primary,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                    backgroundColor: theme.secondary,
-                    minimumSize: const Size(double.infinity, 50)),
-                onPressed: () => _createNewList(_listNameController.text),
-                child: Text(l10n.create, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
-              )
-            ],
+                const SizedBox(height: 20),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                      backgroundColor: theme.secondary,
+                      minimumSize: const Size(double.infinity, 50)),
+                  onPressed: () => _createNewList(_listNameController.text),
+                  child: Text(l10n.create, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
+                )
+              ],
+            ),
           ),
         );
       },
@@ -221,6 +227,7 @@ class _ManageShoppingListsPageState
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -314,38 +321,34 @@ class _ManageShoppingListsPageState
     );
   }
 
+  // --- THIS IS THE UPDATED WIDGET ---
   Widget _buildEmptyState(AppLocalizations l10n, AppThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              l10n.createFirstListPrompt,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: theme.inactive.withOpacity(0.7), fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _showCreateListSheet,
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.secondary,
-                  foregroundColor: theme.primary
-              ),
-              child: Text(l10n.createListButton),
-            )
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Text(
+          // For a real app, you would move this string to your AppLocalizations file.
+          'Create and manage your shopping lists here.\nTap the "+ Create New" button below to get started.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: theme.inactive.withOpacity(0.8),
+            fontSize: 17,
+            height: 1.5, // Improves readability for multi-line text
+          ),
         ),
       ),
     );
   }
 
-  // --- CHANGE: The entire widget has been rebuilt to match the new style ---
+  // ... (_buildSelectList is unchanged)
   Widget _buildSelectList(List<ShoppingListInfo> lists) {
     final theme = ref.watch(themeProvider);
     final activeListId = ref.watch(activeShoppingListProvider);
+
+    // --- 1. GET USER PROFILE TO DETERMINE THE ITEM LIMIT ---
+    final userProfile = ref.watch(userProfileProvider).value;
+    final isPremium = userProfile?.isPremium ?? false;
+    final itemLimit = isPremium ? 60 : 30; // The same limit from your summary bar
 
     lists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
@@ -356,33 +359,55 @@ class _ManageShoppingListsPageState
         final list = lists[index];
         final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
 
-        // Define colors based on selection state
         final tileColor = isCurrentlyActive ? theme.secondary : theme.primary;
         final textColor = isCurrentlyActive ? theme.primary : theme.inactive;
         final iconColor = isCurrentlyActive ? theme.primary : theme.inactive;
+        final countColor = isCurrentlyActive
+            ? theme.primary.withOpacity(0.85)
+            : theme.inactive.withOpacity(0.7);
 
         return Card(
-          color: tileColor, // The card itself holds the background color
+          color: tileColor,
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
-            contentPadding: const EdgeInsets.only(left: 16.0),
-            title: Text(
-              list.name,
-              style: TextStyle(
-                fontWeight: isCurrentlyActive ? FontWeight.bold : FontWeight.w600,
-                color: textColor,
-                fontSize: 16,
-              ),
+            contentPadding: const EdgeInsets.only(left: 20.0),
+            // --- 2. UPDATE THE TITLE TO SHOW THE COUNT IN THE NEW FORMAT ---
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    list.name,
+                    style: TextStyle(
+                      fontWeight:
+                      isCurrentlyActive ? FontWeight.bold : FontWeight.w600,
+                      color: textColor,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '[ ${list.itemCount} / $itemLimit ]', // Display as [current / limit]
+                  style: TextStyle(
+                    color: countColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
             ),
             onTap: () {
               if (isSelectActiveMode) {
-                ref.read(activeShoppingListProvider.notifier).setActiveList(list.id);
-                // Optionally pop if this is a selection screen
+                ref
+                    .read(activeShoppingListProvider.notifier)
+                    .setActiveList(list.id);
                 Navigator.pop(context);
               } else {
-                ref.read(shoppingListsProvider.notifier).addToSpecificList(widget.product!, list.id, context);
+                ref.read(shoppingListsProvider.notifier).addToSpecificList(
+                    widget.product!, list.id, context);
                 widget.onConfirm!(list.name);
               }
             },

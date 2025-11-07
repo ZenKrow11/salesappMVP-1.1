@@ -11,7 +11,7 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 
 
@@ -87,9 +87,12 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     style: TextStyle(color: theme.inactive)),
                 onTap: () {
                   Navigator.pop(ctx);
+                  // --- CHANGE #1: Use SlidePageRoute for editing ---
                   Navigator.of(context, rootNavigator: true).push(
-                    SlideUpPageRoute(
-                        page: CreateCustomItemPage(productToEdit: item)),
+                    SlidePageRoute(
+                      page: CreateCustomItemPage(productToEdit: item),
+                      direction: SlideDirection.rightToLeft,
+                    ),
                   );
                 },
               ),
@@ -241,9 +244,12 @@ class ManageCustomItemsPage extends ConsumerWidget {
                   ElevatedButton.icon(
                     onPressed: isLimitReached
                         ? null
+                    // --- CHANGE #2: Use SlidePageRoute for creating ---
                         : () => Navigator.of(context, rootNavigator: true)
-                        .push(SlideUpPageRoute(
-                        page: const CreateCustomItemPage())),
+                        .push(SlidePageRoute(
+                      page: const CreateCustomItemPage(),
+                      direction: SlideDirection.rightToLeft,
+                    )),
                     icon: const Icon(Icons.add),
                     label: Text(l10n.add),
                     style: ElevatedButton.styleFrom(

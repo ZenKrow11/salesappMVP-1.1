@@ -162,19 +162,21 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
           icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        // --- THIS IS THE FINAL FIX ---
         title: Text(
           _isEditing ? l10n.editCustomItem : l10n.createCustomItem,
-          style: TextStyle(color: theme.secondary),
+          style: TextStyle(
+              color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
       body: SingleChildScrollView(
+        // ... (The rest of the file is unchanged)
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ... TextFormField and DropdownButtonFormField are unchanged ...
               TextFormField(
                 controller: _nameController,
                 style: TextStyle(color: theme.inactive),
@@ -230,9 +232,6 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
                   _isEditing ? l10n.saveChanges : l10n.createItem,
                   style: TextStyle(color: theme.primary),
                 ),
-                // --- FIX 4: THE ULTIMATE SAFETY CHECK ---
-                // The button is disabled if we are saving OR if the userProfile object is null (i.e., still loading).
-                // When pressed, it passes the guaranteed-to-be-loaded userProfile to the submit function.
                 onPressed: (_isSaving || userProfile == null)
                     ? null
                     : () => _submitForm(userProfile),

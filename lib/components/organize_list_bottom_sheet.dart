@@ -126,10 +126,16 @@ class _OrganizeListBottomSheetState extends ConsumerState<OrganizeListBottomShee
   Widget _buildTabBar(AppThemeData theme, AppLocalizations l10n) {
     return TabBar(
       controller: _tabController,
+      // --- THIS IS THE FIX ---
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      // ----------------------
       labelColor: theme.secondary,
       unselectedLabelColor: theme.inactive,
       indicatorColor: theme.secondary,
       dividerColor: Colors.transparent,
+      // Add some padding for better spacing
+      labelPadding: const EdgeInsets.symmetric(horizontal: 20.0),
       tabs: [
         Tab(text: l10n.stores),
         Tab(text: l10n.categories),

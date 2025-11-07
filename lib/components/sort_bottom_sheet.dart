@@ -37,6 +37,18 @@ class SortBottomSheet extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
+    // --- THIS IS THE FIX ---
+    // Create a list with your desired display order.
+    const List<SortOption> displayOrder = [
+      SortOption.discountHighToLow,
+      SortOption.discountLowToHigh,
+      SortOption.priceLowToHigh,
+      SortOption.priceHighToLow,
+      SortOption.storeAlphabetical,
+      SortOption.productAlphabetical,
+    ];
+    // --- END OF FIX ---
+
     return Container(
         decoration: BoxDecoration(
           color: theme.background,
@@ -72,14 +84,13 @@ class SortBottomSheet extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  ...SortOption.values.map((option) {
+                  // --- CHANGE: Iterate over your new ordered list ---
+                  ...displayOrder.map((option) {
                     final bool isSelected = option == currentSortOption;
 
                     return Card(
                       elevation: 0,
-                      // --- CHANGE: Use theme.primary for inactive background color ---
                       color: isSelected ? theme.secondary : theme.primary,
-                      // --- CHANGE: Remove the border entirely for a cleaner look ---
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -90,7 +101,6 @@ class SortBottomSheet extends ConsumerWidget {
                           style: TextStyle(
                             fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
-                            // This text color logic remains correct.
                             color: isSelected ? theme.primary : theme.inactive,
                           ),
                         ),
