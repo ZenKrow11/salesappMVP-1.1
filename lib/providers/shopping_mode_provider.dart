@@ -18,6 +18,10 @@ class ShoppingModeState with _$ShoppingModeState {
 class ShoppingModeNotifier extends StateNotifier<ShoppingModeState> {
   ShoppingModeNotifier() : super(const ShoppingModeState());
 
+  void initializeQuantities(Map<String, int> initialQuantities) {
+    state = state.copyWith(productQuantities: initialQuantities);
+  }
+
   void toggleChecked(String productId) {
     final newCheckedIds = Set<String>.from(state.checkedProductIds);
     if (newCheckedIds.contains(productId)) {

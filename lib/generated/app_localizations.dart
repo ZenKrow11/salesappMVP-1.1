@@ -770,11 +770,11 @@ abstract class AppLocalizations {
   /// **'Initializing...'**
   String get initializing;
 
-  /// Success message shown after adding a custom item to a shopping list.
+  /// Notification text shown when a custom item is successfully added to a specific shopping list.
   ///
   /// In en, this message translates to:
-  /// **'\"{itemName}\" added to list.'**
-  String itemAddedToList(String itemName);
+  /// **'\'{itemName}\' added to {listName}.'**
+  String itemAddedToList(String itemName, String listName);
 
   /// Success message shown after deleting a custom item from the library.
   ///
@@ -1621,6 +1621,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create a List'**
   String get createListButton;
+
+  /// Fallback text for a shopping list's name when it cannot be found.
+  ///
+  /// In en, this message translates to:
+  /// **'your list'**
+  String get yourList;
 }
 
 class _AppLocalizationsDelegate

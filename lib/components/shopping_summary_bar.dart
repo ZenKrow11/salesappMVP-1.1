@@ -10,6 +10,8 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
 import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+import 'package:sales_app_mvp/providers/shopping_mode_provider.dart';
+
 
 class ShoppingSummaryBar extends ConsumerWidget {
   final List<Product> products;
@@ -84,7 +86,15 @@ class ShoppingSummaryBar extends ConsumerWidget {
                   itemLimit,
                 );
               } else {
-                // --- THIS IS THE FIX ---
+
+                final initialQuantities = {
+                  for (var p in products) p.id: p.quantity
+                };
+
+                ref
+                    .read(shoppingModeProvider.notifier)
+                    .initializeQuantities(initialQuantities);
+
                 Navigator.push(
                   context,
                   SlidePageRoute(
@@ -100,9 +110,8 @@ class ShoppingSummaryBar extends ConsumerWidget {
               backgroundColor: theme.secondary,
               foregroundColor: theme.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8), // Adjust the radius here
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             ),
           ),
         ],

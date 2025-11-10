@@ -13,7 +13,6 @@ import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'dart:math' as math;
 import 'package:sales_app_mvp/services/notification_manager.dart';
 
-
 class ShoppingListItemTile extends ConsumerWidget {
   final Product product;
   final List<Product> allProductsInList;
@@ -39,23 +38,21 @@ class ShoppingListItemTile extends ConsumerWidget {
       );
     }
 
-    // --- STEP 2: APPLY THE "EXPIRED" VISUALS WRAPPER ---
-    // If the product is no longer on sale, wrap the entire tile
-    // in an Opacity widget to grey it out.
     if (!product.isOnSale) {
       return Opacity(
-        opacity: 0.6, // Adjust this value for desired dimming effect
+        opacity: 0.6,
         child: tile,
       );
     }
     return tile;
   }
 
-  // ... (_onTap and _onDoubleTap methods remain unchanged) ...
   void _onTap(BuildContext context) {
-    final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
+    final initialIndex =
+    allProductsInList.indexWhere((p) => p.id == product.id);
     if (initialIndex != -1) {
-      final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
+      final plainProducts =
+      allProductsInList.map((p) => p.toPlainObject()).toList();
 
       Navigator.of(context).push(SlidePageRoute(
         page: ProductSwiperScreen(
@@ -73,12 +70,11 @@ class ShoppingListItemTile extends ConsumerWidget {
     NotificationManager.show(context, l10n.removedItem(product.name));
   }
 
-  // --- STEP 3: CREATE THE REUSABLE "EXPIRED" BADGE WIDGET ---
   Widget _buildExpiredBadge(AppLocalizations l10n) {
     return Positioned.fill(
       child: Center(
         child: Transform.rotate(
-          angle: -math.pi / 12, // A slight rotation for a "stamped" look
+          angle: -math.pi / 12,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
             decoration: BoxDecoration(
@@ -87,7 +83,7 @@ class ShoppingListItemTile extends ConsumerWidget {
               border: Border.all(color: Colors.white, width: 2),
             ),
             child: Text(
-              l10n.dealExpired, // You'll need to add this to your localization file
+              l10n.dealExpired,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -99,7 +95,6 @@ class ShoppingListItemTile extends ConsumerWidget {
       ),
     );
   }
-
 
   Widget _buildGridTile(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
@@ -114,13 +109,17 @@ class ShoppingListItemTile extends ConsumerWidget {
         nameTextStyle.fontSize! * nameTextStyle.height! * 2;
     final l10n = AppLocalizations.of(context)!;
 
-    // --- STEP 4: WRAP THE GRID TILE CONTENT IN A STACK ---
+    // --- NEW: Check if the imageUrl is valid ---
+    final imageUrl = product.imageUrl;
+    final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
+
     return Stack(
       children: [
         Card(
           color: theme.primary,
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           clipBehavior: Clip.antiAlias,
           child: GestureDetector(
             onTap: () => _onTap(context),
@@ -131,11 +130,21 @@ class ShoppingListItemTile extends ConsumerWidget {
                 Expanded(
                   child: Container(
                     color: Colors.white,
-                    child: ImageWithAspectRatio(
-                      imageUrl: product.imageUrl ?? '',
+                    // --- THIS IS THE FIX ---
+                    // Conditionally show the image or a placeholder
+                    child: hasValidImage
+                        ? ImageWithAspectRatio(
+                      imageUrl: imageUrl,
                       fit: BoxFit.contain,
                       maxWidth: double.infinity,
                       maxHeight: double.infinity,
+                    )
+                        : Center(
+                      child: Icon(
+                        Icons.shopping_basket_outlined,
+                        color: Colors.grey[300],
+                        size: 40,
+                      ),
                     ),
                   ),
                 ),
@@ -178,8 +187,6 @@ class ShoppingListItemTile extends ConsumerWidget {
             ),
           ),
         ),
-
-        // --- STEP 5: ADD THE BADGE TO THE STACK IF NOT ON SALE ---
         if (!product.isOnSale) _buildExpiredBadge(l10n),
       ],
     );
@@ -190,7 +197,10 @@ class ShoppingListItemTile extends ConsumerWidget {
     final priceString = product.currentPrice.toStringAsFixed(2);
     final l10n = AppLocalizations.of(context)!;
 
-    // --- STEP 6: WRAP THE LIST TILE CONTENT IN A STACK ---
+    // --- NEW: Check if the imageUrl is valid ---
+    final imageUrl = product.imageUrl;
+    final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
+
     return Stack(
       children: [
         Padding(
@@ -205,11 +215,21 @@ class ShoppingListItemTile extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8.0),
                   child: Container(
                     color: Colors.white,
-                    child: ImageWithAspectRatio(
-                      imageUrl: product.imageUrl ?? '',
+                    // --- THIS IS THE FIX ---
+                    // Conditionally show the image or a placeholder
+                    child: hasValidImage
+                        ? ImageWithAspectRatio(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
                       maxWidth: 60,
                       maxHeight: 60,
+                    )
+                        : Center(
+                      child: Icon(
+                        Icons.shopping_basket_outlined,
+                        color: Colors.grey[300],
+                        size: 30,
+                      ),
                     ),
                   ),
                 ),
@@ -247,8 +267,6 @@ class ShoppingListItemTile extends ConsumerWidget {
             ],
           ),
         ),
-
-        // --- STEP 7: ADD THE BADGE TO THE STACK IF NOT ON SALE ---
         if (!product.isOnSale) _buildExpiredBadge(l10n),
       ],
     );

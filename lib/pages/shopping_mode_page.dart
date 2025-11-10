@@ -3,7 +3,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:sales_app_mvp/components/shopping_mode_list_item_tile.dart';
 import 'package:sales_app_mvp/models/product.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
@@ -11,16 +10,13 @@ import 'package:sales_app_mvp/providers/shopping_mode_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/image_aspect_ratio.dart';
-import 'package:sales_app_mvp/widgets/quantity_stepper.dart';
+import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/category_definitions.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
-import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
-
 
 class ShoppingModeScreen extends ConsumerStatefulWidget {
   const ShoppingModeScreen({super.key});
@@ -61,10 +57,14 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             Navigator.of(context).pop();
           },
         ),
+
         title: Text(
           localizations.shoppingMode,
           style: TextStyle(
-              color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
+            color: theme.secondary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
         actions: [
           IconButton(
@@ -86,7 +86,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
           final activeProducts =
           products.where((product) => product.isOnSale).toList();
           return activeProducts.isNotEmpty
-              ? _buildSummaryBar(context, ref, activeProducts, shoppingModeState) // This method is now restored
+              ? _buildSummaryBar(context, ref, activeProducts, shoppingModeState)
               : const SizedBox.shrink();
         },
         loading: () => const SizedBox.shrink(),
@@ -122,8 +122,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
           final List<String> orderedGroupNames;
 
           if (sortOption == SortOption.storeAlphabetical) {
-            groupedProducts =
-                groupBy(visibleProducts, (Product p) => p.store);
+            groupedProducts = groupBy(visibleProducts, (Product p) => p.store);
             orderedGroupNames = groupedProducts.keys.toList()..sort();
           } else {
             groupedProducts = groupBy(
@@ -142,8 +141,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
 
           return ScrollbarTheme(
             data: ScrollbarThemeData(
-              thumbColor: MaterialStateProperty.all(
-                  theme.secondary.withOpacity(0.7)),
+              thumbColor:
+              MaterialStateProperty.all(theme.secondary.withOpacity(0.7)),
               radius: const Radius.circular(4),
               thickness: MaterialStateProperty.all(6.0),
             ),
@@ -174,9 +173,9 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                           final isChecked = shoppingModeState
                               .checkedProductIds
                               .contains(product.id);
-                          final quantity = shoppingModeState
-                              .productQuantities[product.id] ??
-                              1;
+                          final quantity =
+                              shoppingModeState.productQuantities[product.id] ??
+                                  1;
 
                           return ShoppingModeListItemTile(
                             product: product,
@@ -184,8 +183,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                             quantity: quantity,
                             onCheckTap: () =>
                                 shoppingModeNotifier.toggleChecked(product.id),
-                            onInfoTap: () =>
-                                _showItemDetailsBottomSheet(context, ref, product), // This now calls the modernized version
+                            onInfoTap: () => _showItemDetailsBottomSheet(
+                                context, ref, product),
                           );
                         },
                         childCount: groupedProducts[groupName]!.length,
@@ -234,7 +233,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
-  // --- THIS IS THE NEW MODERNIZED BOTTOM SHEET METHOD ---
+  // --- Bottom Sheet for item details ---
   void _showItemDetailsBottomSheet(
       BuildContext context, WidgetRef ref, Product product) {
     final theme = ref.read(themeProvider);
@@ -242,7 +241,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Allows the sheet to take up more height
+      isScrollControlled: true,
       backgroundColor: theme.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -255,75 +254,65 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             final currentQuantity = state.productQuantities[product.id] ?? 1;
             final totalPrice = product.currentPrice * currentQuantity;
 
-            // Use a container that takes up 70% of the screen height.
-            // This gives the Expanded widget inside a defined space to work with.
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-              // The main layout is a Column.
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- 1. PRODUCT NAME ---
                   AutoSizeText(
                     product.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.white),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      color: Colors.white,
+                    ),
                     maxLines: 2,
                     minFontSize: 18,
                   ),
                   const SizedBox(height: 16),
-
-                  // --- 2. IMAGE (RESPONSIVE) ---
-                  // ** THIS IS THE CRITICAL FIX **
-                  // Expanded allows the image to shrink vertically on smaller screens,
-                  // ensuring the buttons below are never pushed off-screen.
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // White background
                           Container(color: Colors.white),
-                          // Image
                           ImageWithAspectRatio(
                             imageUrl: product.imageUrl,
-                            maxHeight: 400, // It can be this tall...
+                            maxHeight: 400,
                             maxWidth: double.infinity,
                             fit: BoxFit.contain,
                           ),
-                          // Store Logo Overlay
                           Positioned(
                             top: 8,
                             left: 8,
-                            child:
-                            StoreLogo(storeName: product.store, height: 28),
+                            child: StoreLogo(storeName: product.store, height: 28),
                           ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // --- 3. PRICE x QUANTITY = TOTAL ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${product.currentPrice.toStringAsFixed(2)} Fr.', style: TextStyle(color: theme.inactive, fontSize: 16)),
-                        Text('x $currentQuantity', style: TextStyle(color: theme.inactive, fontSize: 16)),
-                        Text('= ${totalPrice.toStringAsFixed(2)} Fr.', style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20)),
+                        Text('${product.currentPrice.toStringAsFixed(2)} Fr.',
+                            style: TextStyle(color: theme.inactive, fontSize: 16)),
+                        Text('x $currentQuantity',
+                            style: TextStyle(color: theme.inactive, fontSize: 16)),
+                        Text('= ${totalPrice.toStringAsFixed(2)} Fr.',
+                            style: TextStyle(
+                                color: theme.secondary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20)),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // --- 4. BUTTONS ---
                   Row(
                     children: [
                       Expanded(
@@ -334,7 +323,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             side: BorderSide(color: theme.accent),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           child: Icon(Icons.remove, color: theme.accent, size: 28),
                         ),
@@ -346,7 +336,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             side: BorderSide(color: theme.secondary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           child: Icon(Icons.add, color: theme.secondary, size: 28),
                         ),
@@ -362,7 +353,7 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
-  // --- THIS METHOD IS NOW RESTORED ---
+  // --- Summary Bar (unchanged) ---
   Widget _buildSummaryBar(BuildContext context, WidgetRef ref,
       List<Product> products, ShoppingModeState shoppingModeState) {
     final theme = ref.watch(themeProvider);
@@ -373,7 +364,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
       return sum + (product.currentPrice * quantity);
     });
 
-    // --- FIX: Sum the quantities instead of just counting the products ---
     final int totalItems = products.fold(0, (sum, product) {
       final quantity = shoppingModeState.productQuantities[product.id] ?? 1;
       return sum + quantity;
@@ -442,113 +432,262 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                 foregroundColor: theme.primary,
                 padding:
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  // --- THIS METHOD IS NOW RESTORED ---
   Future<void> _showFinishShoppingDialog(
       BuildContext context, WidgetRef ref, List<Product> allProducts) async {
     final theme = ref.read(themeProvider);
     final localizations = AppLocalizations.of(context)!;
-    final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
 
-    return showDialog<void>(
+    final shoppingModeState = ref.read(shoppingModeProvider);
+    final finalQuantities = shoppingModeState.productQuantities;
+
+    // Quick summary
+    final totalItems = finalQuantities.values.fold<int>(0, (a, b) => a + b);
+    final totalCost = allProducts.fold<double>(
+      0,
+          (sum, p) => sum + (p.currentPrice * (finalQuantities[p.id] ?? 1)),
+    );
+
+    await showModalBottomSheet(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: theme.background,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(localizations.finishShoppingTitle,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
-          content: Text(localizations.finishShoppingBody,
-              style:
-              TextStyle(color: theme.inactive.withOpacity(0.8))),
-          actionsAlignment: MainAxisAlignment.center,
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          actions: <Widget>[
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextButton(
-                  child: Text(localizations.cancel,
-                      style: TextStyle(
-                          color: theme.inactive.withOpacity(0.6))),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
+      isScrollControlled: true,
+      backgroundColor: theme.pageBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // --- Handle bar ---
+              Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: theme.inactive.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                TextButton(
-                  child: Text(localizations.keepAllItems,
-                      style: TextStyle(
-                          color: theme.secondary,
-                          fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    shoppingModeNotifier.resetState();
-                    Navigator.of(dialogContext).pop();
-                    Navigator.of(context).pop();
-                  },
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: theme.primary,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    padding:
-                    const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text(localizations.removeCheckedItems,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    final checkedIds =
-                        ref.read(shoppingModeProvider).checkedProductIds;
-                    final listNotifier =
-                    ref.read(shoppingListsProvider.notifier);
+              ),
+              const SizedBox(height: 16),
 
-                    for (final productId in checkedIds) {
-                      final productToRemove = allProducts
-                          .firstWhere((p) => p.id == productId);
-                      listNotifier.removeItemFromList(productToRemove);
-                    }
-                    shoppingModeNotifier.resetState();
-                    Navigator.of(dialogContext).pop();
-                    Navigator.of(context).pop();
-                  },
+              // --- Title ---
+              Icon(Icons.shopping_bag_outlined,
+                  size: 44, color: theme.secondary),
+              const SizedBox(height: 8),
+              Text(
+                localizations.finishShoppingTitle,
+                style: TextStyle(
+                  color: theme.inactive,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            )
-          ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                localizations.finishShoppingBody,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.inactive.withOpacity(0.7),
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Quick summary row ---
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: theme.background.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.shopping_cart_outlined,
+                          color: theme.secondary, size: 20),
+                      const SizedBox(width: 6),
+                      Text(
+                        "$totalItems ${localizations.itemsLabel}",
+                        style: TextStyle(color: theme.inactive, fontSize: 15),
+                      ),
+                    ]),
+                    Text(
+                      "${totalCost.toStringAsFixed(2)} ${localizations.currencyFrancs}",
+                      style: TextStyle(
+                        color: theme.secondary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // --- Buttons ---
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ✅ Remove checked items
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle_outline, size: 22),
+                    label: Text(
+                      localizations.removeCheckedItems,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.secondary,
+                      foregroundColor: theme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () async {
+                      // Show loading overlay
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => Center(
+                          child: CircularProgressIndicator(color: theme.secondary),
+                        ),
+                      );
+
+                      final listNotifier = ref.read(shoppingListsProvider.notifier);
+                      final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
+                      final finalQuantities = ref.read(shoppingModeProvider).productQuantities;
+                      final checkedIds = ref.read(shoppingModeProvider).checkedProductIds;
+
+                      try {
+                        // 1️⃣ Save latest quantities
+                        await listNotifier.updateItemQuantities(finalQuantities);
+
+                        // 2️⃣ Remove checked items sequentially
+                        for (final productId in checkedIds) {
+                          final productToRemove =
+                          allProducts.firstWhere((p) => p.id == productId);
+                          // Re-read notifier fresh each iteration to avoid stale ref
+                          await ref.read(shoppingListsProvider.notifier)
+                              .removeItemFromList(productToRemove);
+                        }
+
+                        // 3️⃣ Reset state only after removals are done
+                        shoppingModeNotifier.resetState();
+
+                        // 4️⃣ Pop only when context is still mounted
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // close loading
+                          Navigator.of(context).pop(); // close sheet
+                          Navigator.of(context).pop(); // leave shopping mode
+                        }
+                      } catch (e, st) {
+                        debugPrint('Error while removing items: $e\n$st');
+                        // Optionally, pop the loading dialog and show an error message
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // close loading
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to remove items.'))
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 🧺 Keep all items
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.shopping_basket_outlined, size: 22),
+                    label: Text(
+                      localizations.keepAllItems,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: theme.secondary, width: 1.5),
+                      foregroundColor: theme.secondary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () async {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => Center(
+                          child: CircularProgressIndicator(
+                            color: theme.secondary,
+                          ),
+                        ),
+                      );
+
+                      final listNotifier = ref.read(shoppingListsProvider.notifier);
+                      final shoppingModeNotifier = ref.read(shoppingModeProvider.notifier);
+
+                      await listNotifier.updateItemQuantities(finalQuantities);
+                      shoppingModeNotifier.resetState();
+
+                      if (context.mounted) {
+                        Navigator.of(context).pop(); // close loading
+                        Navigator.of(context).pop(); // close sheet
+                        Navigator.of(context).pop(); // leave shopping mode
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ❌ Cancel
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      localizations.cancel,
+                      style: TextStyle(
+                        color: theme.inactive.withOpacity(0.6),
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
   }
 }
 
-// This class does not need changes, but is required for the screen to build.
 class _SliverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
-
   _SliverHeaderDelegate({required this.child, required this.height});
-
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
+      child;
   @override
   double get maxExtent => height;
   @override
   double get minExtent => height;
-
   @override
   bool shouldRebuild(_SliverHeaderDelegate oldDelegate) =>
       height != oldDelegate.height || child != oldDelegate.child;

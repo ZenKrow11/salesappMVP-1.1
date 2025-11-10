@@ -2,8 +2,8 @@
 
 import 'categorizable.dart';
 
-// NOTE: This class DOES NOT import Hive and DOES NOT extend HiveObject.
-// It is a Plain Old Dart Object (PODO).
+// A Plain Old Dart Object (PODO) for use in isolates or when a non-Hive
+// object is required. It mirrors the structure of the main Product model.
 class PlainProduct implements Categorizable {
   final String id;
   final String store;
@@ -11,6 +11,7 @@ class PlainProduct implements Categorizable {
   final double currentPrice;
   final double normalPrice;
   final int discountPercentage;
+  @override
   final String category;
   final String subcategory;
   final String url;
@@ -21,6 +22,9 @@ class PlainProduct implements Categorizable {
   final DateTime? dealEnd;
   final bool isCustom;
   final bool isOnSale;
+
+  // --- 1. ADD THE QUANTITY FIELD ---
+  final int quantity;
 
   PlainProduct({
     required this.id,
@@ -39,9 +43,11 @@ class PlainProduct implements Categorizable {
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,
+    // --- 2. ADD QUANTITY TO THE CONSTRUCTOR ---
+    this.quantity = 1,
   });
 
-  // ✅ Factory constructor must be inside the class
+  /// Factory constructor to create a PlainProduct from a Hive-backed Product.
   factory PlainProduct.fromProduct(dynamic product) {
     return PlainProduct(
       id: product.id,
@@ -54,16 +60,18 @@ class PlainProduct implements Categorizable {
       subcategory: product.subcategory,
       url: product.url,
       imageUrl: product.imageUrl,
-      nameTokens: product.nameTokens ?? [],
+      nameTokens: List<String>.from(product.nameTokens ?? []), // Ensure it's a new list
       dealStart: product.dealStart,
       specialCondition: product.specialCondition,
       dealEnd: product.dealEnd,
       isCustom: product.isCustom ?? false,
       isOnSale: product.isOnSale ?? true,
+      // --- 3. COPY THE QUANTITY FROM THE SOURCE PRODUCT ---
+      quantity: product.quantity ?? 1,
     );
   }
 
-  // A helper getter for sorting, same as in the original Product class.
+  /// A helper getter for sorting, same as in the original Product class.
   double get discountRate {
     if (normalPrice <= 0 || normalPrice <= currentPrice) return 0.0;
     return (normalPrice - currentPrice) / normalPrice;

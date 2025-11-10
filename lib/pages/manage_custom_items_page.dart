@@ -14,7 +14,6 @@ import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 
-
 class ManageCustomItemsPage extends ConsumerWidget {
   const ManageCustomItemsPage({super.key});
 
@@ -23,6 +22,7 @@ class ManageCustomItemsPage extends ConsumerWidget {
       WidgetRef ref,
       Product item,
       ) async {
+    // Unchanged
     final theme = ref.read(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -32,24 +32,37 @@ class ManageCustomItemsPage extends ConsumerWidget {
         return AlertDialog(
           backgroundColor: theme.background,
           shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             l10n.deleteItemConfirmationTitle(item.name),
-            style: TextStyle(color: theme.secondary),
+            style:
+            TextStyle(color: theme.secondary, fontWeight: FontWeight.bold),
           ),
           content: Text(
             l10n.deleteItemConfirmationBody,
             style: TextStyle(color: theme.inactive),
           ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.inactive,
+                side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancel, style: TextStyle(color: theme.inactive)),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: theme.accent,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () async {
                 await ref
@@ -67,71 +80,31 @@ class ManageCustomItemsPage extends ConsumerWidget {
     );
   }
 
-  void _showMoreActions(BuildContext context, WidgetRef ref, Product item) {
-    final theme = ref.read(themeProvider);
+  // --- MODIFIED: Replaced _showAddToListSheet with a navigation method ---
+  void _navigateToAddToListPage(
+      BuildContext context, WidgetRef ref, Product product) async {
     final l10n = AppLocalizations.of(context)!;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.edit_outlined, color: theme.inactive),
-                title: Text(l10n.editCustomItem,
-                    style: TextStyle(color: theme.inactive)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  // --- CHANGE #1: Use SlidePageRoute for editing ---
-                  Navigator.of(context, rootNavigator: true).push(
-                    SlidePageRoute(
-                      page: CreateCustomItemPage(productToEdit: item),
-                      direction: SlideDirection.rightToLeft,
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: theme.accent),
-                title: Text(l10n.delete, style: TextStyle(color: theme.accent)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showDeleteConfirmation(context, ref, item);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAddToListSheet(
-      BuildContext context, WidgetRef ref, Product product) {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => ManageShoppingListsPage(
-        product: product,
-        onConfirm: (selectedListName) {
-          NotificationManager.show(context, l10n.itemAddedToList(selectedListName));
-          Navigator.pop(ctx);
-        },
+    // Use Navigator.push with SlidePageRoute and await the string result.
+    final selectedListName = await Navigator.of(context, rootNavigator: true)
+        .push<String>(
+      SlidePageRoute(
+        page: ManageShoppingListsPage(product: product),
+        direction: SlideDirection.rightToLeft,
       ),
     );
+
+    // After the ManageShoppingListsPage is popped, check if it returned a list name.
+    // The context.mounted check is a good safety measure after an async operation.
+    if (selectedListName != null && context.mounted) {
+      NotificationManager.show(
+          context, l10n.itemAddedToList(product.name, selectedListName));
+    }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Unchanged until the ListTile onTap
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final customItemsAsync = ref.watch(customItemsProvider);
@@ -148,10 +121,10 @@ class ManageCustomItemsPage extends ConsumerWidget {
           icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        // --- CHANGE: Updated title style to match the other page ---
         title: Text(
           l10n.manageCustomItemsTitle,
-          style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+              color: theme.secondary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
       body: customItemsAsync.when(
@@ -182,7 +155,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final item = items[index];
               return Card(
-                // --- CHANGE: Updated color to match the other page's inactive state ---
                 color: theme.primary,
                 margin:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -191,7 +163,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
                 child: ListTile(
                   title: Text(
                     item.name,
-                    // --- CHANGE: Updated text color for consistency ---
                     style: TextStyle(
                         color: theme.inactive, fontWeight: FontWeight.bold),
                   ),
@@ -201,12 +172,48 @@ class ManageCustomItemsPage extends ConsumerWidget {
                         : l10n.customItem,
                     style: TextStyle(color: theme.inactive.withOpacity(0.7)),
                   ),
-                  onTap: () => _showAddToListSheet(context, ref, item),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    color: theme.inactive,
+                  // --- THIS IS THE KEY CHANGE ---
+                  onTap: () => _navigateToAddToListPage(context, ref, item),
+                  trailing: PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: theme.inactive),
                     tooltip: l10n.moreOptions,
-                    onPressed: () => _showMoreActions(context, ref, item),
+                    color: theme.background,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        Navigator.of(context, rootNavigator: true).push(
+                          SlidePageRoute(
+                            page: CreateCustomItemPage(productToEdit: item),
+                            direction: SlideDirection.rightToLeft,
+                          ),
+                        );
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmation(context, ref, item);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                    <PopupMenuEntry<String>>[
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: ListTile(
+                          leading:
+                          Icon(Icons.edit_outlined, color: theme.inactive),
+                          title: Text(l10n.editCustomItem,
+                              style: TextStyle(color: theme.inactive)),
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: ListTile(
+                          leading:
+                          Icon(Icons.delete_outline, color: theme.accent),
+                          title: Text(l10n.delete,
+                              style: TextStyle(color: theme.accent)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -226,8 +233,8 @@ class ManageCustomItemsPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               decoration: BoxDecoration(
                 color: theme.primary,
-                border:
-                Border(top: BorderSide(color: theme.background, width: 1.0)),
+                border: Border(
+                    top: BorderSide(color: theme.background, width: 1.0)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -244,7 +251,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
                   ElevatedButton.icon(
                     onPressed: isLimitReached
                         ? null
-                    // --- CHANGE #2: Use SlidePageRoute for creating ---
                         : () => Navigator.of(context, rootNavigator: true)
                         .push(SlidePageRoute(
                       page: const CreateCustomItemPage(),

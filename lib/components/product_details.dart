@@ -35,7 +35,7 @@ class ProductDetails extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(context, WidgetRef ref) {
     return SafeArea(
       child: GestureDetector(
         onDoubleTap: () => _toggleItemInList(context, ref),
@@ -53,7 +53,6 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // ... (code for _toggleItemInList, _launchURL, etc. is unchanged)
   void _toggleItemInList(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final activeListId = ref.read(activeShoppingListProvider);
@@ -93,10 +92,12 @@ class ProductDetails extends ConsumerWidget {
     final isItemInList = shoppingListProducts.any((item) => item.id == product.id);
 
     if (isItemInList) {
+      // --- FIX: Method call no longer needs context ---
       notifier.removeItemFromList(hiveProduct);
       NotificationManager.show(context, l10n.removedFrom(activeListName));
     } else {
-      notifier.addToList(hiveProduct, context);
+      // --- FIX: Method call no longer needs context ---
+      notifier.addToList(hiveProduct);
       NotificationManager.show(context, l10n.addedTo(activeListName));
     }
   }

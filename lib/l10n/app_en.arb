@@ -548,13 +548,31 @@
         "description": "A common button label for saving changes."
       },
       "createFirstListPrompt": "Create your first shopping list to get started.",
-      "@createFirstListPrompt": {
-        "description": "Instructional text prompting a new user to create their first shopping list."
-      },
-      "createListButton": "Create a List",
-      "@createListButton": {
-        "description": "Button text for creating a new shopping list from an empty state."
-      }
+            "@createFirstListPrompt": {
+              "description": "Instructional text prompting a new user to create their first shopping list."
+            },
+            "createListButton": "Create a List",
+            "@createListButton": {
+              "description": "Button text for creating a new shopping list from an empty state."
+            },
+            "itemAddedToList": "'{itemName}' added to {listName}.",
+                  "@itemAddedToList": {
+                    "description": "Notification text shown when a custom item is successfully added to a specific shopping list.",
+                    "placeholders": {
+                      "itemName": {
+                        "type": "String",
+                        "example": "Bread"
+                      },
+                      "listName": {
+                        "type": "String",
+                        "example": "Groceries"
+                      }
+                    }
+                  },
+                  "yourList": "your list",
+                  "@yourList": {
+                    "description": "Fallback text for a shopping list's name when it cannot be found."
+                  }
 
 
 }

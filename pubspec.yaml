@@ -51,6 +51,7 @@ dependencies:
   grouped_list: ^6.0.0
   google_mobile_ads: ^5.2.0
   visibility_detector: ^0.4.0+2
+  equatable: ^2.0.5
 
 dev_dependencies:
   flutter_test:

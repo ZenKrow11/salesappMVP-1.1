@@ -1,15 +1,19 @@
 // lib/models/product.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:equatable/equatable.dart'; // 1. Import Equatable
 import 'package:hive/hive.dart';
 import 'plain_product.dart';
 import 'categorizable.dart';
 
 part 'product.g.dart';
 
-/// Represents a product item, designed to be stored in both Firestore and local Hive cache.
+/// Represents a product item, designed for use with Firestore, Hive, and Riverpod.
+///
+/// Implements [Equatable] for proper object comparison, which is essential for
+/// state management to detect when the UI needs to be updated.
 @HiveType(typeId: 0)
-class Product extends HiveObject implements Categorizable {
+class Product extends HiveObject with EquatableMixin implements Categorizable {
   @HiveField(0)
   final String id;
   @HiveField(1)
@@ -23,6 +27,7 @@ class Product extends HiveObject implements Categorizable {
   @HiveField(5)
   final int discountPercentage;
   @HiveField(6)
+  @override // 2. Add override for Categorizable interface
   final String category;
   @HiveField(7)
   final String subcategory;
@@ -43,6 +48,11 @@ class Product extends HiveObject implements Categorizable {
   @HiveField(15)
   final bool isOnSale;
 
+  // 3. Add the new quantity field
+  @HiveField(16)
+  final int quantity;
+
+  // 4. Use a const constructor with required named parameters for clarity and immutability.
   Product({
     required this.id,
     required this.store,
@@ -60,10 +70,11 @@ class Product extends HiveObject implements Categorizable {
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,
+    this.quantity = 1, // Default quantity is 1
   });
 
+  /// Factory constructor to create a Product from a Firestore document.
   factory Product.fromFirestore(String id, Map<String, dynamic> data) {
-    // UPDATED: Now reads from 'special_condition' which matches your Python script output
     String? specialConditionValue = _parseString(data['special_condition']);
     if (specialConditionValue.isEmpty || specialConditionValue.toLowerCase() == 'nan') {
       specialConditionValue = null;
@@ -83,12 +94,15 @@ class Product extends HiveObject implements Categorizable {
       nameTokens: _parseStringList(data['name_tokens']),
       dealStart: _parseDate(data['dealStart']),
       dealEnd: _parseDate(data['dealEnd']),
-      specialCondition: specialConditionValue, // <-- UPDATED to use the correct variable
+      specialCondition: specialConditionValue,
       isCustom: _parseBool(data['isCustom'], defaultValue: false),
       isOnSale: _parseBool(data['isOnSale'], defaultValue: true),
+      // Read quantity from Firestore, defaulting to 1 if not present.
+      quantity: _parseInt(data['quantity'], defaultValue: 1),
     );
   }
 
+  /// Converts the Product instance to a JSON map for Firestore.
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
@@ -103,14 +117,58 @@ class Product extends HiveObject implements Categorizable {
     'name_tokens': nameTokens,
     'dealStart': dealStart != null ? Timestamp.fromDate(dealStart!) : null,
     'dealEnd': dealEnd != null ? Timestamp.fromDate(dealEnd!) : null,
-    'special_condition': specialCondition, // <-- RENAMED to match database schema
+    'special_condition': specialCondition,
     'isCustom': isCustom,
     'isOnSale': isOnSale,
+    'quantity': quantity, // Add quantity to the JSON data
   };
 
+  /// Computed property for discount rate.
   double get discountRate {
     if (normalPrice <= 0 || normalPrice <= currentPrice) return 0.0;
     return (normalPrice - currentPrice) / normalPrice;
+  }
+
+  /// 5. Add a `copyWith` method for immutable state updates.
+  /// This is essential for Riverpod notifiers.
+  Product copyWith({
+    String? id,
+    String? store,
+    String? name,
+    double? currentPrice,
+    double? normalPrice,
+    int? discountPercentage,
+    String? category,
+    String? subcategory,
+    String? url,
+    String? imageUrl,
+    List<String>? nameTokens,
+    DateTime? dealStart,
+    String? specialCondition,
+    DateTime? dealEnd,
+    bool? isCustom,
+    bool? isOnSale,
+    int? quantity,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      store: store ?? this.store,
+      name: name ?? this.name,
+      currentPrice: currentPrice ?? this.currentPrice,
+      normalPrice: normalPrice ?? this.normalPrice,
+      discountPercentage: discountPercentage ?? this.discountPercentage,
+      category: category ?? this.category,
+      subcategory: subcategory ?? this.subcategory,
+      url: url ?? this.url,
+      imageUrl: imageUrl ?? this.imageUrl,
+      nameTokens: nameTokens ?? this.nameTokens,
+      dealStart: dealStart ?? this.dealStart,
+      specialCondition: specialCondition ?? this.specialCondition,
+      dealEnd: dealEnd ?? this.dealEnd,
+      isCustom: isCustom ?? this.isCustom,
+      isOnSale: isOnSale ?? this.isOnSale,
+      quantity: quantity ?? this.quantity,
+    );
   }
 
   /// Convert Hive-backed Product to a plain, sendable object for isolates.
@@ -128,15 +186,39 @@ class Product extends HiveObject implements Categorizable {
       imageUrl: imageUrl,
       nameTokens: List<String>.from(nameTokens),
       dealStart: dealStart,
-      specialCondition: specialCondition, // <-- RENAMED
+      specialCondition: specialCondition,
       dealEnd: dealEnd,
       isCustom: isCustom,
       isOnSale: isOnSale,
+      // 6. Pass quantity to the plain object
+      quantity: quantity,
     );
   }
+
+  // 7. Implement Equatable props for value comparison.
+  @override
+  List<Object?> get props => [
+    id,
+    store,
+    name,
+    currentPrice,
+    normalPrice,
+    discountPercentage,
+    category,
+    subcategory,
+    url,
+    imageUrl,
+    nameTokens,
+    dealStart,
+    specialCondition,
+    dealEnd,
+    isCustom,
+    isOnSale,
+    quantity,
+  ];
 }
 
-// Helper Functions (unchanged)
+// Helper Functions (unchanged, they are robust and fine as top-level functions)
 DateTime? _parseDate(dynamic data) {
   if (data is Timestamp) return data.toDate();
   return null;

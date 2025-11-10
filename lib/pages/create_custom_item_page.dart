@@ -94,10 +94,12 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         nameTokens: [],
       );
 
+      // lib/pages/create_custom_item_page.dart -> _submitForm method
+
       if (_isEditing) {
         await shoppingListNotifier.updateCustomItem(productToSave);
       } else {
-        await shoppingListNotifier.createAndAddCustomItem(productToSave, context);
+        await shoppingListNotifier.createAndAddCustomItem(productToSave); // <--- CORRECT
       }
 
       if (mounted) {

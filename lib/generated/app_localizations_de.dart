@@ -377,8 +377,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get initializing => 'Initialisiere...';
 
   @override
-  String itemAddedToList(String itemName) {
-    return '\"$itemName\" added to list.';
+  String itemAddedToList(String itemName, String listName) {
+    return '\'$itemName\' added to $listName.';
   }
 
   @override
@@ -845,4 +845,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get createListButton => 'Create a List';
+
+  @override
+  String get yourList => 'your list';
 }

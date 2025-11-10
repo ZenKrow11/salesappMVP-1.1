@@ -1,5 +1,4 @@
-// C:\Users\patri\AndroidStudioProjects\salesappMVP-1.2\lib\components\product_tile.dart
-// This file is correct as provided in the previous step, with the AspectRatio fix.
+// lib/components/product_tile.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +15,9 @@ import 'package:sales_app_mvp/pages/manage_shopping_list.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:sales_app_mvp/models/categorizable.dart';
+import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
+import 'package:sales_app_mvp/models/shopping_list_info.dart';
+
 
 class ProductTile extends ConsumerWidget {
   final PlainProduct product;
@@ -26,6 +28,26 @@ class ProductTile extends ConsumerWidget {
     required this.product,
     required this.onTap,
   });
+
+  void _navigateToAddToListPage(
+      BuildContext context, WidgetRef ref, Product product) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final selectedListName =
+    await Navigator.of(context, rootNavigator: true).push<String>(
+      SlidePageRoute(
+        page: ManageShoppingListsPage(product: product),
+        direction: SlideDirection.rightToLeft,
+      ),
+    );
+
+    if (selectedListName != null && context.mounted) {
+      NotificationManager.show(
+        context,
+        l10n.itemAddedToList(product.name, selectedListName),
+      );
+    }
+  }
 
   Color _darken(Color color, [double amount = 0.1]) {
     assert(amount >= 0 && amount <= 1);
@@ -38,67 +60,72 @@ class ProductTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final categorizableProduct = product as Categorizable;
-    final categoryStyle = CategoryService.getStyleForCategory(categorizableProduct.category);
-    final Color backgroundTint = _darken(categoryStyle.color, 0.4).withOpacity(0.15);
+    final categoryStyle =
+    CategoryService.getStyleForCategory(categorizableProduct.category);
+    final Color backgroundTint =
+    _darken(categoryStyle.color, 0.4).withOpacity(0.15);
     final theme = ref.watch(themeProvider);
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
 
     Product createHiveProduct() {
       return Product(
-          id: product.id, store: product.store, name: product.name,
-          currentPrice: product.currentPrice, normalPrice: product.normalPrice,
+          id: product.id,
+          store: product.store,
+          name: product.name,
+          currentPrice: product.currentPrice,
+          normalPrice: product.normalPrice,
           discountPercentage: product.discountPercentage,
-          category: product.category.isEmpty ? 'categoryUncategorized' : product.category,
-          subcategory: product.subcategory, url: product.url, imageUrl: product.imageUrl,
-          nameTokens: product.nameTokens, dealStart: product.dealStart,
+          category: product.category.isEmpty
+              ? 'categoryUncategorized'
+              : product.category,
+          subcategory: product.subcategory,
+          url: product.url,
+          imageUrl: product.imageUrl,
+          nameTokens: product.nameTokens,
+          dealStart: product.dealStart,
           specialCondition: product.specialCondition,
           dealEnd: product.dealEnd,
-          isCustom: product.isCustom, isOnSale: product.isOnSale
-      );
+          isCustom: product.isCustom,
+          isOnSale: product.isOnSale);
     }
 
     return GestureDetector(
       onTap: onTap,
       onDoubleTap: () {
         final notifier = ref.read(shoppingListsProvider.notifier);
-        // theme is no longer needed here
         final hiveProduct = createHiveProduct();
 
         if (isInShoppingList) {
+          // --- FIX: Method call no longer needs context ---
           notifier.removeItemFromList(hiveProduct);
-          // 2. UPDATE THIS LINE
           NotificationManager.show(context, l10n.removedFromList);
-        } else {
-          notifier.addToList(hiveProduct, context);
-          // 3. UPDATE THIS LINE
-          NotificationManager.show(context, l10n.addedToActiveList);
+          return;
         }
+
+        final activeListId = ref.read(activeShoppingListProvider);
+        if (activeListId == null) {
+          NotificationManager.show(context, "Please create a shopping list first.");
+          return;
+        }
+
+        // --- FIX: Method call no longer needs context ---
+        notifier.addToList(hiveProduct);
+
+        final allLists = ref.read(allShoppingListsProvider).valueOrNull ?? [];
+        final activeList = allLists.firstWhere(
+              (list) => list.id == activeListId,
+          orElse: () => ShoppingListInfo(id: '', name: l10n.yourList, itemCount: 0),
+        );
+        NotificationManager.show(
+            context, l10n.itemAddedToList(hiveProduct.name, activeList.name));
       },
       onLongPress: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: theme.background,
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (ctx) {
-            final hiveProduct = createHiveProduct();
-            return ManageShoppingListsPage(
-              product: hiveProduct,
-              onConfirm: (selectedListId) {
-                ref
-                    .read(shoppingListsProvider.notifier)
-                    .addToSpecificList(hiveProduct, selectedListId, context);
-                Navigator.of(ctx).pop();
-                // 4. UPDATE THIS LINE
-                NotificationManager.show(context, l10n.addedTo(selectedListId));
-              },
-            );
-          },
-        );
+        final hiveProduct = createHiveProduct();
+        _navigateToAddToListPage(context, ref, hiveProduct);
       },
       child: Container(
+        // ... rest of the widget is unchanged
         decoration: BoxDecoration(
           color: backgroundTint,
           borderRadius: BorderRadius.circular(12.0),
@@ -124,17 +151,15 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, AppLocalizations l10n, bool isInShoppingList) {
+  Widget _buildContent(BuildContext context, WidgetRef ref,
+      AppLocalizations l10n, bool isInShoppingList) {
+    // ... This method is unchanged
     final theme = ref.watch(themeProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeaderRow(context, ref),
         const SizedBox(height: 6),
-        // --- THIS IS THE FIX ---
-        // Now that the tile has a fixed height from the parent grid,
-        // Expanded is the correct widget to use. It will fill the available
-        // space between the header and the price, preventing any overflow.
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -210,6 +235,7 @@ class ProductTile extends ConsumerWidget {
   }
 
   Widget _buildHeaderRow(BuildContext context, WidgetRef ref) {
+    // ... This method is unchanged
     final theme = ref.watch(themeProvider);
     return SizedBox(
       height: 38.0,
@@ -239,7 +265,9 @@ class ProductTile extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+  Widget _buildPriceRow(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    // ... This method is unchanged
     final theme = ref.watch(themeProvider);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,

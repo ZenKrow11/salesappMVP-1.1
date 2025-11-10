@@ -12,14 +12,12 @@ import 'package:sales_app_mvp/components/upgrade_dialog.dart';
 
 class ManageShoppingListsPage extends ConsumerStatefulWidget {
   final Product? product;
-  final void Function(String selectedListName)? onConfirm;
 
+  // --- MODIFIED: The onConfirm callback is no longer needed for this flow ---
   const ManageShoppingListsPage({
     super.key,
     this.product,
-    this.onConfirm,
-  }) : assert(product == null || onConfirm != null,
-  'onConfirm must be provided when a product is given');
+  });
 
   @override
   ConsumerState<ManageShoppingListsPage> createState() =>
@@ -30,7 +28,8 @@ class _ManageShoppingListsPageState
     extends ConsumerState<ManageShoppingListsPage> {
   final TextEditingController _listNameController = TextEditingController();
 
-  bool get isSelectActiveMode => widget.product == null;
+  // This logic is now simpler: if a product is passed, we're in "selection mode".
+  bool get isSelectMode => widget.product != null;
 
   @override
   void dispose() {
@@ -38,7 +37,6 @@ class _ManageShoppingListsPageState
     super.dispose();
   }
 
-  // ... (All methods like _createNewList, _showCreateListSheet, etc. are unchanged)
   void _createNewList(String listName) {
     if (listName.trim().isEmpty) return;
     final trimmedName = listName.trim();
@@ -73,15 +71,34 @@ class _ManageShoppingListsPageState
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: theme.background,
-          title: Text(l10n.deleteListConfirmationTitle(listName), style: TextStyle(color: theme.secondary)),
-          content: Text(l10n.deleteListConfirmationBody, style: TextStyle(color: theme.inactive)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(l10n.deleteListConfirmationTitle(listName),
+              style: TextStyle(
+                  color: theme.secondary, fontWeight: FontWeight.bold)),
+          content: Text(l10n.deleteListConfirmationBody,
+              style: TextStyle(color: theme.inactive)),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: <Widget>[
-            TextButton(
-              child: Text(l10n.cancel, style: TextStyle(color: theme.inactive)),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.inactive,
+                side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: theme.accent),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: Text(l10n.delete),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
@@ -94,10 +111,15 @@ class _ManageShoppingListsPageState
     );
   }
 
-  void _showCreateListSheet() {
+  void _showListNameInputSheet({
+    required String title,
+    required String buttonText,
+    required String hintText,
+    required void Function(String) onSubmit,
+    String initialValue = '',
+  }) {
     final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
-    _listNameController.clear();
+    _listNameController.text = initialValue;
 
     showModalBottomSheet(
       context: context,
@@ -107,29 +129,39 @@ class _ManageShoppingListsPageState
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        // --- THIS IS THE FIX ---
-        // Wrap the content in a SafeArea to respect the system navigation bar.
         return SafeArea(
           child: Padding(
-            // The bottom padding now correctly combines the keyboard inset AND the safe area.
-            padding: EdgeInsets.fromLTRB(20, 20, 20,
-                MediaQuery.of(ctx).viewInsets.bottom + 20),
+            padding: EdgeInsets.fromLTRB(
+                20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(l10n.createNew, style: TextStyle(color: theme.secondary, fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: TextStyle(
+                      color: theme.secondary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: _listNameController,
                   autofocus: true,
                   style: TextStyle(color: theme.inactive),
-                  onSubmitted: _createNewList,
+                  onSubmitted: onSubmit,
                   decoration: InputDecoration(
-                    labelText: l10n.enterNewListName,
-                    labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
+                    labelText: hintText,
+                    labelStyle:
+                    TextStyle(color: theme.inactive.withOpacity(0.7)),
                     filled: true,
                     fillColor: theme.primary,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.secondary, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -137,8 +169,14 @@ class _ManageShoppingListsPageState
                   style: FilledButton.styleFrom(
                       backgroundColor: theme.secondary,
                       minimumSize: const Size(double.infinity, 50)),
-                  onPressed: () => _createNewList(_listNameController.text),
-                  child: Text(l10n.create, style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold)),
+                  onPressed: () => onSubmit(_listNameController.text),
+                  child: Text(
+                    buttonText,
+                    style: TextStyle(
+                        color: theme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  ),
                 )
               ],
             ),
@@ -148,89 +186,9 @@ class _ManageShoppingListsPageState
     );
   }
 
-  void _showEditListDialog(ShoppingListInfo list) {
-    final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
-    _listNameController.text = list.name;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: theme.background,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(l10n.renameListTitle, style: TextStyle(color: theme.secondary)),
-          content: TextField(
-            controller: _listNameController,
-            autofocus: true,
-            style: TextStyle(color: theme.inactive),
-            onSubmitted: (value) => _renameList(list.id, value),
-            decoration: InputDecoration(
-              labelText: l10n.listNameLabel,
-              labelStyle: TextStyle(color: theme.inactive),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.secondary),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancel, style: TextStyle(color: theme.inactive)),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: theme.secondary),
-              onPressed: () => _renameList(list.id, _listNameController.text),
-              child: Text(l10n.save, style: TextStyle(color: theme.primary)),
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void _showListActionsSheet(ShoppingListInfo list) {
-    final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.edit_outlined, color: theme.inactive),
-                title: Text(l10n.renameListTitle, style: TextStyle(color: theme.inactive)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showEditListDialog(list);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: theme.accent),
-                title: Text(l10n.delete, style: TextStyle(color: theme.accent)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showDeleteConfirmationDialog(context, list.id, list.name);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
+    // Unchanged
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final allListsAsync = ref.watch(allShoppingListsProvider);
@@ -294,7 +252,12 @@ class _ManageShoppingListsPageState
                     ElevatedButton.icon(
                       onPressed: () {
                         if (canCreateMore) {
-                          _showCreateListSheet();
+                          _showListNameInputSheet(
+                            title: l10n.createNew,
+                            buttonText: l10n.create,
+                            hintText: l10n.enterNewListName,
+                            onSubmit: _createNewList,
+                          );
                         } else if (!isPremium) {
                           showUpgradeDialog(context, ref);
                         }
@@ -321,34 +284,32 @@ class _ManageShoppingListsPageState
     );
   }
 
-  // --- THIS IS THE UPDATED WIDGET ---
   Widget _buildEmptyState(AppLocalizations l10n, AppThemeData theme) {
+    // Unchanged
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Text(
-          // For a real app, you would move this string to your AppLocalizations file.
           'Create and manage your shopping lists here.\nTap the "+ Create New" button below to get started.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: theme.inactive.withOpacity(0.8),
             fontSize: 17,
-            height: 1.5, // Improves readability for multi-line text
+            height: 1.5,
           ),
         ),
       ),
     );
   }
 
-  // ... (_buildSelectList is unchanged)
   Widget _buildSelectList(List<ShoppingListInfo> lists) {
+    // Unchanged until ListTile onTap
     final theme = ref.watch(themeProvider);
+    final l10n = AppLocalizations.of(context)!;
     final activeListId = ref.watch(activeShoppingListProvider);
-
-    // --- 1. GET USER PROFILE TO DETERMINE THE ITEM LIMIT ---
     final userProfile = ref.watch(userProfileProvider).value;
     final isPremium = userProfile?.isPremium ?? false;
-    final itemLimit = isPremium ? 60 : 30; // The same limit from your summary bar
+    final itemLimit = isPremium ? 60 : 30;
 
     lists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
@@ -357,7 +318,7 @@ class _ManageShoppingListsPageState
       itemCount: lists.length,
       itemBuilder: (context, index) {
         final list = lists[index];
-        final isCurrentlyActive = isSelectActiveMode && list.id == activeListId;
+        final isCurrentlyActive = !isSelectMode && list.id == activeListId;
 
         final tileColor = isCurrentlyActive ? theme.secondary : theme.primary;
         final textColor = isCurrentlyActive ? theme.primary : theme.inactive;
@@ -373,7 +334,6 @@ class _ManageShoppingListsPageState
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
             contentPadding: const EdgeInsets.only(left: 20.0),
-            // --- 2. UPDATE THE TITLE TO SHOW THE COUNT IN THE NEW FORMAT ---
             title: Row(
               children: [
                 Expanded(
@@ -390,7 +350,7 @@ class _ManageShoppingListsPageState
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '[ ${list.itemCount} / $itemLimit ]', // Display as [current / limit]
+                  '[ ${list.itemCount} / $itemLimit ]',
                   style: TextStyle(
                     color: countColor,
                     fontWeight: FontWeight.w500,
@@ -399,21 +359,61 @@ class _ManageShoppingListsPageState
                 ),
               ],
             ),
+            // --- THIS IS THE KEY CHANGE ---
             onTap: () {
-              if (isSelectActiveMode) {
+              if (isSelectMode) {
+                // This is the "add to list" mode.
+                // --- FIX: Method call no longer needs context ---
+                ref.read(shoppingListsProvider.notifier).addToSpecificList(
+                    widget.product!, list.id);
+
+                // Pop the page and return the selected list's name as a result.
+                Navigator.pop(context, list.name);
+              } else {
+                // This is the "manage lists" mode.
                 ref
                     .read(activeShoppingListProvider.notifier)
                     .setActiveList(list.id);
                 Navigator.pop(context);
-              } else {
-                ref.read(shoppingListsProvider.notifier).addToSpecificList(
-                    widget.product!, list.id, context);
-                widget.onConfirm!(list.name);
               }
             },
-            trailing: IconButton(
+            trailing: PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: iconColor),
-              onPressed: () => _showListActionsSheet(list),
+              color: theme.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (value) {
+                if (value == 'rename') {
+                  _showListNameInputSheet(
+                    title: l10n.renameListTitle,
+                    buttonText: l10n.save,
+                    hintText: l10n.listNameLabel,
+                    initialValue: list.name,
+                    onSubmit: (newName) => _renameList(list.id, newName),
+                  );
+                } else if (value == 'delete') {
+                  _showDeleteConfirmationDialog(context, list.id, list.name);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'rename',
+                  child: ListTile(
+                    leading: Icon(Icons.edit_outlined, color: theme.inactive),
+                    title: Text(l10n.renameListTitle,
+                        style: TextStyle(color: theme.inactive)),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, color: theme.accent),
+                    title:
+                    Text(l10n.delete, style: TextStyle(color: theme.accent)),
+                  ),
+                ),
+              ],
             ),
           ),
         );
