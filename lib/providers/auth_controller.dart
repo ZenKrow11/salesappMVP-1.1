@@ -10,7 +10,6 @@ import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/settings_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 final authControllerProvider =
 StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
   return AuthController(ref);
@@ -19,7 +18,6 @@ StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
 class AuthController extends StateNotifier<AsyncValue<User?>> {
   final Ref _ref;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   AuthController(this._ref) : super(const AsyncValue.loading()) {
     _auth.authStateChanges().listen((user) {
@@ -56,9 +54,11 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   Future<void> signInWithGoogle() async {
     state = const AsyncValue.loading();
     try {
-      final googleUser = await _googleSignIn.signIn();
+      // This implementation is correct for your dependency version.
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+      final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        state = AsyncValue.data(_auth.currentUser); // User cancelled the flow
+        state = AsyncValue.data(_auth.currentUser); // Cancelled by user
         return;
       }
 
@@ -71,7 +71,11 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       state = AsyncValue.error(
-          e.message ?? 'Google Sign-In failed', StackTrace.current);
+        e.message ?? 'Google Sign-In failed',
+        StackTrace.current,
+      );
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
     }
   }
 
@@ -103,7 +107,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
           email: user.email!, password: currentPassword);
       await user.reauthenticateWithCredential(cred);
       await user.updatePassword(newPassword);
-      state = AsyncValue.data(user); // Success, return to a stable state
+      state = AsyncValue.data(user);
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'An error occurred.';
       if (e.code == 'wrong-password') {
@@ -117,7 +121,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-  /// --- Delete Account with Re-authentication ---
+  /// --- Delete Account with Re-authentication (REFACTORED) ---
   Future<void> deleteAccount(String uid) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -130,10 +134,9 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
 
       print('[AuthController] Starting full cascade delete for $uid ...');
 
-      // --- Delete known subcollections ---
       final knownSubcollections = [
         'favorites',
-        'shopping_lists', // NOTE: 'shoppingLists' is the actual collection name
+        'shopping_lists',
         'settings',
         'metadata',
         'customItems',
@@ -156,7 +159,9 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       print('[AuthController] All Firestore user data deleted.');
       await user.delete();
       print('[AuthController] Firebase Auth account deleted.');
-      await _googleSignIn.signOut();
+
+      // CORRECTED: Create a new instance before calling signOut.
+      await GoogleSignIn().signOut();
       await _auth.signOut();
 
       final metadataBox = _ref.read(metadataBoxProvider);
@@ -169,13 +174,11 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(settingsProvider);
       _ref.invalidate(activeShoppingListProvider);
 
-      // THIS LINE WAS REMOVED AS IT'S NO LONGER NEEDED AND CAUSES AN ERROR
-      // await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
-
       print('[AuthController] Local data cleared and logout enforced.');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        throw Exception('Reauthentication required before deleting this account.');
+        throw Exception(
+            'Reauthentication required before deleting this account.');
       } else {
         rethrow;
       }
@@ -185,29 +188,25 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-
-
-  /// --- Sign Out ---
+  /// --- Sign Out (REFACTORED) ---
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      // CORRECTED: Create a new instance before calling signOut.
+      await GoogleSignIn().signOut();
       await _auth.signOut();
 
-      // Clear local storage and reset providers
       final metadataBox = _ref.read(metadataBoxProvider);
       await metadataBox.clear();
-      _ref.read(appDataProvider.notifier).reset();
+
       _ref.invalidate(appDataProvider);
       _ref.invalidate(userProfileProvider);
       _ref.invalidate(userProfileNotifierProvider);
       _ref.invalidate(listedProductIdsProvider);
       _ref.invalidate(settingsProvider);
+      _ref.invalidate(activeShoppingListProvider);
 
-      // THIS LINE WAS REMOVED AS IT'S NO LONGER NEEDED AND CAUSES AN ERROR
-      // await _ref.read(activeShoppingListProvider.notifier).setActiveList(kDefaultListName);
-
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
     }
   }
 }
