@@ -13,6 +13,10 @@ import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'dart:math' as math;
 import 'package:sales_app_mvp/services/notification_manager.dart';
 
+// --- ADDED ---
+import 'package:sales_app_mvp/providers/selection_state_provider.dart';
+import 'package:sales_app_mvp/widgets/app_theme.dart';
+
 class ShoppingListItemTile extends ConsumerWidget {
   final Product product;
   final List<Product> allProductsInList;
@@ -27,33 +31,62 @@ class ShoppingListItemTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // --- MODIFIED: Watch selection state and determine if this tile is selected ---
+    final selectionState = ref.watch(selectionStateProvider);
+    final isSelected = selectionState.selectedItemIds.contains(product.id);
+    final theme = ref.watch(themeProvider);
+
     Widget tile;
     if (isGridView) {
       tile = _buildGridTile(context, ref);
     } else {
-      tile = GestureDetector(
-        onTap: () => _onTap(context),
-        onDoubleTap: () => _onDoubleTap(context, ref),
-        child: _buildListTile(context, ref),
-      );
+      tile = _buildListTile(context, ref);
     }
+
+    // --- MODIFIED: Add a visual indicator for selection ---
+    final tileWithSelection = Stack(
+      children: [
+        tile,
+        if (isSelected)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
+                color: theme.secondary.withOpacity(0.4),
+              ),
+              child: Icon(
+                Icons.check_circle,
+                color: Colors.white.withOpacity(0.9),
+                size: 36,
+              ),
+            ),
+          ),
+      ],
+    );
 
     if (!product.isOnSale) {
       return Opacity(
         opacity: 0.6,
-        child: tile,
+        child: tileWithSelection,
       );
     }
-    return tile;
+    return tileWithSelection;
   }
 
-  void _onTap(BuildContext context) {
-    final initialIndex =
-    allProductsInList.indexWhere((p) => p.id == product.id);
-    if (initialIndex != -1) {
-      final plainProducts =
-      allProductsInList.map((p) => p.toPlainObject()).toList();
+  // --- MODIFIED: Handle tap based on whether selection mode is active ---
+  void _onTap(BuildContext context, WidgetRef ref) {
+    final selectionNotifier = ref.read(selectionStateProvider.notifier);
+    final isSelectionModeActive = ref.read(selectionStateProvider).isSelectionModeActive;
 
+    if (isSelectionModeActive) {
+      selectionNotifier.toggleItem(product.id);
+      return;
+    }
+
+    // Original tap action
+    final initialIndex = allProductsInList.indexWhere((p) => p.id == product.id);
+    if (initialIndex != -1) {
+      final plainProducts = allProductsInList.map((p) => p.toPlainObject()).toList();
       Navigator.of(context).push(SlidePageRoute(
         page: ProductSwiperScreen(
           products: plainProducts,
@@ -64,7 +97,15 @@ class ShoppingListItemTile extends ConsumerWidget {
     }
   }
 
+  // --- ADDED: Handle long press to enable selection mode ---
+  void _onLongPress(WidgetRef ref) {
+    ref.read(selectionStateProvider.notifier).enableSelectionMode(product.id);
+  }
+
   void _onDoubleTap(BuildContext context, WidgetRef ref) {
+    // Prevent double tap from interfering with selection mode
+    if (ref.read(selectionStateProvider).isSelectionModeActive) return;
+
     final l10n = AppLocalizations.of(context)!;
     ref.read(shoppingListsProvider.notifier).removeItemFromList(product);
     NotificationManager.show(context, l10n.removedItem(product.name));
@@ -105,33 +146,29 @@ class ShoppingListItemTile extends ConsumerWidget {
       fontSize: 14,
       height: 1.3,
     );
-    final double twoLineTextHeight =
-        nameTextStyle.fontSize! * nameTextStyle.height! * 2;
+    final double twoLineTextHeight = nameTextStyle.fontSize! * nameTextStyle.height! * 2;
     final l10n = AppLocalizations.of(context)!;
-
-    // --- NEW: Check if the imageUrl is valid ---
     final imageUrl = product.imageUrl;
     final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return Stack(
       children: [
-        Card(
-          color: theme.primary,
-          elevation: 2,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          clipBehavior: Clip.antiAlias,
-          child: GestureDetector(
-            onTap: () => _onTap(context),
-            onDoubleTap: () => _onDoubleTap(context, ref),
+        // --- MODIFIED: The GestureDetector now wraps the entire tile content ---
+        GestureDetector(
+          onTap: () => _onTap(context, ref),
+          onLongPress: () => _onLongPress(ref),
+          onDoubleTap: () => _onDoubleTap(context, ref),
+          child: Card(
+            color: theme.primary,
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: Container(
                     color: Colors.white,
-                    // --- THIS IS THE FIX ---
-                    // Conditionally show the image or a placeholder
                     child: hasValidImage
                         ? ImageWithAspectRatio(
                       imageUrl: imageUrl,
@@ -196,75 +233,79 @@ class ShoppingListItemTile extends ConsumerWidget {
     final theme = ref.watch(themeProvider);
     final priceString = product.currentPrice.toStringAsFixed(2);
     final l10n = AppLocalizations.of(context)!;
-
-    // --- NEW: Check if the imageUrl is valid ---
     final imageUrl = product.imageUrl;
     final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: Container(
-                    color: Colors.white,
-                    // --- THIS IS THE FIX ---
-                    // Conditionally show the image or a placeholder
-                    child: hasValidImage
-                        ? ImageWithAspectRatio(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      maxWidth: 60,
-                      maxHeight: 60,
-                    )
-                        : Center(
-                      child: Icon(
-                        Icons.shopping_basket_outlined,
-                        color: Colors.grey[300],
-                        size: 30,
+        // --- MODIFIED: The GestureDetector now wraps the entire tile content ---
+        GestureDetector(
+          onTap: () => _onTap(context, ref),
+          onLongPress: () => _onLongPress(ref),
+          onDoubleTap: () => _onDoubleTap(context, ref),
+          // Use a container to provide a larger tap target and a transparent background
+          child: Container(
+            color: Colors.transparent, // Ensures the gesture detector fills the space
+            padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Container(
+                      color: Colors.white,
+                      child: hasValidImage
+                          ? ImageWithAspectRatio(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        maxWidth: 60,
+                        maxHeight: 60,
+                      )
+                          : Center(
+                        child: Icon(
+                          Icons.shopping_basket_outlined,
+                          color: Colors.grey[300],
+                          size: 30,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  product.name,
-                  style: TextStyle(
-                    color: theme.inactive,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  StoreLogo(storeName: product.store, height: 22),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$priceString ${l10n.currencyFrancs}',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    product.name,
                     style: TextStyle(
-                      color: theme.secondary,
+                      color: theme.inactive,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    StoreLogo(storeName: product.store, height: 22),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$priceString ${l10n.currencyFrancs}',
+                      style: TextStyle(
+                        color: theme.secondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         if (!product.isOnSale) _buildExpiredBadge(l10n),

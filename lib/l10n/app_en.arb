@@ -572,7 +572,43 @@
                   "yourList": "your list",
                   "@yourList": {
                     "description": "Fallback text for a shopping list's name when it cannot be found."
-                  }
+                  },
+                   "itemsSelected": "{count} selected",
+                   "@itemsSelected": {
+                     "description": "Indicates how many items are selected in the app bar during multi-select mode.",
+                     "placeholders": {
+                       "count": {
+                         "type": "int",
+                         "example": "3"
+                       }
+                     }
+                   },
+                   "tooltipDeleteSelected": "Delete selected items",
+                   "@tooltipDeleteSelected": {
+                     "description": "Tooltip for the button to delete multiple selected items."
+                   },
+                   "confirmDeletionTitle": "Confirm Deletion",
+                   "@confirmDeletionTitle": {
+                     "description": "Title for the confirmation dialog before deleting items."
+                   },
+                   "confirmDeletionMessage": "Are you sure you want to delete {count} items?",
+                   "@confirmDeletionMessage": {
+                     "description": "Confirmation message asking the user to confirm the deletion of multiple items.",
+                     "placeholders": {
+                       "count": {
+                         "type": "int",
+                         "example": "3"
+                       }
+                     }
+                   },
+                   "cancel": "Cancel",
+                   "@cancel": {
+                     "description": "Generic text for a cancel button on a dialog."
+                   },
+                   "delete": "Delete",
+                   "@delete": {
+                     "description": "Generic text for a delete button on a dialog."
+                   }
 
 
 }

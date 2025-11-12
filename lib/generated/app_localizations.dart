@@ -170,7 +170,7 @@ abstract class AppLocalizations {
   /// **'APPLY'**
   String get apply;
 
-  /// Button text to cancel an action, like in a dialog.
+  /// Generic text for a cancel button on a dialog.
   ///
   /// In en, this message translates to:
   /// **'Cancel'**
@@ -584,7 +584,7 @@ abstract class AppLocalizations {
   /// **'Your default list is being prepared...'**
   String get defaultListIsBeingPrepared;
 
-  /// Confirmation button text for deleting something, like a shopping list.
+  /// Generic text for a delete button on a dialog.
   ///
   /// In en, this message translates to:
   /// **'Delete'**
@@ -1627,6 +1627,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'your list'**
   String get yourList;
+
+  /// Indicates how many items are selected in the app bar during multi-select mode.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String itemsSelected(int count);
+
+  /// Tooltip for the button to delete multiple selected items.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected items'**
+  String get tooltipDeleteSelected;
+
+  /// Title for the confirmation dialog before deleting items.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Deletion'**
+  String get confirmDeletionTitle;
+
+  /// Confirmation message asking the user to confirm the deletion of multiple items.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {count} items?'**
+  String confirmDeletionMessage(int count);
 }
 
 class _AppLocalizationsDelegate

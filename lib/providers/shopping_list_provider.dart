@@ -19,6 +19,8 @@ part 'shopping_list_provider.freezed.dart';
 // SECTION 1: DATA STREAM PROVIDERS
 // =========================================================================
 
+// ... (This entire section remains unchanged)
+
 final listedProductIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getListedProductIdsStream();
@@ -126,6 +128,7 @@ final customItemsProvider = StreamProvider.autoDispose<List<Product>>((ref) {
   return firestoreService.getCustomItemsStream();
 });
 
+
 // =========================================================================
 // SECTION 2: ACTION NOTIFIER
 // =========================================================================
@@ -166,6 +169,7 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     }
   }
 
+  // ... (createNewList, renameList, deleteList, addToList, etc. are all unchanged)
   Future<void> createNewList(String listName) async {
     final isPremium = _ref.read(userProfileProvider).value?.isPremium ?? false;
     final listCount = _ref.read(allShoppingListsProvider).value?.length ?? 0;
@@ -251,6 +255,38 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     final activeListId = _ref.read(activeShoppingListProvider);
     if (activeListId == null) return;
     await _performAction(() => _firestoreService.removeItemFromList(listId: activeListId, productId: product.id));
+  }
+
+  // --- THIS IS THE NEW METHOD FOR BULK DELETE ---
+  Future<void> removeItemsFromList(Set<String> productIds) async {
+    final activeListId = _ref.read(activeShoppingListProvider);
+    if (activeListId == null) {
+      state = const ShoppingListActionState.error('No active list to remove items from.');
+      return;
+    }
+    if (productIds.isEmpty) return;
+
+    final idsToRemove = productIds.toList();
+
+    // --- ADD THIS LINE for debugging ---
+    print('ShoppingListNotifier received request to remove: $idsToRemove from list $activeListId');
+
+    await _performAction(
+          () async { // --- Make this async
+        try {
+          await _firestoreService.removeItemsFromList(
+            listId: activeListId,
+            productIds: idsToRemove,
+          );
+        } catch (e) {
+          // --- ADD THIS CATCH BLOCK ---
+          print('!!! ERROR during bulk delete in FirestoreService: $e');
+          // Re-throw the error so _performAction can handle it
+          throw e;
+        }
+      },
+      successMessage: '${idsToRemove.length} item(s) removed from the list.',
+    );
   }
 
   Future<void> purgeExpiredItems() async {

@@ -25,6 +25,9 @@ import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 
+// --- ADDED ---
+import 'package:sales_app_mvp/providers/selection_state_provider.dart';
+
 class MainAppScreen extends ConsumerStatefulWidget {
   static const routeName = '/main-app';
   const MainAppScreen({super.key});
@@ -102,15 +105,81 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   PreferredSizeWidget? _buildAppBarForIndex(
       BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
+    // --- MODIFIED: Watch selection state to decide which AppBar to show ---
+    final selectionState = ref.watch(selectionStateProvider);
+
     switch (index) {
       case 0:
         return _buildHomePageAppBar(theme);
       case 1:
-        return _buildShoppingListPageAppBar(context, theme, ref);
+      // --- MODIFIED: Switch AppBar based on selection mode ---
+        return selectionState.isSelectionModeActive
+            ? _buildContextualShoppingListAppBar(context, theme, ref)
+            : _buildShoppingListPageAppBar(context, theme, ref);
       default:
         return null;
     }
   }
+
+  // In lib/pages/main_app_screen.dart
+
+  PreferredSizeWidget _buildContextualShoppingListAppBar(
+      BuildContext context, AppThemeData theme, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final selectionNotifier = ref.read(selectionStateProvider.notifier);
+    final selectedCount = ref.watch(selectionStateProvider.select((s) => s.selectedItemIds.length));
+
+    return AppBar(
+      backgroundColor: theme.background, // Use a different color to indicate selection mode
+      elevation: 4,
+      leading: IconButton(
+        icon: Icon(Icons.close, color: theme.inactive),
+        onPressed: () {
+          selectionNotifier.disableSelectionMode();
+        },
+      ),
+      title: Text(
+        l10n.itemsSelected(selectedCount),
+        style: TextStyle(color: theme.inactive, fontWeight: FontWeight.bold),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.delete_sweep, color: theme.inactive, size: 28),
+          tooltip: l10n.tooltipDeleteSelected,
+          onPressed: selectedCount > 0 ? () {
+            // Show confirmation dialog
+            showDialog(
+              context: context,
+              builder: (BuildContext dialogContext) {
+                return AlertDialog(
+                  title: Text(l10n.confirmDeletionTitle),
+                  content: Text(l10n.confirmDeletionMessage(selectedCount)),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text(l10n.cancel),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
+                    TextButton(
+                      child: Text(l10n.delete),
+                      onPressed: () {
+                        final selectedIds = ref.read(selectionStateProvider).selectedItemIds;
+                        print('Attempting to delete these IDs: $selectedIds');
+
+                        ref.read(shoppingListsProvider.notifier).removeItemsFromList(selectedIds);
+                        selectionNotifier.disableSelectionMode();
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          } : null, // Disable button if nothing is selected
+        ),
+      ],
+    );
+  }
+
 
   PreferredSizeWidget _buildHomePageAppBar(AppThemeData theme) {
     return AppBar(
@@ -129,13 +198,11 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // --- REFACTORED METHOD ---
   PreferredSizeWidget _buildShoppingListPageAppBar(
       BuildContext context, AppThemeData theme, WidgetRef ref) {
     final settingsState = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // Check if there is an active shopping list.
     final activeListId = ref.watch(activeShoppingListProvider);
     final isListActive = activeListId != null;
     final disabledColor = theme.inactive.withOpacity(0.4);
@@ -322,7 +389,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // --- REFACTORED HELPER WIDGET ---
   Widget _buildOrganizeListAction(AppThemeData theme, AppLocalizations l10n,
       {required bool isEnabled}) {
     final isFilterActive = ref.watch(shoppingListPageFilterStateProvider
@@ -347,7 +413,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     );
   }
 
-  // --- REFACTORED HELPER WIDGET ---
   Widget _buildShoppingListSettingsAction(AppThemeData theme,
       {required bool isEnabled}) {
     final disabledColor = theme.inactive.withOpacity(0.4);

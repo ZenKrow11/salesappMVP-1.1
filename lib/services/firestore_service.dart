@@ -191,7 +191,11 @@ class FirestoreService {
     });
   }
 
-  /// Removes a list of products from a shopping list (e.g., for purging).
+  // =======================================================================
+  // --- THIS IS THE CORRECTED METHOD ---
+  // =======================================================================
+  /// Removes a list of products from a shopping list (e.g., for purging or multi-select delete).
+  /// This transaction is structured to perform all reads before all writes to comply with Firestore rules.
   Future<void> removeItemsFromList({
     required String listId,
     required List<String> productIds,
@@ -201,22 +205,37 @@ class FirestoreService {
     final listDocRef = _shoppingListsRef().doc(listId);
 
     await _firestore.runTransaction((transaction) async {
+      // PHASE 1: READ ALL DOCUMENTS FIRST
+      // We will read all the necessary index documents and store their snapshots.
+      final Map<String, DocumentSnapshot> indexSnapshots = {};
       for (final productId in productIds) {
-        final itemDocRef = listDocRef.collection('items').doc(productId);
         final indexDocRef = _listedProductIdsRef().doc(productId);
-        final indexSnapshot = await transaction.get(indexDocRef);
+        indexSnapshots[productId] = await transaction.get(indexDocRef);
+      }
 
+      // PHASE 2: NOW PERFORM ALL WRITES
+      // Since all reads are complete, we can now safely perform writes.
+      for (final productId in productIds) {
+        // Delete the item from the current shopping list.
+        final itemDocRef = listDocRef.collection('items').doc(productId);
         transaction.delete(itemDocRef);
 
+        // Use the snapshot we read in Phase 1 to decide how to handle the index.
+        final indexSnapshot = indexSnapshots[productId]!;
         if (indexSnapshot.exists) {
+          final indexDocRef = _listedProductIdsRef().doc(productId);
           final count = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
           if (count <= 1) {
+            // This is the last list containing this item, so delete the index.
             transaction.delete(indexDocRef);
           } else {
+            // Other lists still have this item, so just decrement the count.
             transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
           }
         }
       }
+
+      // Finally, update the total item count on the main list document.
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-productIds.length)});
     });
   }

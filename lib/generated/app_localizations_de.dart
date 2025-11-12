@@ -848,4 +848,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get yourList => 'your list';
+
+  @override
+  String itemsSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get tooltipDeleteSelected => 'Delete selected items';
+
+  @override
+  String get confirmDeletionTitle => 'Confirm Deletion';
+
+  @override
+  String confirmDeletionMessage(int count) {
+    return 'Are you sure you want to delete $count items?';
+  }
 }
