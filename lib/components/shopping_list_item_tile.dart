@@ -12,10 +12,7 @@ import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'dart:math' as math;
 import 'package:sales_app_mvp/services/notification_manager.dart';
-
-// --- ADDED ---
 import 'package:sales_app_mvp/providers/selection_state_provider.dart';
-import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 class ShoppingListItemTile extends ConsumerWidget {
   final Product product;
@@ -31,7 +28,6 @@ class ShoppingListItemTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // --- MODIFIED: Watch selection state and determine if this tile is selected ---
     final selectionState = ref.watch(selectionStateProvider);
     final isSelected = selectionState.selectedItemIds.contains(product.id);
     final theme = ref.watch(themeProvider);
@@ -43,21 +39,25 @@ class ShoppingListItemTile extends ConsumerWidget {
       tile = _buildListTile(context, ref);
     }
 
-    // --- MODIFIED: Add a visual indicator for selection ---
     final tileWithSelection = Stack(
       children: [
         tile,
         if (isSelected)
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
-                color: theme.secondary.withOpacity(0.4),
-              ),
-              child: Icon(
-                Icons.check_circle,
-                color: Colors.white.withOpacity(0.9),
-                size: 36,
+            // --- THIS IS THE FIX ---
+            // Wrap the overlay in an IgnorePointer. This allows the
+            // GestureDetector underneath it to receive tap events.
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
+                  color: theme.secondary.withOpacity(0.4),
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: Colors.white.withOpacity(0.9),
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -73,7 +73,6 @@ class ShoppingListItemTile extends ConsumerWidget {
     return tileWithSelection;
   }
 
-  // --- MODIFIED: Handle tap based on whether selection mode is active ---
   void _onTap(BuildContext context, WidgetRef ref) {
     final selectionNotifier = ref.read(selectionStateProvider.notifier);
     final isSelectionModeActive = ref.read(selectionStateProvider).isSelectionModeActive;
@@ -97,13 +96,15 @@ class ShoppingListItemTile extends ConsumerWidget {
     }
   }
 
-  // --- ADDED: Handle long press to enable selection mode ---
   void _onLongPress(WidgetRef ref) {
-    ref.read(selectionStateProvider.notifier).enableSelectionMode(product.id);
+    // Only enable selection mode if it's not already active
+    if (!ref.read(selectionStateProvider).isSelectionModeActive) {
+      ref.read(selectionStateProvider.notifier).enableSelectionMode(product.id);
+    }
   }
 
+
   void _onDoubleTap(BuildContext context, WidgetRef ref) {
-    // Prevent double tap from interfering with selection mode
     if (ref.read(selectionStateProvider).isSelectionModeActive) return;
 
     final l10n = AppLocalizations.of(context)!;
@@ -153,7 +154,6 @@ class ShoppingListItemTile extends ConsumerWidget {
 
     return Stack(
       children: [
-        // --- MODIFIED: The GestureDetector now wraps the entire tile content ---
         GestureDetector(
           onTap: () => _onTap(context, ref),
           onLongPress: () => _onLongPress(ref),
@@ -238,14 +238,12 @@ class ShoppingListItemTile extends ConsumerWidget {
 
     return Stack(
       children: [
-        // --- MODIFIED: The GestureDetector now wraps the entire tile content ---
         GestureDetector(
           onTap: () => _onTap(context, ref),
           onLongPress: () => _onLongPress(ref),
           onDoubleTap: () => _onDoubleTap(context, ref),
-          // Use a container to provide a larger tap target and a transparent background
           child: Container(
-            color: Colors.transparent, // Ensures the gesture detector fills the space
+            color: Colors.transparent,
             padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,

@@ -24,8 +24,6 @@ import 'package:sales_app_mvp/components/manage_list_items_bottom_sheet.dart';
 import 'package:sales_app_mvp/components/organize_list_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
-
-// --- ADDED ---
 import 'package:sales_app_mvp/providers/selection_state_provider.dart';
 
 class MainAppScreen extends ConsumerStatefulWidget {
@@ -105,14 +103,12 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   PreferredSizeWidget? _buildAppBarForIndex(
       BuildContext context, int index, AppThemeData theme, WidgetRef ref) {
-    // --- MODIFIED: Watch selection state to decide which AppBar to show ---
     final selectionState = ref.watch(selectionStateProvider);
 
     switch (index) {
       case 0:
         return _buildHomePageAppBar(theme);
       case 1:
-      // --- MODIFIED: Switch AppBar based on selection mode ---
         return selectionState.isSelectionModeActive
             ? _buildContextualShoppingListAppBar(context, theme, ref)
             : _buildShoppingListPageAppBar(context, theme, ref);
@@ -121,8 +117,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     }
   }
 
-  // In lib/pages/main_app_screen.dart
-
   PreferredSizeWidget _buildContextualShoppingListAppBar(
       BuildContext context, AppThemeData theme, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -130,7 +124,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
     final selectedCount = ref.watch(selectionStateProvider.select((s) => s.selectedItemIds.length));
 
     return AppBar(
-      backgroundColor: theme.background, // Use a different color to indicate selection mode
+      backgroundColor: theme.background,
       elevation: 4,
       leading: IconButton(
         icon: Icon(Icons.close, color: theme.inactive),
@@ -147,24 +141,45 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           icon: Icon(Icons.delete_sweep, color: theme.inactive, size: 28),
           tooltip: l10n.tooltipDeleteSelected,
           onPressed: selectedCount > 0 ? () {
-            // Show confirmation dialog
+            // --- UPDATED DIALOG STYLE ---
             showDialog(
               context: context,
               builder: (BuildContext dialogContext) {
                 return AlertDialog(
-                  title: Text(l10n.confirmDeletionTitle),
-                  content: Text(l10n.confirmDeletionMessage(selectedCount)),
+                  backgroundColor: theme.background,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text(
+                    l10n.confirmDeletionTitle,
+                    style: TextStyle(color: theme.secondary, fontWeight: FontWeight.bold),
+                  ),
+                  content: Text(
+                    l10n.confirmDeletionMessage(selectedCount),
+                    style: TextStyle(color: theme.inactive),
+                  ),
+                  actionsAlignment: MainAxisAlignment.spaceBetween,
+                  actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   actions: <Widget>[
-                    TextButton(
-                      child: Text(l10n.cancel),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.inactive,
+                        side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: Text(l10n.cancel),
                     ),
-                    TextButton(
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.accent, // Use accent color for deletion
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: Text(l10n.delete),
                       onPressed: () {
                         final selectedIds = ref.read(selectionStateProvider).selectedItemIds;
-                        print('Attempting to delete these IDs: $selectedIds');
-
                         ref.read(shoppingListsProvider.notifier).removeItemsFromList(selectedIds);
                         selectionNotifier.disableSelectionMode();
                         Navigator.of(dialogContext).pop();
@@ -174,12 +189,11 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                 );
               },
             );
-          } : null, // Disable button if nothing is selected
+          } : null,
         ),
       ],
     );
   }
-
 
   PreferredSizeWidget _buildHomePageAppBar(AppThemeData theme) {
     return AppBar(
