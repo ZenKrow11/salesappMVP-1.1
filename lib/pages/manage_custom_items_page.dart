@@ -22,7 +22,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
       WidgetRef ref,
       Product item,
       ) async {
-    // Unchanged
     final theme = ref.read(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -48,7 +47,8 @@ class ManageCustomItemsPage extends ConsumerWidget {
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: theme.inactive,
-                side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                side: BorderSide(color: theme.inactive.withAlpha((255 * 0.5).round())),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -69,6 +69,9 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     .read(firestoreServiceProvider)
                     .deleteCustomItemFromStorage(item.id);
                 ref.invalidate(customItemsProvider);
+
+                // --- FIX: Add mounted check before using context in async gap ---
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 NotificationManager.show(context, l10n.itemDeleted(item.name));
               },
@@ -80,12 +83,10 @@ class ManageCustomItemsPage extends ConsumerWidget {
     );
   }
 
-  // --- MODIFIED: Replaced _showAddToListSheet with a navigation method ---
   void _navigateToAddToListPage(
       BuildContext context, WidgetRef ref, Product product) async {
     final l10n = AppLocalizations.of(context)!;
 
-    // Use Navigator.push with SlidePageRoute and await the string result.
     final selectedListName = await Navigator.of(context, rootNavigator: true)
         .push<String>(
       SlidePageRoute(
@@ -94,8 +95,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
       ),
     );
 
-    // After the ManageShoppingListsPage is popped, check if it returned a list name.
-    // The context.mounted check is a good safety measure after an async operation.
     if (selectedListName != null && context.mounted) {
       NotificationManager.show(
           context, l10n.itemAddedToList(product.name, selectedListName));
@@ -104,7 +103,6 @@ class ManageCustomItemsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Unchanged until the ListTile onTap
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final customItemsAsync = ref.watch(customItemsProvider);
@@ -143,8 +141,9 @@ class ManageCustomItemsPage extends ConsumerWidget {
                 child: Text(
                   l10n.customItemsEmpty,
                   textAlign: TextAlign.center,
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
                   style: TextStyle(
-                      color: theme.inactive.withOpacity(0.7), fontSize: 16),
+                      color: theme.inactive.withAlpha((255 * 0.7).round()), fontSize: 16),
                 ),
               ),
             );
@@ -170,9 +169,9 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     item.category == 'custom' && item.subcategory.isNotEmpty
                         ? item.subcategory
                         : l10n.customItem,
-                    style: TextStyle(color: theme.inactive.withOpacity(0.7)),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    style: TextStyle(color: theme.inactive.withAlpha((255 * 0.7).round())),
                   ),
-                  // --- THIS IS THE KEY CHANGE ---
                   onTap: () => _navigateToAddToListPage(context, ref, item),
                   trailing: PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: theme.inactive),
@@ -243,7 +242,8 @@ class ManageCustomItemsPage extends ConsumerWidget {
                   Text(
                     countText,
                     style: TextStyle(
-                      color: theme.inactive.withOpacity(0.8),
+                      // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                      color: theme.inactive.withAlpha((255 * 0.8).round()),
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -260,7 +260,8 @@ class ManageCustomItemsPage extends ConsumerWidget {
                     label: Text(l10n.add),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isLimitReached
-                          ? theme.inactive.withOpacity(0.4)
+                      // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                          ? theme.inactive.withAlpha((255 * 0.4).round())
                           : theme.secondary,
                       foregroundColor: theme.primary,
                       padding: const EdgeInsets.symmetric(

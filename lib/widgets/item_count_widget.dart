@@ -41,7 +41,7 @@ class ItemCountWidget extends ConsumerWidget {
       // ===================== FIX START =====================
       // If showBackground is true, apply the decoration.
           ? BoxDecoration(
-        color: theme.background.withOpacity(0.5),
+        color: theme.background.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8.0),
       )
       // Otherwise, apply no decoration (null).

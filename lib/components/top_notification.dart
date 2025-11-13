@@ -21,11 +21,11 @@ class TopNotification extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: theme.primary.withOpacity(0.95),
+            color: theme.primary.withAlpha((255 * 0.95).round()),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withAlpha((255 * 0.2).round()),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               )

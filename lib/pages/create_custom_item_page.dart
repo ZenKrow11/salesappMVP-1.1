@@ -6,11 +6,10 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/product.dart';
-import 'package:sales_app_mvp/models/user_profile.dart'; // <-- Import the UserProfile model
+import 'package:sales_app_mvp/models/user_profile.dart';
 import 'package:sales_app_mvp/providers/shopping_list_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/category_service.dart';
-import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 
@@ -51,7 +50,6 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
     super.dispose();
   }
 
-  // --- FIX 1: CHANGE THE METHOD SIGNATURE TO ACCEPT THE LOADED PROFILE ---
   Future<void> _submitForm(UserProfile userProfile) async {
     final l10n = AppLocalizations.of(context)!;
     final shoppingListNotifier = ref.read(shoppingListsProvider.notifier);
@@ -67,10 +65,7 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
     });
 
     try {
-      final firestoreService = ref.read(firestoreServiceProvider);
-
-      // --- FIX 2: USE THE PASSED-IN userProfile DIRECTLY ---
-      // No need to check for null here, because the button's logic guarantees it's available.
+      // --- FIX: Removed unused 'firestoreService' variable ---
       if (!_isEditing) {
         final customItems = ref.read(customItemsProvider).value ?? [];
         final limit = userProfile.isPremium ? 45 : 15;
@@ -94,18 +89,15 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         nameTokens: [],
       );
 
-      // lib/pages/create_custom_item_page.dart -> _submitForm method
-
       if (_isEditing) {
         await shoppingListNotifier.updateCustomItem(productToSave);
       } else {
-        await shoppingListNotifier.createAndAddCustomItem(productToSave); // <--- CORRECT
+        await shoppingListNotifier.createAndAddCustomItem(productToSave);
       }
 
       if (mounted) {
         Navigator.of(context).pop();
         NotificationManager.show(context, l10n.itemSavedSuccessfully(productToSave.name));
-        // ========================================================
       }
     } catch (e) {
       if (mounted) {
@@ -130,19 +122,20 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // --- FIX 3: WATCH THE PROVIDER AND GET THE ACTUAL DATA OBJECT ---
     final userProfileAsync = ref.watch(userProfileProvider);
-    // This will be the UserProfile object when loaded, or null otherwise.
     final UserProfile? userProfile = userProfileAsync.value;
 
     final allCategoriesForDropdown = CategoryService.getAllCategoriesForDropdown();
 
-    InputDecoration _buildInputDecoration(String label) {
+    // --- FIX: Renamed local function to remove leading underscore ---
+    InputDecoration buildInputDecoration(String label) {
       return InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: theme.inactive.withOpacity(0.7)),
+        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+        labelStyle: TextStyle(color: theme.inactive.withAlpha((255 * 0.7).round())),
         filled: true,
-        fillColor: theme.background.withOpacity(0.4),
+        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+        fillColor: theme.background.withAlpha((255 * 0.4).round()),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -164,7 +157,6 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
           icon: Icon(Icons.chevron_left, color: theme.secondary, size: 32),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        // --- THIS IS THE FINAL FIX ---
         title: Text(
           _isEditing ? l10n.editCustomItem : l10n.createCustomItem,
           style: TextStyle(
@@ -172,7 +164,6 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
         ),
       ),
       body: SingleChildScrollView(
-        // ... (The rest of the file is unchanged)
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -182,18 +173,19 @@ class _CreateCustomItemPageState extends ConsumerState<CreateCustomItemPage> {
               TextFormField(
                 controller: _nameController,
                 style: TextStyle(color: theme.inactive),
-                decoration: _buildInputDecoration(l10n.itemName),
+                decoration: buildInputDecoration(l10n.itemName),
                 validator: (value) => (value == null || value.trim().isEmpty)
                     ? l10n.pleaseEnterItemName
                     : null,
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                // --- FIX: Replaced deprecated 'value' with 'initialValue' ---
+                initialValue: _selectedCategory,
                 isExpanded: true,
                 dropdownColor: theme.background,
                 style: TextStyle(color: theme.inactive, fontSize: 16),
-                decoration: _buildInputDecoration(l10n.selectCategory),
+                decoration: buildInputDecoration(l10n.selectCategory),
                 items: allCategoriesForDropdown.map((categoryInfo) {
                   return DropdownMenuItem(
                     value: categoryInfo.firestoreName,

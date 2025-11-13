@@ -92,7 +92,7 @@ class _AdPlaceholderWidgetState extends ConsumerState<AdPlaceholderWidget> {
         // The placeholder size is now always a standard banner.
         width: AdSize.banner.width.toDouble(),
         height: AdSize.banner.height.toDouble(),
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.surface.withAlpha((255 * 0.1).round()),
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         child: const Text('Ad Loading...'),

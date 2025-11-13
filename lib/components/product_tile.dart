@@ -62,8 +62,8 @@ class ProductTile extends ConsumerWidget {
     final categorizableProduct = product as Categorizable;
     final categoryStyle =
     CategoryService.getStyleForCategory(categorizableProduct.category);
-    final Color backgroundTint =
-    _darken(categoryStyle.color, 0.4).withOpacity(0.15);
+    final Color backgroundBase = HSLColor.fromColor(categoryStyle.color).withLightness(0.15).toColor();
+    final Color backgroundTint = backgroundBase.withAlpha((255 * 0.15).round());
     final theme = ref.watch(themeProvider);
     final listedProductIds = ref.watch(listedProductIdsProvider).value ?? {};
     final isInShoppingList = listedProductIds.contains(product.id);
@@ -134,7 +134,7 @@ class ProductTile extends ConsumerWidget {
               : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: const Color(0x33000000), // Colors.black.withOpacity(0.2)
               blurRadius: 8.0,
               offset: const Offset(0, 4),
             ),
@@ -213,7 +213,7 @@ class ProductTile extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(4),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
+                                color: const Color(0x80000000), // Colors.black.withOpacity(0.5)
                                 blurRadius: 4,
                                 offset: const Offset(0, 1))
                           ]),

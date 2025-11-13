@@ -3,7 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
-import 'package:sales_app_mvp/generated/app_localizations.dart';
+// --- FIX: This import is no longer needed since 'l10n' is not used ---
+// import 'package:sales_app_mvp/generated/app_localizations.dart';
 
 class QuantityStepper extends ConsumerWidget {
   final int quantity;
@@ -20,10 +21,9 @@ class QuantityStepper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
+    // --- FIX: The unused 'l10n' variable has been removed ---
 
-    // --- NEW MODERNIZED LAYOUT ---
-    // The stepper is now just two large, distinct buttons.
+    // The modernized layout remains the same.
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

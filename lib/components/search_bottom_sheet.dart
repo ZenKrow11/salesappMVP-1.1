@@ -1,6 +1,5 @@
 // lib/components/search_bottom_sheet.dart
 
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -90,7 +89,7 @@ class _SearchBottomSheetState extends ConsumerState<SearchBottomSheet> {
                   )
                       : null,
                   filled: true,
-                  fillColor: theme.inactive.withOpacity(0.1),
+                  fillColor: theme.inactive.withAlpha((255 * 0.1).round()),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide.none,

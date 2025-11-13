@@ -85,7 +85,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       await _auth.sendPasswordResetEmail(email: email);
       return true;
     } catch (e) {
-      print("Error sending password reset email: $e");
       return false;
     }
   }
@@ -132,8 +131,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       final firestore = FirebaseFirestore.instance;
       final userDocRef = firestore.collection('users').doc(uid);
 
-      print('[AuthController] Starting full cascade delete for $uid ...');
-
       final knownSubcollections = [
         'favorites',
         'shopping_lists',
@@ -149,16 +146,10 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
         for (final doc in snapshot.docs) {
           await doc.reference.delete();
         }
-        print('[AuthController] Deleted subcollection: $subcollection');
       }
 
-      await userDocRef.delete().catchError((_) {
-        print('[AuthController] No main user document found to delete.');
-      });
-
-      print('[AuthController] All Firestore user data deleted.');
+      await userDocRef.delete().catchError((_) {});
       await user.delete();
-      print('[AuthController] Firebase Auth account deleted.');
 
       // CORRECTED: Create a new instance before calling signOut.
       await GoogleSignIn().signOut();
@@ -174,7 +165,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       _ref.invalidate(settingsProvider);
       _ref.invalidate(activeShoppingListProvider);
 
-      print('[AuthController] Local data cleared and logout enforced.');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
         throw Exception(
@@ -183,7 +173,6 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
         rethrow;
       }
     } catch (e) {
-      print('[AuthController] Error during full cascade delete: $e');
       rethrow;
     }
   }

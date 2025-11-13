@@ -101,7 +101,6 @@ class AppDataController extends StateNotifier<AppDataState> {
       }
 
       final allProducts = productBox.values.toList();
-      print("[AppDataProvider] Initialization complete. Loaded ${allProducts.length} products.");
 
       state = state.copyWith(loadingMessage: 'loadingAllSet', loadingProgress: 1.0);
       await Future.delayed(const Duration(milliseconds: 250));
@@ -113,7 +112,6 @@ class AppDataController extends StateNotifier<AppDataState> {
       );
 
     } catch (e, stack) {
-      print("[AppDataProvider] CRITICAL ERROR during initialization: $e\n$stack");
       state = state.copyWith(
         status: InitializationStatus.error,
         errorMessage: e.toString(),

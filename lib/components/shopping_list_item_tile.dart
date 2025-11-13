@@ -51,11 +51,13 @@ class ShoppingListItemTile extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
-                  color: theme.secondary.withOpacity(0.4),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: theme.secondary.withAlpha((255 * 0.4).round()),
                 ),
                 child: Icon(
                   Icons.check_circle,
-                  color: Colors.white.withOpacity(0.9),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: Colors.white.withAlpha((255 * 0.9).round()),
                   size: 36,
                 ),
               ),
@@ -120,7 +122,8 @@ class ShoppingListItemTile extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.85),
+              // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+              color: Colors.red.withAlpha((255 * 0.85).round()),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white, width: 2),
             ),
@@ -150,7 +153,8 @@ class ShoppingListItemTile extends ConsumerWidget {
     final double twoLineTextHeight = nameTextStyle.fontSize! * nameTextStyle.height! * 2;
     final l10n = AppLocalizations.of(context)!;
     final imageUrl = product.imageUrl;
-    final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
+    // --- FIX: Removed unnecessary null check ---
+    final bool hasValidImage = imageUrl.isNotEmpty;
 
     return Stack(
       children: [
@@ -234,7 +238,8 @@ class ShoppingListItemTile extends ConsumerWidget {
     final priceString = product.currentPrice.toStringAsFixed(2);
     final l10n = AppLocalizations.of(context)!;
     final imageUrl = product.imageUrl;
-    final bool hasValidImage = imageUrl != null && imageUrl.isNotEmpty;
+    // --- FIX: Removed unnecessary null check ---
+    final bool hasValidImage = imageUrl.isNotEmpty;
 
     return Stack(
       children: [

@@ -97,26 +97,4 @@ class StoresFilterTab extends ConsumerWidget {
       },
     );
   }
-
-  // --- CHANGE: This helper method is now unused, but kept for potential future use ---
-  // This helper method has no text, so it remains unchanged.
-  Widget _buildModeToggleTile(AppThemeData theme) {
-    final iconData = isIncludeMode ? Icons.add_circle : Icons.remove_circle;
-    final iconColor = isIncludeMode ? theme.secondary : theme.accent;
-
-    return GestureDetector(
-      onTap: onToggleMode,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: theme.primary,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: iconColor, width: 2.0),
-        ),
-        child: Center(
-          child: Icon(iconData, color: iconColor, size: 36),
-        ),
-      ),
-    );
-  }
 }

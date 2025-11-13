@@ -33,7 +33,8 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.inactive,
-              side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+              // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+              side: BorderSide(color: theme.inactive.withAlpha((255 * 0.5).round())),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -81,7 +82,6 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
                     color: theme.secondary),
               ),
               const SizedBox(height: 24),
-              // --- THIS IS THE FIX: A ROW FOR SIDE-BY-SIDE BUTTONS ---
               Row(
                 children: [
                   // Button 1: Purge Expired
@@ -113,7 +113,9 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
                           await ref
                               .read(shoppingListsProvider.notifier)
                               .purgeExpiredItems();
-                          ref.refresh(shoppingListWithDetailsProvider);
+                          final _ = ref.refresh(shoppingListWithDetailsProvider);
+                          // --- FIX: Add context mounted check after async gap ---
+                          if (!context.mounted) return;
                           Navigator.of(context).pop();
                         }
                       },
@@ -149,7 +151,9 @@ class ManageListItemsBottomSheet extends ConsumerWidget {
                           await ref
                               .read(shoppingListsProvider.notifier)
                               .clearActiveList();
-                          ref.refresh(shoppingListWithDetailsProvider);
+                          final _ = ref.refresh(shoppingListWithDetailsProvider);
+                          // --- FIX: Add context mounted check after async gap ---
+                          if (!context.mounted) return;
                           Navigator.of(context).pop();
                         }
                       },

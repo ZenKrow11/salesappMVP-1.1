@@ -102,16 +102,11 @@ class FirestoreService {
   }
 
   /// Deletes an entire shopping list and all its items.
-  /// This is a complex operation that involves:
-  /// 1. Deleting all items in the `items` subcollection.
-  /// 2. Atomically updating the `listedProductIds` index.
-  /// 3. Deleting the list document itself.
   Future<void> deleteList({required String listId}) async {
     final listDocRef = _shoppingListsRef().doc(listId);
     final itemsSnapshot = await listDocRef.collection('items').get();
     final itemIds = itemsSnapshot.docs.map((doc) => doc.id).toList();
 
-    // Batch delete all items for efficiency.
     if (itemsSnapshot.docs.isNotEmpty) {
       final batch = _firestore.batch();
       for (final doc in itemsSnapshot.docs) {
@@ -120,22 +115,22 @@ class FirestoreService {
       await batch.commit();
     }
 
-    // Run a transaction to safely update the index and delete the list.
     await _firestore.runTransaction((transaction) async {
       for (final itemId in itemIds) {
         final indexDocRef = _listedProductIdsRef().doc(itemId);
         final indexSnapshot = await transaction.get(indexDocRef);
 
         if (indexSnapshot.exists) {
-          final count = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+          // --- FIX: Removed unnecessary null-aware operator ---
+          final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (count <= 1) {
-            transaction.delete(indexDocRef); // Last one, delete the index.
+            transaction.delete(indexDocRef);
           } else {
             transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
           }
         }
       }
-      transaction.delete(listDocRef); // Finally, delete the list doc.
+      transaction.delete(listDocRef);
     });
   }
 
@@ -155,7 +150,7 @@ class FirestoreService {
 
     final dataToSet = productData ?? {};
     dataToSet['addedAt'] = FieldValue.serverTimestamp();
-    dataToSet['quantity'] = 1; // Always set a default quantity.
+    dataToSet['quantity'] = 1;
 
     final batch = _firestore.batch()
       ..set(itemDocRef, dataToSet)
@@ -181,7 +176,8 @@ class FirestoreService {
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-1)});
 
       if (indexSnapshot.exists) {
-        final count = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+        // --- FIX: Removed unnecessary null-aware operator ---
+        final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
         if (count <= 1) {
           transaction.delete(indexDocRef);
         } else {
@@ -191,11 +187,7 @@ class FirestoreService {
     });
   }
 
-  // =======================================================================
-  // --- THIS IS THE CORRECTED METHOD ---
-  // =======================================================================
-  /// Removes a list of products from a shopping list (e.g., for purging or multi-select delete).
-  /// This transaction is structured to perform all reads before all writes to comply with Firestore rules.
+  /// Removes a list of products from a shopping list.
   Future<void> removeItemsFromList({
     required String listId,
     required List<String> productIds,
@@ -205,37 +197,29 @@ class FirestoreService {
     final listDocRef = _shoppingListsRef().doc(listId);
 
     await _firestore.runTransaction((transaction) async {
-      // PHASE 1: READ ALL DOCUMENTS FIRST
-      // We will read all the necessary index documents and store their snapshots.
       final Map<String, DocumentSnapshot> indexSnapshots = {};
       for (final productId in productIds) {
         final indexDocRef = _listedProductIdsRef().doc(productId);
         indexSnapshots[productId] = await transaction.get(indexDocRef);
       }
 
-      // PHASE 2: NOW PERFORM ALL WRITES
-      // Since all reads are complete, we can now safely perform writes.
       for (final productId in productIds) {
-        // Delete the item from the current shopping list.
         final itemDocRef = listDocRef.collection('items').doc(productId);
         transaction.delete(itemDocRef);
 
-        // Use the snapshot we read in Phase 1 to decide how to handle the index.
         final indexSnapshot = indexSnapshots[productId]!;
         if (indexSnapshot.exists) {
           final indexDocRef = _listedProductIdsRef().doc(productId);
-          final count = (indexSnapshot.data() as Map<String, dynamic>)?['count'] ?? 0;
+          // --- FIX: Removed unnecessary null-aware operator ---
+          final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (count <= 1) {
-            // This is the last list containing this item, so delete the index.
             transaction.delete(indexDocRef);
           } else {
-            // Other lists still have this item, so just decrement the count.
             transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
           }
         }
       }
 
-      // Finally, update the total item count on the main list document.
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-productIds.length)});
     });
   }
@@ -288,7 +272,7 @@ class FirestoreService {
           .snapshots()
           .map((snapshot) => snapshot.docs.map((doc) => doc.id).toSet());
     } catch (_) {
-      return Stream.value({}); // Return empty stream if user is not logged in.
+      return Stream.value({});
     }
   }
 
@@ -312,7 +296,7 @@ class FirestoreService {
       return _shoppingListsRef().doc(listId).collection('items').snapshots().map(
               (snapshot) => snapshot.docs.map((doc) {
             final data = doc.data();
-            data['id'] = doc.id; // Inject the document ID into the map.
+            data['id'] = doc.id;
             return data;
           }).toList());
     } catch (_) {

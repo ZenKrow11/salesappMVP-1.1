@@ -3,9 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-// The purchase service is no longer called directly from the disabled button,
-// but we can leave the import in case you re-enable it later.
-import 'package:sales_app_mvp/services/purchase_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
 void showUpgradeDialog(BuildContext context, WidgetRef ref) {
@@ -36,9 +33,9 @@ void showUpgradeDialog(BuildContext context, WidgetRef ref) {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                  color: theme.secondary.withOpacity(0.15),
+                  color: theme.secondary.withAlpha(38),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: theme.secondary.withOpacity(0.5))
+                  border: Border.all(color: theme.secondary.withAlpha(128))
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -67,8 +64,8 @@ void showUpgradeDialog(BuildContext context, WidgetRef ref) {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               // Use a "disabled" look for the button
-              backgroundColor: theme.inactive.withOpacity(0.3),
-              foregroundColor: theme.inactive.withOpacity(0.7),
+              backgroundColor: theme.inactive.withAlpha(77),
+              foregroundColor: theme.inactive.withAlpha(179),
             ),
             // Setting onPressed to null automatically disables the button
             onPressed: null,

@@ -13,7 +13,6 @@ import 'package:sales_app_mvp/components/upgrade_dialog.dart';
 class ManageShoppingListsPage extends ConsumerStatefulWidget {
   final Product? product;
 
-  // --- MODIFIED: The onConfirm callback is no longer needed for this flow ---
   const ManageShoppingListsPage({
     super.key,
     this.product,
@@ -28,7 +27,6 @@ class _ManageShoppingListsPageState
     extends ConsumerState<ManageShoppingListsPage> {
   final TextEditingController _listNameController = TextEditingController();
 
-  // This logic is now simpler: if a product is passed, we're in "selection mode".
   bool get isSelectMode => widget.product != null;
 
   @override
@@ -44,6 +42,8 @@ class _ManageShoppingListsPageState
         .read(shoppingListsProvider.notifier)
         .createNewList(trimmedName)
         .catchError((e) {
+      // --- FIX: Add mounted check before using context in async gap ---
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -84,7 +84,8 @@ class _ManageShoppingListsPageState
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: theme.inactive,
-                side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                side: BorderSide(color: theme.inactive.withAlpha((255 * 0.5).round())),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -152,7 +153,8 @@ class _ManageShoppingListsPageState
                   decoration: InputDecoration(
                     labelText: hintText,
                     labelStyle:
-                    TextStyle(color: theme.inactive.withOpacity(0.7)),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    TextStyle(color: theme.inactive.withAlpha((255 * 0.7).round())),
                     filled: true,
                     fillColor: theme.primary,
                     border: OutlineInputBorder(
@@ -188,7 +190,6 @@ class _ManageShoppingListsPageState
 
   @override
   Widget build(BuildContext context) {
-    // Unchanged
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final allListsAsync = ref.watch(allShoppingListsProvider);
@@ -244,7 +245,8 @@ class _ManageShoppingListsPageState
                     Text(
                       '${l10n.listsLabel} ${lists.length} / $listLimit',
                       style: TextStyle(
-                        color: theme.inactive.withOpacity(0.8),
+                        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        color: theme.inactive.withAlpha((255 * 0.8).round()),
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -267,7 +269,8 @@ class _ManageShoppingListsPageState
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canCreateMore
                             ? theme.secondary
-                            : theme.inactive.withOpacity(0.4),
+                        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                            : theme.inactive.withAlpha((255 * 0.4).round()),
                         foregroundColor: theme.primary,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
@@ -285,7 +288,6 @@ class _ManageShoppingListsPageState
   }
 
   Widget _buildEmptyState(AppLocalizations l10n, AppThemeData theme) {
-    // Unchanged
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -293,7 +295,8 @@ class _ManageShoppingListsPageState
           'Create and manage your shopping lists here.\nTap the "+ Create New" button below to get started.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: theme.inactive.withOpacity(0.8),
+            // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+            color: theme.inactive.withAlpha((255 * 0.8).round()),
             fontSize: 17,
             height: 1.5,
           ),
@@ -303,7 +306,6 @@ class _ManageShoppingListsPageState
   }
 
   Widget _buildSelectList(List<ShoppingListInfo> lists) {
-    // Unchanged until ListTile onTap
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
     final activeListId = ref.watch(activeShoppingListProvider);
@@ -323,9 +325,10 @@ class _ManageShoppingListsPageState
         final tileColor = isCurrentlyActive ? theme.secondary : theme.primary;
         final textColor = isCurrentlyActive ? theme.primary : theme.inactive;
         final iconColor = isCurrentlyActive ? theme.primary : theme.inactive;
+        // --- FIX: Replaced deprecated withOpacity with withAlpha on both sides ---
         final countColor = isCurrentlyActive
-            ? theme.primary.withOpacity(0.85)
-            : theme.inactive.withOpacity(0.7);
+            ? theme.primary.withAlpha((255 * 0.85).round())
+            : theme.inactive.withAlpha((255 * 0.7).round());
 
         return Card(
           color: tileColor,
@@ -359,18 +362,12 @@ class _ManageShoppingListsPageState
                 ),
               ],
             ),
-            // --- THIS IS THE KEY CHANGE ---
             onTap: () {
               if (isSelectMode) {
-                // This is the "add to list" mode.
-                // --- FIX: Method call no longer needs context ---
                 ref.read(shoppingListsProvider.notifier).addToSpecificList(
                     widget.product!, list.id);
-
-                // Pop the page and return the selected list's name as a result.
                 Navigator.pop(context, list.name);
               } else {
-                // This is the "manage lists" mode.
                 ref
                     .read(activeShoppingListProvider.notifier)
                     .setActiveList(list.id);

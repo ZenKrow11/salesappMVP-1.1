@@ -18,7 +18,8 @@ import 'package:sales_app_mvp/widgets/login_screen.dart';
 
 import 'firebase_options.dart';
 
-const bool USE_EMULATOR = bool.fromEnvironment('USE_EMULATOR');
+// --- FIX: Renamed constant to lowerCamelCase ---
+const bool useEmulator = bool.fromEnvironment('USE_EMULATOR');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  if (USE_EMULATOR) {
+  if (useEmulator) {
     try {
       final host = '192.168.1.116';
       await FirebaseAuth.instance.useAuthEmulator(host, 9099);
@@ -40,14 +41,11 @@ Future<void> main() async {
     debugPrint('>>> CONNECTING TO LIVE FIREBASE PRODUCTION <<<');
   }
 
-  /// firebase emulators:start --only firestore,auth
-
   await Hive.initFlutter();
 
-  // Pre-initialize providers that need to start work before the UI is built.
   final container = ProviderContainer();
   container.read(adManagerProvider.notifier).initialize();
-  if (!USE_EMULATOR) {
+  if (!useEmulator) {
     container
         .read(adManagerProvider.notifier)
         .preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
@@ -76,13 +74,20 @@ class MyApp extends ConsumerWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
+      // --- FIX: Replaced deprecated ProviderScope(parent:) pattern ---
       builder: (context, child) {
-        return ProviderScope(
-          parent: ProviderScope.containerOf(context),
+        // Get the root container.
+        final parentContainer = ProviderScope.containerOf(context);
+        // Create a new container that inherits from the parent and adds our override.
+        final container = ProviderContainer(
+          parent: parentContainer,
           overrides: [
-            localizationProvider
-                .overrideWithValue(AppLocalizations.of(context)!),
+            localizationProvider.overrideWithValue(AppLocalizations.of(context)!),
           ],
+        );
+        // Provide the new container to the widget subtree.
+        return UncontrolledProviderScope(
+          container: container,
           child: child!,
         );
       },
@@ -99,15 +104,10 @@ class MyApp extends ConsumerWidget {
 // Core Application Providers defined in main.dart
 // -----------------------------------------------------------------------------
 
-/// Streams the current Firebase Authentication user state (logged in or out).
-/// This is the primary source of truth for the user's auth status.
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-/// An observer that watches the authentication state. When a user logs in,
-/// it triggers the creation of their Firestore profile document if it doesn't exist.
-/// This is a "fire-and-forget" provider that runs a crucial background task.
 final authStateObserverProvider = Provider<void>((ref) {
   ref.listen<AsyncValue<User?>>(authStateChangesProvider,
           (previous, next) async {

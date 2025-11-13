@@ -141,7 +141,6 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
           icon: Icon(Icons.delete_sweep, color: theme.inactive, size: 28),
           tooltip: l10n.tooltipDeleteSelected,
           onPressed: selectedCount > 0 ? () {
-            // --- UPDATED DIALOG STYLE ---
             showDialog(
               context: context,
               builder: (BuildContext dialogContext) {
@@ -162,7 +161,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: theme.inactive,
-                        side: BorderSide(color: theme.inactive.withOpacity(0.5)),
+                        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        side: BorderSide(color: theme.inactive.withAlpha((255 * 0.5).round())),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -172,7 +172,7 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                     ),
                     FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: theme.accent, // Use accent color for deletion
+                        backgroundColor: theme.accent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -219,7 +219,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
     final activeListId = ref.watch(activeShoppingListProvider);
     final isListActive = activeListId != null;
-    final disabledColor = theme.inactive.withOpacity(0.4);
+    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+    final disabledColor = theme.inactive.withAlpha((255 * 0.4).round());
 
     return AppBar(
       backgroundColor: theme.primary,
@@ -298,7 +299,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
                 opacity: isDataLoaded ? 1.0 : 0.5,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: theme.background.withOpacity(0.5),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    color: theme.background.withAlpha((255 * 0.5).round()),
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: InkWell(
@@ -367,7 +369,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
         padding: const EdgeInsets.only(left: 12.0),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.background.withOpacity(0.5),
+            // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+            color: theme.background.withAlpha((255 * 0.5).round()),
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: InkWell(
@@ -407,7 +410,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
       {required bool isEnabled}) {
     final isFilterActive = ref.watch(shoppingListPageFilterStateProvider
         .select((f) => f.isFilterActiveForShoppingList));
-    final disabledColor = theme.inactive.withOpacity(0.4);
+    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+    final disabledColor = theme.inactive.withAlpha((255 * 0.4).round());
 
     return IconButton(
       icon: Badge(
@@ -429,7 +433,8 @@ class MainAppScreenState extends ConsumerState<MainAppScreen> {
 
   Widget _buildShoppingListSettingsAction(AppThemeData theme,
       {required bool isEnabled}) {
-    final disabledColor = theme.inactive.withOpacity(0.4);
+    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+    final disabledColor = theme.inactive.withAlpha((255 * 0.4).round());
 
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),

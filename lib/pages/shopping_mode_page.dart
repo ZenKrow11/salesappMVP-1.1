@@ -141,10 +141,11 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
 
           return ScrollbarTheme(
             data: ScrollbarThemeData(
-              thumbColor:
-              MaterialStateProperty.all(theme.secondary.withOpacity(0.7)),
+              // --- FIX: Replaced MaterialStateProperty and withOpacity ---
+              thumbColor: WidgetStateProperty.all(theme.secondary.withAlpha((255 * 0.7).round())),
               radius: const Radius.circular(4),
-              thickness: MaterialStateProperty.all(6.0),
+              // --- FIX: Replaced MaterialStateProperty ---
+              thickness: WidgetStateProperty.all(6.0),
             ),
             child: Scrollbar(
               controller: _scrollController,
@@ -221,7 +222,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             displayName.toUpperCase(),
             style: TextStyle(
               fontSize: 14,
-              color: theme.inactive.withOpacity(0.7),
+              // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+              color: theme.inactive.withAlpha((255 * 0.7).round()),
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
@@ -233,11 +235,10 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
-  // --- Bottom Sheet for item details ---
   void _showItemDetailsBottomSheet(
       BuildContext context, WidgetRef ref, Product product) {
     final theme = ref.read(themeProvider);
-    final l10n = AppLocalizations.of(context)!;
+    // --- FIX: Removed unused local variable 'l10n' ---
 
     showModalBottomSheet(
       context: context,
@@ -353,7 +354,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     );
   }
 
-  // --- Summary Bar (unchanged) ---
   Widget _buildSummaryBar(BuildContext context, WidgetRef ref,
       List<Product> products, ShoppingModeState shoppingModeState) {
     final theme = ref.watch(themeProvider);
@@ -388,7 +388,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                 Text(
                   localizations.itemsLabel.toUpperCase(),
                   style: TextStyle(
-                      color: theme.inactive.withOpacity(0.7),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                      color: theme.inactive.withAlpha((255 * 0.7).round()),
                       fontSize: 12,
                       fontWeight: FontWeight.bold),
                 ),
@@ -409,7 +410,8 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                 Text(
                   localizations.total.toUpperCase(),
                   style: TextStyle(
-                      color: theme.inactive.withOpacity(0.7),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                      color: theme.inactive.withAlpha((255 * 0.7).round()),
                       fontSize: 12,
                       fontWeight: FontWeight.bold),
                 ),
@@ -450,7 +452,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
     final shoppingModeState = ref.read(shoppingModeProvider);
     final finalQuantities = shoppingModeState.productQuantities;
 
-    // Quick summary
     final totalItems = finalQuantities.values.fold<int>(0, (a, b) => a + b);
     final totalCost = allProducts.fold<double>(
       0,
@@ -476,18 +477,17 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // --- Handle bar ---
               Container(
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: theme.inactive.withOpacity(0.2),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: theme.inactive.withAlpha((255 * 0.2).round()),
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               const SizedBox(height: 16),
 
-              // --- Title ---
               Icon(Icons.shopping_bag_outlined,
                   size: 44, color: theme.secondary),
               const SizedBox(height: 8),
@@ -504,17 +504,18 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                 localizations.finishShoppingBody,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: theme.inactive.withOpacity(0.7),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: theme.inactive.withAlpha((255 * 0.7).round()),
                   fontSize: 15,
                 ),
               ),
               const SizedBox(height: 20),
 
-              // --- Quick summary row ---
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: theme.background.withOpacity(0.7),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: theme.background.withAlpha((255 * 0.7).round()),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -543,11 +544,9 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
 
               const SizedBox(height: 28),
 
-              // --- Buttons ---
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ✅ Remove checked items
                   ElevatedButton.icon(
                     icon: const Icon(Icons.check_circle_outline, size: 22),
                     label: Text(
@@ -564,7 +563,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                       ),
                     ),
                     onPressed: () async {
-                      // Show loading overlay
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -579,34 +577,28 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                       final checkedIds = ref.read(shoppingModeProvider).checkedProductIds;
 
                       try {
-                        // 1️⃣ Save latest quantities
                         await listNotifier.updateItemQuantities(finalQuantities);
 
-                        // 2️⃣ Remove checked items sequentially
                         for (final productId in checkedIds) {
                           final productToRemove =
                           allProducts.firstWhere((p) => p.id == productId);
-                          // Re-read notifier fresh each iteration to avoid stale ref
                           await ref.read(shoppingListsProvider.notifier)
                               .removeItemFromList(productToRemove);
                         }
 
-                        // 3️⃣ Reset state only after removals are done
                         shoppingModeNotifier.resetState();
 
-                        // 4️⃣ Pop only when context is still mounted
                         if (context.mounted) {
-                          Navigator.of(context).pop(); // close loading
-                          Navigator.of(context).pop(); // close sheet
-                          Navigator.of(context).pop(); // leave shopping mode
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
                         }
                       } catch (e, st) {
                         debugPrint('Error while removing items: $e\n$st');
-                        // Optionally, pop the loading dialog and show an error message
                         if (context.mounted) {
-                          Navigator.of(context).pop(); // close loading
+                          Navigator.of(context).pop();
                           ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed to remove items.'))
+                              const SnackBar(content: Text('Failed to remove items.'))
                           );
                         }
                       }
@@ -614,7 +606,6 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 🧺 Keep all items
                   OutlinedButton.icon(
                     icon: const Icon(Icons.shopping_basket_outlined, size: 22),
                     label: Text(
@@ -648,21 +639,21 @@ class _ShoppingModeScreenState extends ConsumerState<ShoppingModeScreen> {
                       shoppingModeNotifier.resetState();
 
                       if (context.mounted) {
-                        Navigator.of(context).pop(); // close loading
-                        Navigator.of(context).pop(); // close sheet
-                        Navigator.of(context).pop(); // leave shopping mode
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop();
                       }
                     },
                   ),
                   const SizedBox(height: 12),
 
-                  // ❌ Cancel
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       localizations.cancel,
                       style: TextStyle(
-                        color: theme.inactive.withOpacity(0.6),
+                        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        color: theme.inactive.withAlpha((255 * 0.6).round()),
                         fontSize: 15,
                       ),
                     ),

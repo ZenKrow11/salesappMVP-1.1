@@ -32,7 +32,7 @@ class PurchaseService {
       },
       onError: (error) {
         // Handle stream errors if any.
-        print("Purchase Stream Error: $error");
+        // print("Purchase Stream Error: $error");
       },
     );
   }
@@ -41,7 +41,7 @@ class PurchaseService {
   Future<void> buyPremium() async {
     final bool available = await _inAppPurchase.isAvailable();
     if (!available) {
-      print("Store not available");
+      // print("Store not available");
       // Optionally, show a snackbar or dialog to the user.
       return;
     }
@@ -50,7 +50,7 @@ class PurchaseService {
     await _inAppPurchase.queryProductDetails({_premiumProductId});
 
     if (response.notFoundIDs.isNotEmpty) {
-      print("Product not found: $_premiumProductId");
+      // print("Product not found: $_premiumProductId");
       // This means the product ID is not configured correctly in the Play Store.
       return;
     }
@@ -71,7 +71,7 @@ class PurchaseService {
           purchaseDetails.status == PurchaseStatus.restored) {
 
         // The purchase was successful!
-        print("Purchase successful for product: ${purchaseDetails.productID}");
+        // print("Purchase successful for product: ${purchaseDetails.productID}");
 
         // CRITICAL: For a real app, you should verify the purchase on your own server
         // to prevent fraud. For this MVP, we will trust the client.
@@ -87,7 +87,7 @@ class PurchaseService {
           _inAppPurchase.completePurchase(purchaseDetails);
         }
       } else if (purchaseDetails.status == PurchaseStatus.error) {
-        print("Purchase Error: ${purchaseDetails.error}");
+        // print("Purchase Error: ${purchaseDetails.error}");
       }
     }
   }

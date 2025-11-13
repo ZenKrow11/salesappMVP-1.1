@@ -23,7 +23,6 @@ final hiveInitializationProvider = FutureProvider<void>((ref) async {
   // After you are confident your users have updated, you can safely remove this line.
   await Hive.openBox<Product>('favorites');
 
-  print("[HiveProvider] All Hive boxes initialized and opened.");
 });
 
 /// Creates and provides the single instance of your HiveStorageService.

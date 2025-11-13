@@ -8,7 +8,6 @@ import 'package:sales_app_mvp/pages/shopping_mode_page.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/item_count_widget.dart';
-import 'package:sales_app_mvp/widgets/slide_up_page_route.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 import 'package:sales_app_mvp/providers/shopping_mode_provider.dart';
 
@@ -138,7 +137,7 @@ class ShoppingSummaryBar extends ConsumerWidget {
           ),
           content: Text(
             l10n.itemLimitReachedBody(currentItems, limit),
-            style: TextStyle(color: theme.inactive.withOpacity(0.8)),
+            style: TextStyle(color: theme.inactive.withAlpha((255 * 0.8).round())),
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [

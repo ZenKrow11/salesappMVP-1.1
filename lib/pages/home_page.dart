@@ -8,7 +8,6 @@ import 'package:sales_app_mvp/generated/app_localizations.dart';
 import 'package:sales_app_mvp/models/plain_product.dart';
 import 'package:sales_app_mvp/providers/grouped_products_provider.dart';
 import 'package:sales_app_mvp/providers/home_page_state_provider.dart';
-import 'package:sales_app_mvp/services/category_service.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 import 'package:sales_app_mvp/widgets/color_utilities.dart';
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
@@ -112,8 +111,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
     super.dispose();
   }
 
-  // --- REVERTED TO A SIMPLER "SCROLL-TO-TOP" METHOD ---
-  // This is now acceptable because the collapse action is more drastic.
   void _scrollToHeader(GlobalKey headerKey) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = headerKey.currentContext;
@@ -122,7 +119,7 @@ class _ProductListState extends ConsumerState<_ProductList> {
           context,
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
-          alignment: 0.05, // Aligns to the top with a small padding
+          alignment: 0.05,
         );
       }
     });
@@ -130,7 +127,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
 
   @override
   Widget build(BuildContext context) {
-    // The ref.listen block has been removed as it's no longer needed.
     final unifiedList = ref.watch(unifiedListProvider);
     final l10n = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
@@ -141,9 +137,11 @@ class _ProductListState extends ConsumerState<_ProductList> {
 
     return ScrollbarTheme(
       data: ScrollbarThemeData(
-        thumbColor: MaterialStateProperty.all(theme.secondary.withOpacity(0.7)),
+        // --- FIX: Replaced MaterialStateProperty and withOpacity ---
+        thumbColor: WidgetStateProperty.all(theme.secondary.withAlpha((255 * 0.7).round())),
         radius: const Radius.circular(4),
-        thickness: MaterialStateProperty.all(6.0),
+        // --- FIX: Replaced MaterialStateProperty ---
+        thickness: WidgetStateProperty.all(6.0),
       ),
       child: Scrollbar(
         controller: _scrollController,
@@ -165,7 +163,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
       List<ListItem> unifiedList,
       List<PlainProduct> allProductsForSwiper,
       AppLocalizations l10n) {
-    // This method's implementation remains the same...
     final List<Widget> slivers = [];
     if (unifiedList.isEmpty) return slivers;
 
@@ -199,7 +196,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
   }
 
   Widget _buildAdSliver() {
-    // ... implementation remains the same
     return const SliverPadding(
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       sliver: SliverToBoxAdapter(child: AdPlaceholderWidget()),
@@ -215,10 +211,9 @@ class _ProductListState extends ConsumerState<_ProductList> {
         totalItemCount: item.group.products.length,
         showingItemCount: ref.watch(categoryPaginationProvider)[categoryKey] ?? kCollapsedItemLimit,
         canLoadMore: item.canLoadMore,
-        // --- THE onCollapse ACTION IS NOW USED FOR THE SINGLE TAP ---
         onCollapse: () {
-          _scrollToHeader(headerKey); // Scroll to the top of the section
-          ref.read(categoryPaginationProvider.notifier).reset(categoryKey); // Reset the state
+          _scrollToHeader(headerKey);
+          ref.read(categoryPaginationProvider.notifier).reset(categoryKey);
         },
         onShowMore: () => ref.read(categoryPaginationProvider.notifier).increase(categoryKey),
       ),
@@ -226,7 +221,6 @@ class _ProductListState extends ConsumerState<_ProductList> {
   }
 
   int _buildProductGridSliver(
-      // ... implementation remains the same
       BuildContext context,
       List<Widget> slivers,
       List<ListItem> unifiedList,
@@ -333,13 +327,12 @@ class _GroupHeader extends ConsumerWidget {
   }
 }
 
-// The button widget itself does not need any changes.
 class _LoadMoreControl extends ConsumerWidget {
   final int totalItemCount;
   final int showingItemCount;
   final bool canLoadMore;
   final VoidCallback onShowMore;
-  final VoidCallback onCollapse; // The only "show less" action now
+  final VoidCallback onCollapse;
 
   const _LoadMoreControl({
     required this.totalItemCount,
@@ -361,8 +354,6 @@ class _LoadMoreControl extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30.0),
-          // This border is now handled by the inner elements
-          // to achieve the desired visual separation without an outer frame.
           border: Border.all(color: Colors.transparent, width: 1.5),
         ),
         child: ClipRRect(
@@ -375,13 +366,13 @@ class _LoadMoreControl extends ConsumerWidget {
                   child: Material(
                     color: theme.accent,
                     child: InkWell(
-                      // --- A SIMPLE TAP NOW TRIGGERS THE FULL COLLAPSE ---
                       onTap: onCollapse,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
+                          // --- FIX: Replaced deprecated withOpacity with withAlpha ---
                           border: Border(
-                            right: BorderSide(color: theme.secondary.withOpacity(0.5), width: 1.5),
+                            right: BorderSide(color: theme.secondary.withAlpha((255 * 0.5).round()), width: 1.5),
                           ),
                         ),
                         child: Icon(Icons.expand_less, color: theme.primary),

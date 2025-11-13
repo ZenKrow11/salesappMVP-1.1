@@ -33,7 +33,6 @@ class ProductSyncService {
       }
       return null;
     } catch (e) {
-      print('Error fetching remote metadata: $e');
       return null;
     }
   }
@@ -55,7 +54,6 @@ class ProductSyncService {
     final localTimestampValue = localMetadata['lastUpdated'];
 
     if (remoteTimestampValue == null) {
-      print("[ProductSyncService] Warning: Remote metadata is missing 'lastUpdated' field.");
       return false; // Cannot compare, so no sync.
     }
 
@@ -80,7 +78,6 @@ class ProductSyncService {
     final remoteMetadata = await getRemoteMetadata();
 
     if (remoteMetadata == null) {
-      print("[ProductSyncService] No remote metadata found. Clearing local cache.");
       await _productBox.clear();
       await _metadataBox.clear();
       return {};
@@ -101,7 +98,6 @@ class ProductSyncService {
     final Map<String, Product> productMap = {};
 
     // --- QUERY 1: Fetch all products currently on sale ---
-    print("[ProductSyncService] Fetching all products on sale...");
     final productsOnSaleSnapshot = await _firestore
         .collection('products')
         .where('isOnSale', isEqualTo: true)
@@ -110,13 +106,11 @@ class ProductSyncService {
     for (var doc in productsOnSaleSnapshot.docs) {
       productMap[doc.id] = Product.fromFirestore(doc.id, doc.data());
     }
-    print("[ProductSyncService] Found ${productMap.length} products on sale.");
 
     // --- QUERY 2: Fetch all products saved by the user that are NOT already fetched ---
     final idsToFetch = savedProductIds.where((id) => !productMap.containsKey(id)).toList();
 
     if (idsToFetch.isNotEmpty) {
-      print("[ProductSyncService] Fetching ${idsToFetch.length} additional user-saved products...");
       // Firestore 'whereIn' queries are limited to 30 elements per query.
       // We must break our list of IDs into chunks of 30.
       for (var i = 0; i < idsToFetch.length; i += 30) {
@@ -137,10 +131,8 @@ class ProductSyncService {
     // --- STEP 3: THE FIX - STORE PRODUCTS INDIVIDUALLY ---
     // Clear the box of old data and then use `putAll` to save each product
     // from our map as a separate key-value pair. This is the core of the fix.
-    print("[ProductSyncService] Caching ${productMap.length} total products individually...");
     await _productBox.clear();
     await _productBox.putAll(productMap);
-    print("[ProductSyncService] Caching complete.");
 
     // On success, save the new metadata locally
     final newLocalMetadata = Map<String, dynamic>.from(remoteMetadata);

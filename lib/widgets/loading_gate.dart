@@ -2,9 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// --- THIS IS THE FIX ---
-// We import the google_mobile_ads package but explicitly hide the conflicting
-// InitializationStatus enum, as we want to use our own from app_data_provider.
 import 'package:google_mobile_ads/google_mobile_ads.dart' hide InitializationStatus;
 
 import 'package:sales_app_mvp/components/preloaded_ad_widget.dart';
@@ -14,9 +11,14 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/services/ad_manager.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
+// This helper function remains the same.
+String _getTranslatedMessage(AppDataState state, AppLocalizations l10n) {
+  // If progress is 0, we are in the initial "splash" state.
+  if (state.loadingProgress == 0.0 && state.status != InitializationStatus.error) {
+    return l10n.initializing;
+  }
 
-String _getTranslatedMessage(String key, AppLocalizations l10n) {
-  switch (key) {
+  switch (state.loadingMessage) {
     case 'loadingInitializing':
       return l10n.loadingInitializing;
     case 'loadingPreparingStorage':
@@ -50,7 +52,8 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final isPremium = ref.read(isPremiumProvider);
-        if (!isPremium) {
+        // Only preload the ad if we anticipate a network load.
+        if (!isPremium && ref.read(appDataProvider).loadingType == LoadingType.fromNetwork) {
           ref.read(adManagerProvider.notifier).preloadBannerAd(AdPlacement.splashScreen, AdSize.banner);
         }
       }
@@ -60,87 +63,88 @@ class _LoadingGateState extends ConsumerState<LoadingGate> {
   @override
   Widget build(BuildContext context) {
     final appDataState = ref.watch(appDataProvider);
-    // Now that the ambiguity is resolved, this line will work correctly.
-    final hasError = appDataState.status == InitializationStatus.error;
-
-    return _buildLoadingScreen(appDataState, hasError: hasError);
-  }
-
-  Widget _buildLoadingScreen(AppDataState state, {bool hasError = false}) {
     final theme = ref.watch(themeProvider);
     final l10n = AppLocalizations.of(context)!;
+
+    final hasError = appDataState.status == InitializationStatus.error;
+    final isIndeterminate = appDataState.loadingProgress == 0.0 && !hasError;
+
+    // --- SMART ANIMATION DURATION ---
+    // Use a quick, satisfying animation for fast cache loads.
+    // Use a smoother, shorter animation for each step of a network load.
+    final animationDuration = appDataState.loadingType == LoadingType.fromCache
+        ? const Duration(milliseconds: 400)
+        : const Duration(milliseconds: 300);
+
     final Color iconColor = hasError ? Colors.red : theme.secondary;
     final Color textColor = hasError ? Colors.red : theme.inactive;
     final Color progressColor = hasError ? Colors.red : theme.secondary;
     final Color progressBackgroundColor =
-    hasError ? Colors.red.withOpacity(0.3) : theme.primary;
+        hasError ? Colors.red.withAlpha((255 * 0.3).round()) : theme.primary;
 
     return Scaffold(
       backgroundColor: theme.pageBackground,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Spacer(flex: 3),
-                      Flexible(
-                        flex: 5,
-                        child: ref.watch(isPremiumProvider)
-                            ? const SizedBox.shrink()
-                            : const PreloadedAdWidget(
-                          placement: AdPlacement.splashScreen,
-                          adSize: AdSize.banner,
-                        ),
-                      ),
-                      const Spacer(flex: 2),
-                      Icon(
-                        hasError ? Icons.error_outline : Icons.shopping_cart_checkout,
-                        size: 60,
-                        color: iconColor,
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Text(
-                          _getTranslatedMessage(state.loadingMessage, l10n),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: textColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 60.0),
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: state.loadingProgress),
-                          duration: const Duration(milliseconds: 300),
-                          builder: (context, value, child) {
-                            return LinearProgressIndicator(
-                              value: value,
-                              minHeight: 8.0,
-                              backgroundColor: progressBackgroundColor,
-                              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                              borderRadius: BorderRadius.circular(10),
-                            );
-                          },
-                        ),
-                      ),
-                      const Spacer(flex: 4),
-                    ],
-                  ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 3),
+            // --- SMART AD DISPLAY ---
+            // Only show the ad banner for non-premium users during a network load.
+            Flexible(
+              flex: 5,
+              child: (ref.watch(isPremiumProvider) || appDataState.loadingType != LoadingType.fromNetwork)
+                  ? const SizedBox(height: 50) // Reserve space to prevent layout jumps
+                  : const PreloadedAdWidget(
+                placement: AdPlacement.splashScreen,
+                adSize: AdSize.banner,
+              ),
+            ),
+            const Spacer(flex: 2),
+            Icon(
+              hasError ? Icons.error_outline : Icons.shopping_cart_checkout,
+              size: 60,
+              color: iconColor,
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text(
+                _getTranslatedMessage(appDataState, l10n),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          );
-        },
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 60.0),
+              // --- SMART PROGRESS INDICATOR ---
+              child: isIndeterminate
+                  ? LinearProgressIndicator(
+                backgroundColor: progressBackgroundColor,
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              )
+                  : TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: appDataState.loadingProgress),
+                duration: animationDuration,
+                builder: (context, value, child) {
+                  return LinearProgressIndicator(
+                    value: value,
+                    minHeight: 8.0,
+                    backgroundColor: progressBackgroundColor,
+                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                    borderRadius: BorderRadius.circular(10),
+                  );
+                },
+              ),
+            ),
+            const Spacer(flex: 4),
+          ],
+        ),
       ),
     );
   }

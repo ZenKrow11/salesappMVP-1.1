@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sales_app_mvp/generated/app_localizations.dart';
-import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/pages/change_password_page.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
@@ -29,13 +28,16 @@ class AccountPage extends ConsumerWidget {
         content: Text(l10n.logoutConfirmation, style: TextStyle(color: theme.inactive)),
         actions: [
           TextButton(
-            child: Text(l10n.cancel, style: TextStyle(color: theme.inactive.withOpacity(0.7))),
+            // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+            child: Text(l10n.cancel, style: TextStyle(color: theme.inactive.withAlpha((255 * 0.7).round()))),
             onPressed: () => Navigator.of(dialogContext).pop(),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: theme.accent),
             child: Text(l10n.logout),
             onPressed: () async {
+              // Note: context.mounted check is crucial here
+              if (!context.mounted) return;
               Navigator.of(dialogContext).pop();
               await ref.read(authControllerProvider.notifier).signOut();
               if (context.mounted) {
@@ -79,6 +81,8 @@ class AccountPage extends ConsumerWidget {
     );
 
     if (confirmed != true) return;
+    // --- FIX: Check context before async operation ---
+    if (!context.mounted) return;
 
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -131,6 +135,7 @@ class AccountPage extends ConsumerWidget {
             onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty) {
+                // No context used after await, so no check needed here.
                 await ref.read(userProfileNotifierProvider.notifier).updateDisplayName(newName);
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();
               }
@@ -212,6 +217,15 @@ class AccountPage extends ConsumerWidget {
                                 builder: (_) => const ChangePasswordPage()));
                           },
                         ),
+                        // --- REFACTOR: Moved delete account option here ---
+                        _buildSubListItem(
+                          l10n.deleteAccount,
+                          context,
+                          l10n: l10n,
+                          theme: theme,
+                          isDestructive: true,
+                          onTap: () => _showConfirmDeleteDialog(context, ref),
+                        ),
                       ],
                     ),
                     if (isPremium)
@@ -229,21 +243,7 @@ class AccountPage extends ConsumerWidget {
                           ),
                         ],
                       ),
-                    _buildAccountCard(
-                      icon: Icons.warning_amber_rounded,
-                      title: l10n.dangerZone,
-                      theme: theme,
-                      children: [
-                        _buildSubListItem(
-                          l10n.deleteAccount,
-                          context,
-                          l10n: l10n,
-                          theme: theme,
-                          isDestructive: true,
-                          onTap: () => _showConfirmDeleteDialog(context, ref),
-                        ),
-                      ],
-                    ),
+                    // --- REFACTOR: Removed the separate Danger Zone card ---
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                       child: Card(
@@ -280,19 +280,25 @@ class AccountPage extends ConsumerWidget {
     String? displayName,
     required bool isPremium,
   }) {
+    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+    final statusColor = isPremium ? theme.accent : theme.inactive.withAlpha((255 * 0.7).round());
     final statusText = isPremium ? l10n.accountStatusPremium : l10n.accountStatusFree;
-    final statusColor = isPremium ? theme.accent : theme.inactive.withOpacity(0.7);
 
     return GestureDetector(
       onLongPress: () async {
         try {
           await ref.read(userProfileNotifierProvider.notifier).updateUserPremiumStatus(!isPremium);
-          ref.refresh(userProfileProvider);
+          // --- FIX: Handled unused_result warning ---
+          final _ = ref.refresh(userProfileProvider);
+          // --- FIX: Add context mounted check after async gap ---
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(isPremium ? 'Developer Mode: Set to FREE' : 'Developer Mode: Set to PREMIUM'),
             duration: const Duration(seconds: 1),
           ));
         } catch (e) {
+          // --- FIX: Add context mounted check after async gap ---
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating status: $e'), backgroundColor: theme.accent));
         }
       },
@@ -309,11 +315,13 @@ class AccountPage extends ConsumerWidget {
                 children: [
                   Text(displayName ?? l10n.user, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.inactive), overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text(user?.email ?? l10n.noEmailAvailable, style: TextStyle(fontSize: 14, color: theme.inactive.withOpacity(0.7)), overflow: TextOverflow.ellipsis),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  Text(user?.email ?? l10n.noEmailAvailable, style: TextStyle(fontSize: 14, color: theme.inactive.withAlpha((255 * 0.7).round())), overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    decoration: BoxDecoration(color: statusColor.withAlpha((255 * 0.2).round()), borderRadius: BorderRadius.circular(6)),
                     child: Text(statusText.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
                   ),
                   if (!isPremium) ...[
@@ -323,7 +331,8 @@ class AccountPage extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: theme.accent.withOpacity(0.15),
+                          // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                          color: theme.accent.withAlpha((255 * 0.15).round()),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: theme.accent, width: 1.5),
                         ),

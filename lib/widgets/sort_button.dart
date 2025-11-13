@@ -31,7 +31,7 @@ class SortButton extends ConsumerWidget {
         );
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: theme.background.withOpacity(0.5),
+        backgroundColor: theme.background.withAlpha(128),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(

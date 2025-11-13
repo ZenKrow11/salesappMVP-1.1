@@ -1,7 +1,8 @@
 // lib/models/product.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:equatable/equatable.dart'; // 1. Import Equatable
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart'; // Required for @immutable
 import 'package:hive/hive.dart';
 import 'plain_product.dart';
 import 'categorizable.dart';
@@ -27,9 +28,10 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
   @HiveField(5)
   final int discountPercentage;
   @HiveField(6)
-  @override // 2. Add override for Categorizable interface
+  @override
   final String category;
   @HiveField(7)
+  @override
   final String subcategory;
   @HiveField(8)
   final String url;
@@ -47,12 +49,9 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
   final bool isCustom;
   @HiveField(15)
   final bool isOnSale;
-
-  // 3. Add the new quantity field
   @HiveField(16)
   final int quantity;
 
-  // 4. Use a const constructor with required named parameters for clarity and immutability.
   Product({
     required this.id,
     required this.store,
@@ -70,7 +69,7 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,
-    this.quantity = 1, // Default quantity is 1
+    this.quantity = 1,
   });
 
   /// Factory constructor to create a Product from a Firestore document.
@@ -97,7 +96,6 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       specialCondition: specialConditionValue,
       isCustom: _parseBool(data['isCustom'], defaultValue: false),
       isOnSale: _parseBool(data['isOnSale'], defaultValue: true),
-      // Read quantity from Firestore, defaulting to 1 if not present.
       quantity: _parseInt(data['quantity'], defaultValue: 1),
     );
   }
@@ -120,7 +118,7 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     'special_condition': specialCondition,
     'isCustom': isCustom,
     'isOnSale': isOnSale,
-    'quantity': quantity, // Add quantity to the JSON data
+    'quantity': quantity,
   };
 
   /// Computed property for discount rate.
@@ -129,8 +127,6 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     return (normalPrice - currentPrice) / normalPrice;
   }
 
-  /// 5. Add a `copyWith` method for immutable state updates.
-  /// This is essential for Riverpod notifiers.
   Product copyWith({
     String? id,
     String? store,
@@ -190,12 +186,10 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       dealEnd: dealEnd,
       isCustom: isCustom,
       isOnSale: isOnSale,
-      // 6. Pass quantity to the plain object
       quantity: quantity,
     );
   }
 
-  // 7. Implement Equatable props for value comparison.
   @override
   List<Object?> get props => [
     id,
@@ -218,7 +212,7 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
   ];
 }
 
-// Helper Functions (unchanged, they are robust and fine as top-level functions)
+// Helper Functions
 DateTime? _parseDate(dynamic data) {
   if (data is Timestamp) return data.toDate();
   return null;

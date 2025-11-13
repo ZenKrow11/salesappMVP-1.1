@@ -267,10 +267,10 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         labelStyle: TextStyle(color: appTheme.inactive),
         prefixIcon: Icon(Icons.email_outlined, color: appTheme.inactive),
         filled: true,
-        fillColor: appTheme.primary.withOpacity(0.5),
+        fillColor: appTheme.primary.withAlpha(128),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)),
+          borderSide: BorderSide(color: appTheme.inactive.withAlpha(51)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -301,10 +301,10 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         labelStyle: TextStyle(color: appTheme.inactive),
         prefixIcon: Icon(Icons.lock_outline, color: appTheme.inactive),
         filled: true,
-        fillColor: appTheme.primary.withOpacity(0.5),
+        fillColor: appTheme.primary.withAlpha(128),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: appTheme.inactive.withOpacity(0.2)),
+          borderSide: BorderSide(color: appTheme.inactive.withAlpha(51)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -340,8 +340,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
               onChanged: (val) => setState(() => _keepLoggedIn = val ?? true),
               activeColor: appTheme.secondary,
               checkColor: appTheme.background,
-              side: BorderSide(
-                  color: appTheme.inactive.withOpacity(0.5), width: 2),
+              side: BorderSide(color: appTheme.inactive.withAlpha(128), width: 2),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6)),
             ),
@@ -387,14 +386,12 @@ class _LoginViewState extends ConsumerState<_LoginView> {
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(
-                child: Divider(color: appTheme.inactive.withOpacity(0.3))),
+            Expanded(child: Divider(color: appTheme.inactive.withAlpha(77))),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(l10n.or, style: TextStyle(color: appTheme.inactive)), // <-- LOCALIZED
             ),
-            Expanded(
-                child: Divider(color: appTheme.inactive.withOpacity(0.3))),
+            Expanded(child: Divider(color: appTheme.inactive.withAlpha(77))),
           ],
         ),
         const SizedBox(height: 20),
@@ -411,7 +408,7 @@ class _LoginViewState extends ConsumerState<_LoginView> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: appTheme.inactive.withOpacity(0.3)),
+              side: BorderSide(color: appTheme.inactive.withAlpha(77)),
             ),
             elevation: 0,
             textStyle:

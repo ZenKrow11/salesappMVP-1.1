@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/components/search_bottom_sheet.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/widgets/app_theme.dart';
 
@@ -48,7 +47,7 @@ class SearchButton extends ConsumerWidget {
         );
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: theme.background.withOpacity(0.5),
+        backgroundColor: theme.background.withAlpha(128),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(

@@ -96,7 +96,7 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
               Container(
                 height: 24.0,
                 width: 1.0,
-                color: theme.secondary.withOpacity(0.5),
+                color: theme.secondary.withAlpha((255 * 0.5).round()),
                 margin: const EdgeInsets.only(right: 8.0),
               ),
             if (widget.trailing != null) widget.trailing!,

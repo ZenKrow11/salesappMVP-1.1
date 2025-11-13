@@ -1,7 +1,7 @@
 // lib/providers/shopping_list_provider.dart
 
 import 'dart:async';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter/widgets.dart'; // --- FIX: Replaced implementation import ---
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -11,15 +11,13 @@ import 'package:sales_app_mvp/services/firestore_service.dart';
 import 'package:sales_app_mvp/models/filter_state.dart';
 import 'package:sales_app_mvp/providers/filter_state_provider.dart';
 import 'package:sales_app_mvp/providers/user_profile_provider.dart';
-import 'package:sales_app_mvp/main.dart'; // Needed for authStateChangesProvider
+import 'package:sales_app_mvp/main.dart';
 
 part 'shopping_list_provider.freezed.dart';
 
 // =========================================================================
 // SECTION 1: DATA STREAM PROVIDERS
 // =========================================================================
-
-// ... (This entire section remains unchanged)
 
 final listedProductIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
@@ -169,7 +167,6 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     }
   }
 
-  // ... (createNewList, renameList, deleteList, addToList, etc. are all unchanged)
   Future<void> createNewList(String listName) async {
     final isPremium = _ref.read(userProfileProvider).value?.isPremium ?? false;
     final listCount = _ref.read(allShoppingListsProvider).value?.length ?? 0;
@@ -209,7 +206,6 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
   Future<void> addToSpecificList(Product product, String listId) async {
     if (!_isItemLimitOk()) return;
     final listName = _ref.read(allShoppingListsProvider).value?.firstWhere((info) => info.id == listId,
-        // --- FIX: Provide the required 'itemCount' argument in the orElse fallback. ---
         orElse: () => ShoppingListInfo(id: '', name: 'list', itemCount: 0)
     ).name ?? 'list';
 
@@ -247,7 +243,8 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     try {
       await _firestoreService.updateItemQuantitiesInList(listId: activeListId, quantities: updatedQuantities);
     } catch (e) {
-      print('Silent error saving quantities: $e');
+      // --- FIX: Replaced print with debugPrint ---
+      debugPrint('Silent error saving quantities: $e');
     }
   }
 
@@ -257,7 +254,6 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     await _performAction(() => _firestoreService.removeItemFromList(listId: activeListId, productId: product.id));
   }
 
-  // --- THIS IS THE NEW METHOD FOR BULK DELETE ---
   Future<void> removeItemsFromList(Set<String> productIds) async {
     final activeListId = _ref.read(activeShoppingListProvider);
     if (activeListId == null) {
@@ -268,21 +264,21 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
 
     final idsToRemove = productIds.toList();
 
-    // --- ADD THIS LINE for debugging ---
-    print('ShoppingListNotifier received request to remove: $idsToRemove from list $activeListId');
+    // --- FIX: Replaced print with debugPrint ---
+    debugPrint('ShoppingListNotifier received request to remove: $idsToRemove from list $activeListId');
 
     await _performAction(
-          () async { // --- Make this async
+          () async {
         try {
           await _firestoreService.removeItemsFromList(
             listId: activeListId,
             productIds: idsToRemove,
           );
         } catch (e) {
-          // --- ADD THIS CATCH BLOCK ---
-          print('!!! ERROR during bulk delete in FirestoreService: $e');
-          // Re-throw the error so _performAction can handle it
-          throw e;
+          // --- FIX: Replaced print with debugPrint ---
+          debugPrint('!!! ERROR during bulk delete in FirestoreService: $e');
+          // --- FIX: Use rethrow to preserve the stack trace ---
+          rethrow;
         }
       },
       successMessage: '${idsToRemove.length} item(s) removed from the list.',

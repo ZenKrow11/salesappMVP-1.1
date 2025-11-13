@@ -77,7 +77,7 @@ class ShoppingModeListItemTile extends ConsumerWidget {
 
               // --- Info Icon ---
               IconButton(
-                icon: Icon(Icons.info_outline, color: theme.inactive.withOpacity(0.7)),
+                icon: Icon(Icons.info_outline, color: theme.inactive.withAlpha(179)),
                 onPressed: onInfoTap,
                 tooltip: 'View details',
                 splashRadius: 24,

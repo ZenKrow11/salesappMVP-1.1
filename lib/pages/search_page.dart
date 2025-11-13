@@ -29,7 +29,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), () {
         if (mounted) {
-          ref.refresh(searchSuggestionsProvider(_textController.text));
+          // --- FIX: Assign the result to '_' to mark it as intentionally unused ---
+          final _ = ref.refresh(searchSuggestionsProvider(_textController.text));
         }
       });
       setState(() {});
@@ -81,7 +82,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     return Center(
                       child: Text(
                         "No results found",
-                        style: TextStyle(color: theme.inactive.withOpacity(0.7)),
+                        // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        style: TextStyle(color: theme.inactive.withAlpha((255 * 0.7).round())),
                       ),
                     );
                   }
@@ -108,7 +110,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
   }
 
-  // === THIS WIDGET CONTAINS THE FIX ===
   Widget _buildSearchBar(AppThemeData theme, AppLocalizations l10n) {
     return SafeArea(
       top: false,
@@ -135,7 +136,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   )
                       : null,
                   filled: true,
-                  fillColor: theme.inactive.withOpacity(0.1),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  fillColor: theme.inactive.withAlpha((255 * 0.1).round()),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide.none,
@@ -144,19 +146,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
             ),
             const SizedBox(width: 12),
-            // The ElevatedButton is now a direct child of the Row.
-            // Its size is controlled by its own style properties.
             ElevatedButton(
               onPressed: () => _onApply(_textController.text),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.secondary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12), // Match the TextField's border radius
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                // Use fixedSize to create a perfect square.
-                // You can adjust the value (e.g., 56) to get the exact size you want.
                 fixedSize: const Size(56, 56),
-                padding: EdgeInsets.zero, // Remove padding to center the icon
+                padding: EdgeInsets.zero,
               ),
               child: Icon(
                 Icons.arrow_forward,

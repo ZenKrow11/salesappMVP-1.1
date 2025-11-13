@@ -40,17 +40,11 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
   Widget build(BuildContext context) {
     final activeListId = ref.watch(activeShoppingListProvider);
     final l10n = AppLocalizations.of(context)!;
-    // We need to get the theme here to use it in the empty state.
     final theme = ref.watch(themeProvider);
 
-    // ================================================================
-    // === THIS ENTIRE BLOCK IS REPLACED FOR AESTHETIC CONSISTENCY ===
-    // ================================================================
     if (activeListId == null) {
       return Scaffold(
-        // 1. Set the background color to match the rest of the app.
         backgroundColor: theme.pageBackground,
-        // 2. The redundant AppBar has been removed. The main screen's AppBar is used instead.
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32.0),
@@ -58,8 +52,7 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  l10n.welcome, // Using l10n string
-                  // 3. Style the text to be visible on a dark background.
+                  l10n.welcome,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: theme.inactive,
                   ),
@@ -67,18 +60,17 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  l10n.createFirstListPrompt, // Using l10n string
+                  l10n.createFirstListPrompt,
                   textAlign: TextAlign.center,
-                  // 4. Style the text to be visible on a dark background.
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: theme.inactive.withOpacity(0.8),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    color: theme.inactive.withAlpha((255 * 0.8).round()),
                   ),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
                   label: Text(l10n.createListButton),
-                  // --- THIS IS THE FIX ---
                   onPressed: () {
                     Navigator.of(context).push(
                       SlidePageRoute(
@@ -105,9 +97,6 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
         ),
       );
     }
-    // ================================================================
-    // === END OF REPLACEMENT =========================================
-    // ================================================================
 
     final asyncShoppingList = ref.watch(filteredAndSortedShoppingListProvider);
     final isGridView = ref.watch(settingsProvider).isGridView;
@@ -126,10 +115,11 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
               child: Text(
                 isFilterActive
                     ? l10n.noProductsMatchFilter
-                    : l10n.listIsEmpty, // This message is now for an existing, but empty, list.
+                    : l10n.listIsEmpty,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: theme.inactive.withOpacity(0.7),
+                  // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                  color: theme.inactive.withAlpha((255 * 0.7).round()),
                   fontSize: 16,
                 ),
               ),
@@ -156,10 +146,13 @@ class _ShoppingListPageState extends ConsumerState<ShoppingListPage> {
               Expanded(
                 child: ScrollbarTheme(
                   data: ScrollbarThemeData(
-                    thumbColor: MaterialStateProperty.all(
-                        theme.secondary.withOpacity(0.7)),
+                    // --- FIX: Replaced MaterialStateProperty with WidgetStateProperty ---
+                    thumbColor: WidgetStateProperty.all(
+                      // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        theme.secondary.withAlpha((255 * 0.7).round())),
                     radius: const Radius.circular(4),
-                    thickness: MaterialStateProperty.all(6.0),
+                    // --- FIX: Replaced MaterialStateProperty with WidgetStateProperty ---
+                    thickness: WidgetStateProperty.all(6.0),
                   ),
                   child: Scrollbar(
                     controller: _scrollController,

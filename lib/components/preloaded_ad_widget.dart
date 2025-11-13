@@ -34,11 +34,8 @@ class PreloadedAdWidget extends ConsumerWidget {
       return Container(
         width: adSize.width.toDouble(),
         height: adSize.height.toDouble(),
-        color: Theme
-            .of(context)
-            .colorScheme
-            .surface
-            .withOpacity(0.1),
+        color: Theme.of(context).colorScheme.surface.withAlpha(
+            (255 * 0.1).round()), // Use withAlpha to avoid precision loss
         alignment: Alignment.center,
         child: const Text('Ad Loading...'),
       );

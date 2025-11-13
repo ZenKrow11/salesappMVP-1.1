@@ -17,8 +17,6 @@ import 'package:sales_app_mvp/widgets/store_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sales_app_mvp/services/notification_manager.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
-// --- CLEANED UP IMPORTS ---
 import 'package:sales_app_mvp/widgets/slide_in_page_route.dart';
 
 
@@ -39,7 +37,6 @@ class ProductDetails extends ConsumerWidget {
     return SafeArea(
       child: GestureDetector(
         onDoubleTap: () => _toggleItemInList(context, ref),
-        // This one is correct
         onLongPress: () {
           Navigator.of(context, rootNavigator: true).push(
             SlidePageRoute(
@@ -92,11 +89,9 @@ class ProductDetails extends ConsumerWidget {
     final isItemInList = shoppingListProducts.any((item) => item.id == product.id);
 
     if (isItemInList) {
-      // --- FIX: Method call no longer needs context ---
       notifier.removeItemFromList(hiveProduct);
       NotificationManager.show(context, l10n.removedFrom(activeListName));
     } else {
-      // --- FIX: Method call no longer needs context ---
       notifier.addToList(hiveProduct);
       NotificationManager.show(context, l10n.addedTo(activeListName));
     }
@@ -188,7 +183,8 @@ class ProductDetails extends ConsumerWidget {
                     color: isInShoppingList ? theme.secondary : Colors.transparent,
                     borderRadius: BorderRadius.circular(4),
                     border: !isInShoppingList
-                        ? Border.all(color: Colors.black.withOpacity(0.4), width: 2.5)
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                        ? Border.all(color: Colors.black.withAlpha((255 * 0.4).round()), width: 2.5)
                         : null,
                   ),
                   child: isInShoppingList
@@ -209,12 +205,14 @@ class ProductDetails extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.4),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    color: Colors.black.withAlpha((255 * 0.4).round()),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
                     Icons.open_in_new_rounded,
-                    color: Colors.white.withOpacity(0.9),
+                    // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+                    color: Colors.white.withAlpha((255 * 0.9).round()),
                     size: 24,
                   ),
                 ),
@@ -346,11 +344,9 @@ class ProductDetails extends ConsumerWidget {
     );
   }
 
-  // --- THIS IS THE FIX ---
   Widget _buildSelectListButton(
       BuildContext context, WidgetRef ref, AppThemeData theme) {
     return InkWell(
-      // === CHANGE: Use SlidePageRoute to match the desired animation ===
       onTap: () => Navigator.of(context, rootNavigator: true).push(
         SlidePageRoute(
           page: const ManageShoppingListsPage(),
@@ -360,7 +356,8 @@ class ProductDetails extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-            border: Border.all(color: theme.inactive.withOpacity(0.3), width: 1.5),
+          // --- FIX: Replaced deprecated withOpacity with withAlpha ---
+            border: Border.all(color: theme.inactive.withAlpha((255 * 0.3).round()), width: 1.5),
             borderRadius: BorderRadius.circular(10)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
