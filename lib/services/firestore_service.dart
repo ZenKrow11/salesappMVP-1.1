@@ -3,20 +3,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sales_app_mvp/main.dart'; // To get the auth provider
+import 'package:sales_app_mvp/main.dart';
 import 'package:sales_app_mvp/models/shopping_list_info.dart';
 import 'package:sales_app_mvp/models/user_profile.dart';
 import '../models/product.dart';
 
-/// Provides an instance of FirestoreService to the app.
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService(ref);
 });
 
-/// A service class to handle all interactions with Cloud Firestore.
-///
-/// This class centralizes database logic, making it easier to manage and test.
-/// It handles user profiles, shopping lists, and custom items.
 class FirestoreService {
   final Ref _ref;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -27,8 +22,6 @@ class FirestoreService {
   // PRIVATE HELPERS
   // =======================================================================
 
-  /// Centralized method to get the current user's UID.
-  /// Throws a specific exception if the user is not authenticated.
   String _getUid() {
     final uid = _ref.read(authStateChangesProvider).value?.uid;
     if (uid == null) {
@@ -40,19 +33,15 @@ class FirestoreService {
     return uid;
   }
 
-  /// Reference to the current user's document.
   DocumentReference _userDocRef() =>
       _firestore.collection('users').doc(_getUid());
 
-  /// Reference to the `shoppingLists` subcollection for the current user.
   CollectionReference _shoppingListsRef() =>
       _userDocRef().collection('shoppingLists');
 
-  /// Reference to the `listedProductIds` subcollection for the current user.
   CollectionReference _listedProductIdsRef() =>
       _userDocRef().collection('listedProductIds');
 
-  /// Reference to the `customItems` subcollection for the current user.
   CollectionReference _customItemsRef() =>
       _userDocRef().collection('customItems');
 
@@ -60,8 +49,6 @@ class FirestoreService {
   // USER PROFILE MANAGEMENT
   // =======================================================================
 
-  /// Creates a user profile document if one doesn't already exist.
-  /// Called during the sign-up process.
   Future<void> createUserProfile(User user) async {
     final userRef = _firestore.collection('users').doc(user.uid);
     final doc = await userRef.get();
@@ -77,7 +64,6 @@ class FirestoreService {
     }
   }
 
-  /// Updates the current user's profile with the provided data.
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     await _userDocRef().set(data, SetOptions(merge: true));
   }
@@ -86,7 +72,6 @@ class FirestoreService {
   // SHOPPING LIST MANAGEMENT
   // =======================================================================
 
-  /// Creates a new shopping list with a given name.
   Future<void> createNewList({required String listName}) async {
     await _shoppingListsRef().doc().set({
       'name': listName,
@@ -95,13 +80,11 @@ class FirestoreService {
     });
   }
 
-  /// Updates the name of a specific shopping list.
   Future<void> updateShoppingListName(
       {required String listId, required String newName}) async {
     await _shoppingListsRef().doc(listId).update({'name': newName});
   }
 
-  /// Deletes an entire shopping list and all its items.
   Future<void> deleteList({required String listId}) async {
     final listDocRef = _shoppingListsRef().doc(listId);
     final itemsSnapshot = await listDocRef.collection('items').get();
@@ -121,7 +104,6 @@ class FirestoreService {
         final indexSnapshot = await transaction.get(indexDocRef);
 
         if (indexSnapshot.exists) {
-          // --- FIX: Removed unnecessary null-aware operator ---
           final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (count <= 1) {
             transaction.delete(indexDocRef);
@@ -134,11 +116,14 @@ class FirestoreService {
     });
   }
 
+  Future<DocumentSnapshot> getShoppingListDocument(String listId) async {
+    return _shoppingListsRef().doc(listId).get();
+  }
+
   // =======================================================================
-  // LIST ITEM MANAGEMENT
+  // LIST ITEM MANAGEMENT (REFACTORED)
   // =======================================================================
 
-  /// Adds a product to a specific shopping list.
   Future<void> addItemToList({
     required String listId,
     required String productId,
@@ -148,19 +133,26 @@ class FirestoreService {
     final itemDocRef = listDocRef.collection('items').doc(productId);
     final indexDocRef = _listedProductIdsRef().doc(productId);
 
-    final dataToSet = productData ?? {};
-    dataToSet['addedAt'] = FieldValue.serverTimestamp();
-    dataToSet['quantity'] = 1;
+    await _firestore.runTransaction((transaction) async {
+      final itemSnapshot = await transaction.get(itemDocRef);
+      if (itemSnapshot.exists) {
+        return;
+      }
 
-    final batch = _firestore.batch()
-      ..set(itemDocRef, dataToSet)
-      ..set(indexDocRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true))
-      ..update(listDocRef, {'itemCount': FieldValue.increment(1)});
+      final dataToSet = {
+        'id': productId,
+        'isCustom': productData != null,
+        'quantity': 1,
+        'addedAt': FieldValue.serverTimestamp(),
+        if (productData != null) ...productData,
+      };
 
-    await batch.commit();
+      transaction.set(itemDocRef, dataToSet);
+      transaction.update(listDocRef, {'itemCount': FieldValue.increment(1)});
+      transaction.set(indexDocRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+    });
   }
 
-  /// Removes a single product from a shopping list.
   Future<void> removeItemFromList({
     required String listId,
     required String productId,
@@ -171,12 +163,10 @@ class FirestoreService {
 
     await _firestore.runTransaction((transaction) async {
       final indexSnapshot = await transaction.get(indexDocRef);
-
       transaction.delete(itemDocRef);
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-1)});
 
       if (indexSnapshot.exists) {
-        // --- FIX: Removed unnecessary null-aware operator ---
         final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
         if (count <= 1) {
           transaction.delete(indexDocRef);
@@ -187,30 +177,21 @@ class FirestoreService {
     });
   }
 
-  /// Removes a list of products from a shopping list.
   Future<void> removeItemsFromList({
     required String listId,
     required List<String> productIds,
   }) async {
     if (productIds.isEmpty) return;
-
     final listDocRef = _shoppingListsRef().doc(listId);
 
     await _firestore.runTransaction((transaction) async {
-      final Map<String, DocumentSnapshot> indexSnapshots = {};
-      for (final productId in productIds) {
-        final indexDocRef = _listedProductIdsRef().doc(productId);
-        indexSnapshots[productId] = await transaction.get(indexDocRef);
-      }
-
       for (final productId in productIds) {
         final itemDocRef = listDocRef.collection('items').doc(productId);
         transaction.delete(itemDocRef);
 
-        final indexSnapshot = indexSnapshots[productId]!;
+        final indexDocRef = _listedProductIdsRef().doc(productId);
+        final indexSnapshot = await transaction.get(indexDocRef);
         if (indexSnapshot.exists) {
-          final indexDocRef = _listedProductIdsRef().doc(productId);
-          // --- FIX: Removed unnecessary null-aware operator ---
           final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (count <= 1) {
             transaction.delete(indexDocRef);
@@ -219,26 +200,21 @@ class FirestoreService {
           }
         }
       }
-
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-productIds.length)});
     });
   }
 
-  /// Updates the quantities for multiple items in a list using a batch write.
   Future<void> updateItemQuantitiesInList({
     required String listId,
     required Map<String, int> quantities,
   }) async {
     if (quantities.isEmpty) return;
-
     final listRef = _shoppingListsRef().doc(listId);
     final batch = _firestore.batch();
-
     quantities.forEach((productId, quantity) {
       final itemRef = listRef.collection('items').doc(productId);
       batch.update(itemRef, {'quantity': quantity});
     });
-
     await batch.commit();
   }
 
@@ -246,17 +222,14 @@ class FirestoreService {
   // CUSTOM ITEM MANAGEMENT
   // =======================================================================
 
-  /// Creates or overwrites a custom item in the user's private storage.
   Future<void> addCustomItemToStorage(Product customItem) async {
     await _customItemsRef().doc(customItem.id).set(customItem.toJson());
   }
 
-  /// Updates an existing custom item.
   Future<void> updateCustomItemInStorage(Product customItem) async {
     await _customItemsRef().doc(customItem.id).update(customItem.toJson());
   }
 
-  /// Deletes a custom item from the user's private storage.
   Future<void> deleteCustomItemFromStorage(String customItemId) async {
     await _customItemsRef().doc(customItemId).delete();
   }
@@ -265,7 +238,6 @@ class FirestoreService {
   // STREAM GETTERS
   // =======================================================================
 
-  /// Streams the set of all product IDs currently on any of the user's lists.
   Stream<Set<String>> getListedProductIdsStream() {
     try {
       return _listedProductIdsRef()
@@ -276,10 +248,10 @@ class FirestoreService {
     }
   }
 
-  /// Streams a list of all shopping lists (metadata only).
   Stream<List<ShoppingListInfo>> getAllShoppingListsStream() {
     try {
       return _shoppingListsRef()
+          .orderBy('createdAt', descending: true)
           .snapshots()
           .map((snapshot) => snapshot.docs
           .map((doc) => ShoppingListInfo.fromFirestore(doc))
@@ -289,7 +261,6 @@ class FirestoreService {
     }
   }
 
-  /// Streams the items (as raw data maps) within a specific shopping list.
   Stream<List<Map<String, dynamic>>> getShoppingListItemsStream(
       {required String listId}) {
     try {
@@ -304,7 +275,6 @@ class FirestoreService {
     }
   }
 
-  /// Streams all custom items created by the user.
   Stream<List<Product>> getCustomItemsStream() {
     try {
       return _customItemsRef().snapshots().map((snapshot) => snapshot.docs

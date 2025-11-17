@@ -2,8 +2,6 @@
 
 import 'categorizable.dart';
 
-// A Plain Old Dart Object (PODO) for use in isolates or when a non-Hive
-// object is required. It mirrors the structure of the main Product model.
 class PlainProduct implements Categorizable {
   final String id;
   final String store;
@@ -15,16 +13,15 @@ class PlainProduct implements Categorizable {
   final String category;
   final String subcategory;
   final String url;
-  final String imageUrl;
+  final String imageUrl; // This is the property definition
   final List<String> nameTokens;
   final DateTime? dealStart;
   final String? specialCondition;
   final DateTime? dealEnd;
   final bool isCustom;
   final bool isOnSale;
-
-  // --- 1. ADD THE QUANTITY FIELD ---
   final int quantity;
+  final String discountType;
 
   PlainProduct({
     required this.id,
@@ -43,8 +40,8 @@ class PlainProduct implements Categorizable {
     this.dealEnd,
     this.isCustom = false,
     this.isOnSale = true,
-    // --- 2. ADD QUANTITY TO THE CONSTRUCTOR ---
     this.quantity = 1,
+    this.discountType = 'Standard Discount',
   });
 
   /// Factory constructor to create a PlainProduct from a Hive-backed Product.
@@ -59,15 +56,16 @@ class PlainProduct implements Categorizable {
       category: product.category,
       subcategory: product.subcategory,
       url: product.url,
+      // --- THIS IS THE CORRECTED LINE ---
       imageUrl: product.imageUrl,
-      nameTokens: List<String>.from(product.nameTokens ?? []), // Ensure it's a new list
+      nameTokens: List<String>.from(product.nameTokens ?? []),
       dealStart: product.dealStart,
       specialCondition: product.specialCondition,
       dealEnd: product.dealEnd,
       isCustom: product.isCustom ?? false,
       isOnSale: product.isOnSale ?? true,
-      // --- 3. COPY THE QUANTITY FROM THE SOURCE PRODUCT ---
       quantity: product.quantity ?? 1,
+      discountType: product.discountType ?? 'Standard Discount',
     );
   }
 

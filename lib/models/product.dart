@@ -9,10 +9,6 @@ import 'categorizable.dart';
 
 part 'product.g.dart';
 
-/// Represents a product item, designed for use with Firestore, Hive, and Riverpod.
-///
-/// Implements [Equatable] for proper object comparison, which is essential for
-/// state management to detect when the UI needs to be updated.
 @HiveType(typeId: 0)
 class Product extends HiveObject with EquatableMixin implements Categorizable {
   @HiveField(0)
@@ -51,6 +47,9 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
   final bool isOnSale;
   @HiveField(16)
   final int quantity;
+  // --- ADDED ---
+  @HiveField(17)
+  final String discountType;
 
   Product({
     required this.id,
@@ -70,11 +69,13 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     this.isCustom = false,
     this.isOnSale = true,
     this.quantity = 1,
+    // --- ADDED ---
+    this.discountType = 'Standard Discount',
   });
 
-  /// Factory constructor to create a Product from a Firestore document.
   factory Product.fromFirestore(String id, Map<String, dynamic> data) {
-    String? specialConditionValue = _parseString(data['special_condition']);
+    // --- RENAMED HERE ---
+    String? specialConditionValue = _parseString(data['specialCondition']);
     if (specialConditionValue.isEmpty || specialConditionValue.toLowerCase() == 'nan') {
       specialConditionValue = null;
     }
@@ -90,6 +91,7 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       subcategory: _parseString(data['subcategory']),
       url: _parseString(data['url']),
       imageUrl: _parseString(data['imageUrl']),
+      // Note: your Python script generates 'name_tokens' so this is correct
       nameTokens: _parseStringList(data['name_tokens']),
       dealStart: _parseDate(data['dealStart']),
       dealEnd: _parseDate(data['dealEnd']),
@@ -97,10 +99,11 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       isCustom: _parseBool(data['isCustom'], defaultValue: false),
       isOnSale: _parseBool(data['isOnSale'], defaultValue: true),
       quantity: _parseInt(data['quantity'], defaultValue: 1),
+      // --- ADDED ---
+      discountType: _parseString(data['discountType'], defaultValue: 'Standard Discount'),
     );
   }
 
-  /// Converts the Product instance to a JSON map for Firestore.
   Map<String, dynamic> toJson() => {
     'id': id,
     'store': store,
@@ -115,13 +118,15 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     'name_tokens': nameTokens,
     'dealStart': dealStart != null ? Timestamp.fromDate(dealStart!) : null,
     'dealEnd': dealEnd != null ? Timestamp.fromDate(dealEnd!) : null,
-    'special_condition': specialCondition,
+    // --- RENAMED HERE ---
+    'specialCondition': specialCondition,
     'isCustom': isCustom,
     'isOnSale': isOnSale,
     'quantity': quantity,
+    // --- ADDED ---
+    'discountType': discountType,
   };
 
-  /// Computed property for discount rate.
   double get discountRate {
     if (normalPrice <= 0 || normalPrice <= currentPrice) return 0.0;
     return (normalPrice - currentPrice) / normalPrice;
@@ -145,6 +150,7 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
     bool? isCustom,
     bool? isOnSale,
     int? quantity,
+    String? discountType, // --- ADDED ---
   }) {
     return Product(
       id: id ?? this.id,
@@ -164,10 +170,10 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       isCustom: isCustom ?? this.isCustom,
       isOnSale: isOnSale ?? this.isOnSale,
       quantity: quantity ?? this.quantity,
+      discountType: discountType ?? this.discountType, // --- ADDED ---
     );
   }
 
-  /// Convert Hive-backed Product to a plain, sendable object for isolates.
   PlainProduct toPlainObject() {
     return PlainProduct(
       id: id,
@@ -187,57 +193,40 @@ class Product extends HiveObject with EquatableMixin implements Categorizable {
       isCustom: isCustom,
       isOnSale: isOnSale,
       quantity: quantity,
+      discountType: discountType, // --- ADDED ---
     );
   }
 
   @override
   List<Object?> get props => [
-    id,
-    store,
-    name,
-    currentPrice,
-    normalPrice,
-    discountPercentage,
-    category,
-    subcategory,
-    url,
-    imageUrl,
-    nameTokens,
-    dealStart,
-    specialCondition,
-    dealEnd,
-    isCustom,
-    isOnSale,
-    quantity,
+    id, store, name, currentPrice, normalPrice, discountPercentage, category,
+    subcategory, url, imageUrl, nameTokens, dealStart, specialCondition, dealEnd,
+    isCustom, isOnSale, quantity, discountType, // --- ADDED ---
   ];
 }
 
-// Helper Functions
+// Helper functions do not need changes
+
 DateTime? _parseDate(dynamic data) {
   if (data is Timestamp) return data.toDate();
   return null;
 }
-
 String _parseString(dynamic data, {String defaultValue = ''}) {
   if (data is String) return data.trim();
   return data?.toString().trim() ?? defaultValue;
 }
-
 double _parseDouble(dynamic data, {double defaultValue = 0.0}) {
   if (data is num) return data.toDouble();
   return defaultValue;
 }
-
 int _parseInt(dynamic data, {int defaultValue = 0}) {
   if (data is num) return data.round();
   return defaultValue;
 }
-
 bool _parseBool(dynamic data, {bool defaultValue = false}) {
   if (data is bool) return data;
   return defaultValue;
 }
-
 List<String> _parseStringList(dynamic data) {
   if (data is List) {
     return data.map((item) => item.toString()).toList();
