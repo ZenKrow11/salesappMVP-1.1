@@ -1,7 +1,7 @@
 // lib/providers/shopping_list_provider.dart
 
 import 'dart:async';
-import 'package:flutter/widgets.dart'; // --- FIX: Replaced implementation import ---
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sales_app_mvp/models/product.dart';
@@ -16,7 +16,7 @@ import 'package:sales_app_mvp/providers/user_profile_provider.dart';
 part 'shopping_list_provider.freezed.dart';
 
 // =========================================================================
-// SECTION 1: DATA STREAM PROVIDERS
+// SECTION 1: DATA STREAM PROVIDERS (No changes here)
 // =========================================================================
 
 final listedProductIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
@@ -128,7 +128,7 @@ final customItemsProvider = StreamProvider.autoDispose<List<Product>>((ref) {
 
 
 // =========================================================================
-// SECTION 2: ACTION NOTIFIER
+// SECTION 2: ACTION NOTIFIER (WITH DEBUGGING STATEMENTS)
 // =========================================================================
 
 @freezed
@@ -139,32 +139,39 @@ class ShoppingListActionState with _$ShoppingListActionState {
   const factory ShoppingListActionState.error(String error) = _Error;
 }
 
-// In lib/providers/shopping_list_provider.dart
-
 class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
   final FirestoreService _firestoreService;
   final Ref _ref;
-
-  bool _isDisposed = false; // This flag is crucial
+  bool _isDisposed = false;
 
   ShoppingListNotifier(this._firestoreService, this._ref) : super(const ShoppingListActionState.initial());
 
   @override
   void dispose() {
-    _isDisposed = true; // Correctly set on dispose
+    _isDisposed = true;
     super.dispose();
   }
 
+  // --- DEBUG: Added logging to this crucial wrapper ---
   Future<bool> _performAction(Future<void> Function() action, {String? successMessage}) async {
-    // This wrapper correctly handles the dispose check
+    final actionName = successMessage ?? 'Unknown Action';
+    debugPrint('[DEBUG] _performAction: START for "$actionName"');
     state = const ShoppingListActionState.loading();
     try {
       await action();
-      if (_isDisposed) return true;
+      if (_isDisposed) {
+        debugPrint('[DEBUG] _performAction: FINISHED for "$actionName" but notifier was disposed.');
+        return true;
+      }
+      debugPrint('[DEBUG] _performAction: SUCCESS for "$actionName"');
       state = ShoppingListActionState.success(successMessage ?? 'Success!');
       return true;
     } catch (e) {
-      if (_isDisposed) return false;
+      if (_isDisposed) {
+        debugPrint('[DEBUG] _performAction: FAILED for "$actionName" but notifier was disposed. Error: $e');
+        return false;
+      }
+      debugPrint('[DEBUG] _performAction: FAILED for "$actionName". Error: $e');
       state = ShoppingListActionState.error(e.toString());
       return false;
     }
@@ -206,14 +213,18 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     ), successMessage: '"${product.name}" added to list.');
   }
 
-
+  // --- DEBUG: Heavily instrumented this failing method ---
   Future<void> addToSpecificList(Product product, String listId) async {
+    debugPrint('--- [START ADD EXISTING ITEM] ---');
+    debugPrint('[DEBUG] addToSpecificList: Called for EXISTING product "${product.name}" (ID: ${product.id}) to list ID: $listId');
+
     final listInfo = _ref.read(allShoppingListsProvider).value?.firstWhere(
           (info) => info.id == listId,
       orElse: () => ShoppingListInfo(id: '', name: 'list', itemCount: -1),
     );
 
     if (listInfo == null || listInfo.itemCount == -1) {
+      debugPrint('[DEBUG] addToSpecificList: ERROR - Target list not found.');
       if (_isDisposed) return;
       state = const ShoppingListActionState.error('Target list not found.');
       return;
@@ -222,65 +233,76 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     final isPremium = _ref.read(userProfileProvider).value?.isPremium ?? false;
     final limit = isPremium ? 60 : 30;
     if (listInfo.itemCount >= limit) {
+      debugPrint('[DEBUG] addToSpecificList: ERROR - Item limit reached.');
       if (_isDisposed) return;
       state = ShoppingListActionState.error('Item limit ($limit) for this list has been reached.');
       return;
     }
 
-    final specificListDetailsProvider = StreamProvider.autoDispose<List<Product>>((ref) {
-      final firestoreService = ref.watch(firestoreServiceProvider);
-      final productsBox = ref.watch(productsBoxProvider);
-      final itemsStream = firestoreService.getShoppingListItemsStream(listId: listId);
-      return itemsStream.map((itemMaps) => itemMaps.map((itemData) {
-        final product = itemData['isCustom'] == true
-            ? Product.fromFirestore(itemData['id'], itemData)
-            : productsBox.get(itemData['id']);
-        return product?.copyWith(quantity: itemData['quantity'] as int? ?? 1);
-      }).whereType<Product>().toList());
-    });
+    final String listName = listInfo.name;
+    final success = await _performAction(() {
+      debugPrint('[DEBUG] addToSpecificList: Calling firestoreService.addItemToList...');
+      return _firestoreService.addItemToList(
+        listId: listId,
+        productId: product.id,
+        productData: product.isCustom ? product.toJson() : null,
+      );
+    }, successMessage: '"${product.name}" added to $listName');
 
-    final specificListAsync = await _ref.read(specificListDetailsProvider.future);
+    debugPrint('[DEBUG] addToSpecificList: Firestore action completed. Result success = $success. Is disposed? $_isDisposed');
 
-    // Check if disposed AFTER the await, before using the result.
-    if (_isDisposed) return;
-
-    final currentItemIds = specificListAsync.map((p) => p.id).toSet();
-
-    if (currentItemIds.contains(product.id)) {
-      // This is the updated, safe block.
-      if (_isDisposed) return;
-      state = ShoppingListActionState.success('"${product.name}" is already on this list.');
-      return;
+    if (success && !_isDisposed) {
+      debugPrint('[DEBUG] addToSpecificList: SUCCESS. Invalidating providers NOW.');
+      _ref.invalidate(allShoppingListsProvider);
+      _ref.invalidate(shoppingListWithDetailsProvider);
+    } else {
+      debugPrint('[DEBUG] addToSpecificList: FAILED or disposed. Not invalidating providers.');
     }
-
-    final listName = listInfo.name;
-    await _performAction(() => _firestoreService.addItemToList(
-      listId: listId,
-      productId: product.id,
-      productData: product.isCustom ? product.toJson() : null,
-    ), successMessage: '"${product.name}" added to $listName');
+    debugPrint('--- [END ADD EXISTING ITEM] ---');
   }
 
-  // All other methods from your file go here.
   Future<void> updateCustomItem(Product product) async {
     await _performAction(() => _firestoreService.updateCustomItemInStorage(product), successMessage: 'Custom item updated.');
   }
 
+  // --- DEBUG: Heavily instrumented this working method for comparison ---
   Future<void> createAndAddCustomItem(Product customProduct) async {
-    if (!_isItemLimitOk()) return;
+    debugPrint('--- [START CREATE NEW ITEM] ---');
+    debugPrint('[DEBUG] createAndAddCustomItem: Called for NEW product "${customProduct.name}" (ID: ${customProduct.id})');
+
+    if (!_isItemLimitOk()) {
+      debugPrint('[DEBUG] createAndAddCustomItem: ERROR - Item limit reached.');
+      return;
+    }
     final activeListId = _ref.read(activeShoppingListProvider);
     if (activeListId == null) {
+      debugPrint('[DEBUG] createAndAddCustomItem: ERROR - No active list selected.');
       state = const ShoppingListActionState.error('No active list selected.');
       return;
     }
-    await _performAction(() async {
+
+    final success = await _performAction(() async {
+      debugPrint('[DEBUG] createAndAddCustomItem: Calling firestoreService.addCustomItemToStorage...');
       await _firestoreService.addCustomItemToStorage(customProduct);
+      debugPrint('[DEBUG] createAndAddCustomItem: Calling firestoreService.addItemToList...');
       await _firestoreService.addItemToList(
         listId: activeListId,
         productId: customProduct.id,
         productData: customProduct.toJson(),
       );
     }, successMessage: 'Custom item created and added to list.');
+
+    debugPrint('[DEBUG] createAndAddCustomItem: Firestore action completed. Result success = $success. Is disposed? $_isDisposed');
+
+    if (success && !_isDisposed) {
+      debugPrint('[DEBUG] createAndAddCustomItem: SUCCESS. Invalidating providers NOW.');
+      _ref.invalidate(allShoppingListsProvider);
+      _ref.invalidate(shoppingListWithDetailsProvider);
+      _ref.invalidate(customItemsProvider); // Also invalidate the list of all custom items
+    } else {
+      debugPrint('[DEBUG] createAndAddCustomItem: FAILED or disposed. Not invalidating providers.');
+    }
+    debugPrint('--- [END CREATE NEW ITEM] ---');
   }
 
   Future<void> updateItemQuantities(Map<String, int> updatedQuantities) async {
@@ -308,7 +330,6 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
     if (productIds.isEmpty) return;
 
     final idsToRemove = productIds.toList();
-    debugPrint('ShoppingListNotifier received request to remove: $idsToRemove from list $activeListId');
 
     await _performAction(
           () async {
@@ -318,7 +339,6 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
             productIds: idsToRemove,
           );
         } catch (e) {
-          debugPrint('!!! ERROR during bulk delete in FirestoreService: $e');
           rethrow;
         }
       },
@@ -360,7 +380,7 @@ class ShoppingListNotifier extends StateNotifier<ShoppingListActionState> {
   }
 }
 
-final shoppingListsProvider = StateNotifierProvider.autoDispose<ShoppingListNotifier, ShoppingListActionState>((ref) {
+final shoppingListsProvider = StateNotifierProvider<ShoppingListNotifier, ShoppingListActionState>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   return ShoppingListNotifier(firestoreService, ref);
 });

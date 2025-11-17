@@ -49,6 +49,6 @@ class SelectionNotifier extends StateNotifier<SelectionState> {
   }
 }
 
-final selectionStateProvider = StateNotifierProvider<SelectionNotifier, SelectionState>((ref) {
+final selectionStateProvider = StateNotifierProvider.autoDispose<SelectionNotifier, SelectionState>((ref) {
   return SelectionNotifier();
 });

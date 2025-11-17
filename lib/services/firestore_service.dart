@@ -185,22 +185,44 @@ class FirestoreService {
     final listDocRef = _shoppingListsRef().doc(listId);
 
     await _firestore.runTransaction((transaction) async {
+      // --- FIX START ---
+      // We separate the transaction into a READ phase and a WRITE phase.
+
+      // PHASE 1: READ ALL NECESSARY DATA FIRST
+      final List<DocumentSnapshot> indexSnapshots = [];
       for (final productId in productIds) {
+        final indexDocRef = _listedProductIdsRef().doc(productId);
+        // Read each document and store the result.
+        final indexSnapshot = await transaction.get(indexDocRef);
+        indexSnapshots.add(indexSnapshot);
+      }
+
+      // PHASE 2: PERFORM ALL WRITES NOW THAT READING IS COMPLETE
+      for (int i = 0; i < productIds.length; i++) {
+        final productId = productIds[i];
+        final indexSnapshot = indexSnapshots[i];
+
+        // Delete the item from the list's subcollection
         final itemDocRef = listDocRef.collection('items').doc(productId);
         transaction.delete(itemDocRef);
 
-        final indexDocRef = _listedProductIdsRef().doc(productId);
-        final indexSnapshot = await transaction.get(indexDocRef);
+        // Update the global listedProductIds count
         if (indexSnapshot.exists) {
+          final indexDocRef = indexSnapshot.reference; // Use reference from the snapshot
           final count = (indexSnapshot.data() as Map<String, dynamic>)['count'] ?? 0;
           if (count <= 1) {
+            // If this was the last list the item was on, delete the index doc
             transaction.delete(indexDocRef);
           } else {
+            // Otherwise, just decrement the count
             transaction.update(indexDocRef, {'count': FieldValue.increment(-1)});
           }
         }
       }
+
+      // Finally, update the total item count on the list document itself
       transaction.update(listDocRef, {'itemCount': FieldValue.increment(-productIds.length)});
+      // --- FIX END ---
     });
   }
 
