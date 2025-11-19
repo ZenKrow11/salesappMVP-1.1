@@ -5,23 +5,22 @@
   "@account": {
     "description": "Title for the account section or page."
   },
-
+  "accountStatusFree": "Kostenloser Benutzer",
+  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
+  "accountStatusPremium": "Premium-Mitglied",
+  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
   "adPlaceholder": "Werbeplatzhalter\n300 x 250",
   "@adPlaceholder": {
     "description": "Placeholder text for an advertisement block on the loading screen."
   },
-
   "add": "HINZUFÜGEN",
   "@add": { "description": "Button text to add an item to a list." },
-
   "added": "HINZUGEFÜGT",
   "@added": { "description": "Button text indicating an item has already been added to a list." },
-
   "addedToActiveList": "Zur aktiven Liste hinzugefügt",
   "@addedToActiveList": {
     "description": "Notification message when an item is added to the default active list."
   },
-
   "addedTo": "Zu \"{listName}\" hinzugefügt",
   "@addedTo": {
     "description": "Notification message when an item is added to a specifically named list.",
@@ -31,41 +30,39 @@
       }
     }
   },
-
+  "addToList": "Zur Liste hinzufügen",
+  "@addToList": { "description": "Tooltip for the button to add a library item to the current shopping list." },
   "anUnknownErrorOccurred": "Ein unbekannter Fehler ist aufgetreten",
   "@anUnknownErrorOccurred": {
     "description": "Generic fallback error message."
   },
-
   "anUnexpectedErrorOccurred": "Ein unerwarteter Fehler ist aufgetreten.",
   "@anUnexpectedErrorOccurred": {
     "description": "Generic fallback error message for unexpected issues."
   },
-
   "appName": "SaleSeekr",
   "@appName": {
     "description": "The title of the application"
   },
-
   "apply": "ANWENDEN",
   "@apply": {
     "description": "Button text for applying filters."
   },
-
+  "availableAt": "Erhältlich bei",
+  "@availableAt": { "description": "Label indicating where a product can be bought." },
   "cancel": "Abbrechen",
   "@cancel": {
     "description": "Button text to cancel an action, like in a dialog."
   },
-
   "categories": "Kategorien",
   "@categories": {
     "description": "Tab title for categories filter."
   },
-
   "categoryAlcoholicBeverages": "Alkoholische Getränke",
   "categoryBakingIngredients": "Backzutaten",
   "categoryBeefVeal": "Rind- & Kalbfleisch",
   "categoryBeer": "Bier",
+  "categoryBeverages": "Getränke",
   "categoryBread": "Brot",
   "categoryBreadBakery": "Brot & Backwaren",
   "categoryButterEggs": "Butter & Eier",
@@ -76,18 +73,17 @@
   "categoryChocolateCookies": "Schokolade & Kekse",
   "categoryCoffeeTeaCocoa": "Kaffee, Tee & Kakao",
   "categoryConvenienceReadyMeals": "Convenience & Fertiggerichte",
+  "categoryCustom": "Meine Artikel",
   "categoryDairyEggs": "Milchprodukte & Eier",
   "categoryFishMeat": "Fisch & Fleisch",
   "categoryFishSeafood": "Fisch & Meeresfrüchte",
+  "categoryFrozenProductsSoups": "Tiefkühlprodukte & Suppen",
   "categoryFruits": "Früchte",
   "categoryFruitsVegetables": "Früchte & Gemüse",
-  "categoryFrozenProductsSoups": "Tiefkühlprodukte & Suppen",
   "categoryHoneyJamSpreads": "Honig, Konfitüre & Brotaufstriche",
   "categoryIceCreamSweets": "Eis & Süsswaren",
   "categoryMeatMixesAssorted": "Fleischmischungen & Sonstiges",
-  "categoryCustom": "Meine Artikel",
   "categoryMilkDairyProducts": "Milch & Milchprodukte",
-  "categoryBeverages": "Getränke",
   "categoryOther": "Sonstiges",
   "categoryPantry": "Vorratsschrank",
   "categoryPastriesDesserts": "Gebäck & Desserts",
@@ -105,718 +101,671 @@
   "categoryVegetables": "Gemüse",
   "categoryWaterJuices": "Wasser & Säfte",
   "categoryWinesSparklingWines": "Weine & Schaumweine",
-
   "changePassword": "Passwort ändern",
   "@changePassword": {
     "description": "Title for the change password page and button."
   },
-
   "checkItem": "Artikel abhaken",
   "@checkItem": {
     "description": "Tooltip for the checkbox in shopping mode to mark an item as found."
   },
-
+  "clearAllButton": "Alle löschen",
+  "@clearAllButton": { "description": "Text for the confirmation button to clear all items." },
+  "clearAllButtonLabel": "Alle Artikel löschen",
+  "@clearAllButtonLabel": { "description": "Text for the button that clears all items." },
+  "clearAllConfirmationBody": "Dies wird ALLE Artikel dauerhaft aus deiner aktuellen Liste entfernen. Diese Aktion kann nicht rückgängig gemacht werden.",
+  "@clearAllConfirmationBody": { "description": "Confirmation dialog body for clearing all items." },
+  "clearAllConfirmationTitle": "Alle Artikel löschen?",
+  "@clearAllConfirmationTitle": { "description": "Confirmation dialog title for clearing all items." },
   "close": "SCHLIESSEN",
   "@close": { "description": "Button text to close a dialog or screen." },
-
+  "confirm": "Bestätigen",
+  "@confirm": { "description": "Generic confirm button" },
+  "confirmDeletionMessage": "Möchtest du wirklich {count} Artikel löschen?",
+  "@confirmDeletionMessage": {
+    "description": "Confirmation message asking the user to confirm the deletion of multiple items.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "confirmDeletionTitle": "Löschen bestätigen",
+  "@confirmDeletionTitle": { "description": "Title for the confirmation dialog before deleting items." },
   "continueWithGoogle": "Mit Google fortfahren",
   "@continueWithGoogle": {
     "description": "Button text for signing in with a Google account."
   },
-
+  "continueWithGoogleForDelete": "Mit Google fortfahren",
+  "@continueWithGoogleForDelete": { "description": "Button text on the delete account confirmation for Google users." },
   "couldNotOpenProductLink": "Produktlink konnte nicht geöffnet werden",
   "@couldNotOpenProductLink": {
     "description": "Error message when the app fails to launch a URL to a product page."
   },
-
+  "create": "Erstellen",
+  "@create": { "description": "A short label for a button that creates a new item, like a shopping list." },
   "createAccount": "Konto erstellen",
   "@createAccount": {
     "description": "Button text for the sign-up form."
   },
-
   "createAndAddItem": "ERSTELLEN & HINZUFÜGEN",
   "@createAndAddItem": {
     "description": "Button text for creating a new custom item and adding it to a list."
   },
-
   "createAndSelect": "ERSTELLEN UND AUSWÄHLEN",
   "@createAndSelect": {
     "description": "Button text for creating a new shopping list and making it the active one."
   },
-
+  "createCustomItem": "Eigenen Artikel erstellen",
+  "@createCustomItem": {
+    "description": "AppBar title for the page where users create a new custom item."
+  },
+  "createCustomListsWithPremium": "Erstelle bis zu {count} eigene Listen mit Premium.",
+  "@createCustomListsWithPremium": {
+    "description": "Informational text for non-premium users about the list creation limit.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "createFirstListPrompt": "Erstelle deine erste Einkaufsliste, um loszulegen.",
+  "@createFirstListPrompt": { "description": "Instructional text prompting a new user to create their first shopping list." },
+  "createItem": "ARTIKEL ERSTELLEN",
+  "@createItem": {
+    "description": "Button text for creating a new custom item."
+  },
+  "createListButton": "Liste erstellen",
+  "@createListButton": { "description": "Button text for creating a new shopping list from an empty state." },
+  "createNew": "Neu erstellen",
+  "@createNew": {
+    "description": "Tab title for creating a new item or list."
+  },
   "createdAndSelectedList": "Liste \"{listName}\" erstellt und ausgewählt",
   "@createdAndSelectedList": {
     "description": "Success message shown after creating a new shopping list.",
     "placeholders": { "listName": { "type": "String" } }
   },
-
-  "createCustomItem": "Eigenen Artikel erstellen",
-  "@createCustomItem": {
-    "description": "AppBar title for the page where users create a new custom item."
-  },
-
-  "createCustomListsWithPremium": "Erstelle bis zu {count} eigene Listen mit Premium.",
-  "@createCustomListsWithPremium": {
-    "description": "Informational text for non-premium users about the list creation limit.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-
-  "createItem": "ARTIKEL ERSTELLEN",
-  "@createItem": {
-    "description": "Button text for creating a new custom item."
-  },
-
-  "createNew": "Neu erstellen",
-  "@createNew": {
-    "description": "Tab title for creating a new item or list."
-  },
-
   "currencyFrancs": "Fr.",
   "@currencyFrancs": {
     "description": "Abbreviation for the currency Swiss Francs."
   },
-
   "currentPassword": "Aktuelles Passwort",
   "@currentPassword": {
     "description": "Label for the current password input field."
   },
-
   "customCategoryPremium": "Eigene Kategorie (Premium)",
   "@customCategoryPremium": {
     "description": "Label for the custom category input field, a premium feature."
   },
-
+  "customItem": "Eigener Artikel",
+  "@customItem": { "description": "A generic fallback label for a custom item when it doesn't have a specific user-defined category." },
   "customItemLimitReached": "Du hast dein Limit von {count} eigenen Artikeln erreicht.",
   "@customItemLimitReached": {
     "description": "Error message shown when a user tries to create more custom items than their plan allows.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
+    "placeholders": { "count": { "type": "int" } }
   },
-
   "customItems": "Eigene Artikel",
   "@customItems": { "description": "Label for the button or section related to user-created custom items." },
-
   "customItemsEmpty": "Du hast noch keine eigenen Artikel erstellt.",
   "@customItemsEmpty": { "description": "Message shown in the custom items library when it's empty." },
-
   "dangerZone": "Gefahrenzone",
   "@dangerZone": {
     "description": "Section header on the account page for destructive actions."
   },
-
+  "dealExpired": "Abgelaufen",
+  "@dealExpired": { "description": "Label for expired deals" },
   "decreaseQuantity": "Menge verringern",
   "@decreaseQuantity": {
     "description": "Tooltip for the minus button on the quantity stepper."
   },
-
   "defaultListName": "Merkliste",
   "@defaultListName": {
     "description": "The default name for the user's first shopping list."
   },
-
   "defaultListIsBeingPrepared": "Deine Standardliste wird vorbereitet...",
   "@defaultListIsBeingPrepared": {
     "description": "Loading message shown while the initial default shopping list is being created for a user."
   },
-
   "delete": "Löschen",
   "@delete": {
     "description": "Confirmation button text for deleting something, like a shopping list."
   },
-
   "deleteAccount": "Konto löschen",
   "@deleteAccount": {
     "description": "Title and button text for the account deletion feature."
   },
-
   "deleteAccountConfirmationBody": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden. Alle deine Listen und Daten gehen verloren. Bitte gib dein Passwort zur Bestätigung ein.",
   "@deleteAccountConfirmationBody": {
     "description": "Warning message in the account deletion confirmation dialog."
   },
-
+  "deleteAccountGooglePrompt": "Um dein Konto zu löschen, musst du dich erneut mit Google authentifizieren.",
+  "@deleteAccountGooglePrompt": { "description": "Instructional text in the delete account dialog for users who signed in with Google." },
   "deleteItemConfirmationBody": "Dadurch wird der Artikel dauerhaft aus Deiner Bibliothek entfernt.",
   "@deleteItemConfirmationBody": { "description": "Warning message in the confirmation dialog for deleting a custom item." },
-
   "deleteItemConfirmationTitle": "\"{itemName}\" löschen?",
   "@deleteItemConfirmationTitle": {
     "description": "Title of the confirmation dialog when deleting a custom item.",
     "placeholders": { "itemName": { "type": "String" } }
   },
-
   "deleteListConfirmationBody": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden.",
   "@deleteListConfirmationBody": {
     "description": "Warning message in the confirmation dialog for deleting a list."
   },
-
   "deleteListConfirmationTitle": "\"{listName}\" löschen?",
   "@deleteListConfirmationTitle": {
     "description": "Title of the confirmation dialog when deleting a list.",
-    "placeholders": {
-      "listName": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "listName": { "type": "String" } }
   },
-
   "deletePermanently": "DAUERHAFT LÖSCHEN",
   "@deletePermanently": {
     "description": "Confirmation button text for permanently deleting an account."
   },
-
   "displayName": "Anzeigename",
   "@displayName": {
     "description": "Label for the display name input field."
   },
-
   "editCustomItem": "Eigenen Artikel bearbeiten",
   "@editCustomItem": {
     "description": "AppBar title for the page where users edit an existing custom item."
   },
-
   "editProfile": "Profil bearbeiten",
   "@editProfile": {
     "description": "Title for the edit profile dialog and button."
   },
-
   "emailAddress": "E-Mail-Adresse",
   "@emailAddress": {
     "description": "Label for the email input field."
   },
-
   "enterNewListName": "Neuen Listennamen eingeben",
   "@enterNewListName": {
     "description": "Label for the text field where a user enters the name for a new shopping list."
   },
-
   "error": "Fehler: {error}",
   "@error": {
     "description": "Generic error message prefix.",
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "error": { "type": "String" } }
   },
-
+  "errorCouldNotLoadData": "Fehler: Daten konnten nicht geladen werden.",
+  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."},
   "errorLoadingList": "Fehler beim Laden der Liste: {error}",
   "@errorLoadingList": {
     "description": "Error message shown on the shopping list page when data fails to load.",
-    "placeholders": {
-      "error": { "type": "String" }
-    }
+    "placeholders": { "error": { "type": "String" } }
   },
-
   "errorLoadingProfile": "Fehler beim Laden des Profils",
   "@errorLoadingProfile": {
     "description": "Error message shown on the account page when the user's profile fails to load."
   },
-
   "errorSavingItem": "Fehler beim Speichern des Artikels: {error}",
   "@errorSavingItem": {
     "description": "Error message shown when saving a custom item fails.",
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "error": { "type": "String" } }
   },
-
   "failedToSendResetEmail": "Zurücksetzen-E-Mail konnte nicht gesendet werden.",
   "@failedToSendResetEmail": {
     "description": "Error message when the password reset email fails to send."
   },
-
   "fatalError": "Fataler Fehler: {error}",
   "@fatalError": {
     "description": "Error message for a critical, unrecoverable error.",
-    "placeholders": {
-      "error": { "type": "String" }
-    }
+    "placeholders": { "error": { "type": "String" } }
   },
-
   "featureNotImplemented": "{featureName} ist noch nicht implementiert.",
   "@featureNotImplemented": {
     "description": "Placeholder message for features that are not yet built.",
-    "placeholders": {
-      "featureName": { "type": "String" }
-    }
+    "placeholders": { "featureName": { "type": "String" } }
   },
-
   "filter": "Filter",
   "@filter": {
     "description": "Button text to open filtering options."
   },
-
+  "filterByStore": "Nach Geschäft filtern",
+  "@filterByStore": { "description": "Section header for filtering by store" },
   "filterProducts": "Produkte filtern",
   "@filterProducts": {
     "description": "Header title for the product filtering bottom sheet."
   },
-
   "finish": "Abschliessen",
   "@finish": {
     "description": "Button text in shopping mode to finish the shopping session."
   },
-
   "finishShoppingBody": "Möchtest du die abgehakten Artikel von deiner Liste entfernen?",
   "@finishShoppingBody": {
     "description": "Content of the confirmation dialog when finishing shopping."
   },
-
   "finishShoppingTitle": "Einkauf abschliessen?",
   "@finishShoppingTitle": {
     "description": "Title of the confirmation dialog when finishing shopping."
   },
-
   "forgotPassword": "Passwort vergessen?",
   "@forgotPassword": {
     "description": "Button text for the password reset flow."
   },
-
+  "hideCheckedItems": "Abgehakte Artikel ausblenden",
+  "@hideCheckedItems": { "description": "Tooltip for the visibility toggle in shopping mode to hide checked items." },
   "increaseQuantity": "Menge erhöhen",
   "@increaseQuantity": {
     "description": "Tooltip for the plus button on the quantity stepper."
   },
-
   "initializing": "Initialisiere...",
   "@initializing": {
     "description": "Text shown on the splash screen while the app is loading."
   },
-
-  "itemsLabel": "Artikel",
-  "@itemsLabel": { "description": "Label for a counter showing the number of items." },
-
-  "itemSavedSuccessfully": "\"{itemName}\" erfolgreich gespeichert.",
-  "@itemSavedSuccessfully": {
-    "description": "Success message shown after an item is saved.",
+  "itemAddedToList": "'{itemName}' zu {listName} hinzugefügt.",
+  "@itemAddedToList": {
+    "description": "Notification text shown when a custom item is successfully added to a specific shopping list.",
     "placeholders": {
-      "itemName": {
-        "type": "String"
-      }
+      "itemName": { "type": "String", "example": "Brot" },
+      "listName": { "type": "String", "example": "Einkäufe" }
     }
   },
-
+  "itemDeleted": "\"{itemName}\" gelöscht.",
+  "@itemDeleted": {
+    "description": "Success message shown after deleting a custom item from the library.",
+    "placeholders": { "itemName": { "type": "String" } }
+  },
+  "itemLimitReachedBody": "Deine Liste enthält {currentItems} Artikel, das Maximum ist jedoch {limit}. Bitte entferne einige Artikel, um fortzufahren.",
+  "@itemLimitReachedBody": {
+    "description": "Message shown when the user has too many items in their shopping list.",
+    "placeholders": {
+      "currentItems": { "type": "int", "example": "35" },
+      "limit": { "type": "int", "example": "30" }
+    }
+  },
+  "itemLimitReachedTitle": "Artikellimit erreicht",
+  "@itemLimitReachedTitle": { "description": "Title for the dialog when the shopping list is too full." },
   "itemName": "Artikelname",
   "@itemName": {
     "description": "Label for the item name input field."
   },
-
+  "itemSavedSuccessfully": "\"{itemName}\" erfolgreich gespeichert.",
+  "@itemSavedSuccessfully": {
+    "description": "Success message shown after an item is saved.",
+    "placeholders": { "itemName": { "type": "String" } }
+  },
+  "itemsLabel": "Artikel",
+  "@itemsLabel": { "description": "Label for a counter showing the number of items." },
+  "itemsSelected": "{count} ausgewählt",
+  "@itemsSelected": {
+    "description": "Indicates how many items are selected in the app bar during multi-select mode.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
   "keepAllItems": "Alle Artikel behalten",
   "@keepAllItems": {
     "description": "Button text in the finish shopping dialog to keep all items on the list."
   },
-
+  "list": "Liste",
+  "@list": { "description": "A generic fallback name for a shopping list if its name cannot be found." },
   "listIsEmpty": "Diese Liste ist leer.\nDoppeltippe auf ein Produkt auf der Aktionsseite, um es hinzuzufügen.",
   "@listIsEmpty": {
     "description": "Message shown on the shopping list page when it contains no items."
   },
-
+  "listNameLabel": "Listenname",
+  "@listNameLabel": { "description": "The label for the text field where a user enters the name of a shopping list." },
   "listOptions": "Listenoptionen",
   "@listOptions": {
     "description": "Header title for the list options bottom sheet."
   },
-
+  "listsLabel": "Listen",
+  "@listsLabel": { "description": "Label for the count of shopping lists in the management page." },
+  "loadingAllSet": "Alles bereit!",
+  "@loadingAllSet": { "description": "Final success message before entering the app." },
+  "loadingCheckingUpdates": "Suche nach Updates...",
+  "@loadingCheckingUpdates": { "description": "Loading message when checking if a sync from Firestore is needed." },
+  "loadingDownloadingDeals": "Neueste Angebote werden heruntergeladen...",
+  "@loadingDownloadingDeals": { "description": "Loading message during a sync from Firestore." },
+  "loadingFromCache": "Lade aus dem lokalen Cache...",
+  "@loadingFromCache": { "description": "Loading message when using local data instead of syncing." },
+  "loadingInitializing": "Initialisiere...",
+  "@loadingInitializing": { "description": "Initial loading message." },
+  "loadingPreparingStorage": "Lokaler Speicher wird vorbereitet...",
+  "@loadingPreparingStorage": { "description": "Loading message when setting up Hive/local database." },
   "login": "Anmelden",
   "@login": {
     "description": "Tab and button text for the login action."
   },
-
   "logout": "Abmelden",
   "@logout": {
     "description": "Title and button text for the logout action."
   },
-
   "logoutConfirmation": "Möchtest du dich wirklich abmelden?",
   "@logoutConfirmation": {
     "description": "Confirmation message in the logout dialog."
   },
-
   "manageCustomItemsTitle": "Eigene Artikel verwalten",
   "@manageCustomItemsTitle": {
     "description": "AppBar title for the page where users manage their custom items."
   },
-
   "manageItems": "Artikel verwalten",
   "@manageItems": {
     "description": "Button label for navigating to the 'Manage Custom Items' page."
   },
-
+  "manageItemsTitle": "Artikel verwalten",
+  "@manageItemsTitle": { "description": "Title for the bottom sheet that manages shopping list items." },
   "manageLists": "Listen verwalten",
   "@manageLists": {
     "description": "Button label for opening the 'Manage Lists' bottom sheet."
   },
-
   "manageMyLists": "Meine Listen verwalten",
   "@manageMyLists": {
     "description": "Header title for the shopping list management bottom sheet."
   },
-
   "manageSubscription": "Abonnement verwalten",
   "@manageSubscription": {
     "description": "Button text for managing a premium subscription."
   },
-
   "maximumListsReached": "Du hast das Maximum von {count} Listen erreicht.",
   "@maximumListsReached": {
     "description": "Message shown to premium users when they have reached their shopping list limit.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
+    "placeholders": { "count": { "type": "int" } }
   },
-
+  "moreOptions": "Weitere Optionen",
+  "@moreOptions": { "description": "Tooltip for a button that opens a menu with more actions like Edit or Delete." },
   "myItems": "Meine Artikel",
   "@myItems": {
     "description": "Tab title for the user's library of custom created items."
   },
-
   "myLists": "Meine Listen",
   "@myLists": {
     "description": "Tab title for the user's existing shopping lists."
   },
-
   "navAccount": "Konto",
   "@navAccount": {
     "description": "Label for the Account tab in the bottom navigation bar."
   },
-
   "navAllSales": "Alle Aktionen",
   "@navAllSales": {
     "description": "Label for the Home/All Sales tab in the bottom navigation bar."
   },
-
   "navLists": "Listen",
   "@navLists": {
     "description": "Label for the Shopping Lists tab in the bottom navigation bar."
   },
-
   "newPassword": "Neues Passwort",
   "@newPassword": {
     "description": "Label for the new password input field."
   },
-
   "noEmailAvailable": "Keine E-Mail-Adresse verfügbar",
   "@noEmailAvailable": {
     "description": "Fallback text shown on the account page if a user has no email."
   },
-
+  "noListsExist": "Keine Listen",
+  "@noListsExist": { "description": "Short text displayed in the app bar when the user has created zero shopping lists." },
   "noProductsFound": "Keine Produkte gefunden, die deinen Kriterien entsprechen.",
   "@noProductsFound": {
     "description": "Message shown on the home page when filters result in no products."
   },
-
+  "noProductsMatchFilter": "Keine Produkte entsprechen deinem aktuellen Filter",
+  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" },
   "noSubcategoriesAvailable": "Keine spezifischen Unterkategorien\nfür die gewählte Kategorie verfügbar.",
   "@noSubcategoriesAvailable": {
     "description": "Message shown in the subcategory filter when the selected main category has no subcategories."
   },
-
   "noUserSignedIn": "Aktuell ist kein Benutzer angemeldet.",
   "@noUserSignedIn": {
     "description": "Error message for actions that require an authenticated user."
   },
-
   "notifications": "Benachrichtigungen",
   "@notifications": {
     "description": "Button text for the notifications settings."
   },
-
+  "ok": "OK",
+  "@ok": { "description": "A generic confirmation button text." },
   "or": "ODER",
   "@or": {
     "description": "A separator text, typically used between login methods."
   },
-
   "orSelectMainCategory": "Oder wähle unten eine Hauptkategorie aus:",
   "@orSelectMainCategory": {
     "description": "Instructional text when creating a custom item."
   },
-
+  "organizeList": "Liste organisieren",
+  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
   "password": "Passwort",
   "@password": {
     "description": "Label for the password input field."
   },
-
   "passwordChangedSuccessfully": "Passwort erfolgreich geändert!",
   "@passwordChangedSuccessfully": {
     "description": "Success message shown after a user changes their password."
   },
-
   "passwordResetEmailSent": "E-Mail zum Zurücksetzen des Passworts an {email} gesendet",
   "@passwordResetEmailSent": {
     "description": "Success message after sending a password reset email.",
-    "placeholders": {
-      "email": { "type": "String" }
-    }
+    "placeholders": { "email": { "type": "String" } }
   },
-
   "passwordTooShort": "Das Passwort muss mindestens {count} Zeichen lang sein.",
   "@passwordTooShort": {
     "description": "Validation error for a password that is too short.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
+    "placeholders": { "count": { "type": "int" } }
   },
-
   "pleaseEnterCurrentPassword": "Bitte gib dein aktuelles Passwort ein",
   "@pleaseEnterCurrentPassword": {
     "description": "Validation error for an empty current password field."
   },
-
   "pleaseEnterEmail": "Bitte gib eine E-Mail-Adresse ein.",
   "@pleaseEnterEmail": {
     "description": "Validation error for an empty email field."
   },
-
   "pleaseEnterItemName": "Bitte gib einen Artikelnamen ein.",
   "@pleaseEnterItemName": {
     "description": "Validation error for an empty item name field."
   },
-
   "pleaseEnterNewPassword": "Bitte gib ein neues Passwort ein",
   "@pleaseEnterNewPassword": {
     "description": "Validation error for an empty new password field."
   },
-
   "pleaseEnterPassword": "Bitte gib dein Passwort ein.",
   "@pleaseEnterPassword": {
     "description": "Validation error for an empty password field."
   },
-
   "pleaseEnterValidEmail": "Bitte gib eine gültige E-Mail-Adresse ein.",
   "@pleaseEnterValidEmail": {
     "description": "Validation error for an incorrectly formatted email."
   },
-
   "pleaseSelectCategory": "Bitte wähle eine Kategorie aus.",
   "@pleaseSelectCategory": {
     "description": "Validation error when no category has been selected."
   },
-
   "pleaseSelectCategoryFirst": "Bitte wähle zuerst eine Kategorie aus,\num verfügbare Unterkategorien zu sehen.",
   "@pleaseSelectCategoryFirst": {
     "description": "Instructional text in the subcategory filter tab when no main category is selected yet."
   },
-
   "premium": "Premium",
   "@premium": {
     "description": "Title for the Premium/Subscription section on the account page."
   },
-
+  "premiumFeatureListsBody": "Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.",
+  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
+  "premiumFeatureListsTitle": "Mehr Listen erstellen",
+  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
+  "premiumStatus": "Premium-Status (Test)",
+  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
+  "purgeButton": "Entfernen",
+  "@purgeButton": { "description": "Text for the confirmation button to purge items." },
+  "purgeButtonLabel": "Abgelaufene entfernen",
+  "@purgeButtonLabel": { "description": "Text for the button that purges expired items." },
+  "purgeExpiredConfirmationBody": "Dies entfernt alle abgelaufenen (ausgegrauten) Artikel aus deiner Liste. Dies kann nicht rückgängig gemacht werden.",
+  "@purgeExpiredConfirmationBody": { "description": "Confirmation dialog body for purging expired items." },
+  "purgeExpiredConfirmationTitle": "Abgelaufene entfernen?",
+  "@purgeExpiredConfirmationTitle": { "description": "Confirmation dialog title for purging expired items." },
+  "reauthenticateWithGoogle": "Erneut mit Google authentifizieren",
+  "@reauthenticateWithGoogle": { "description": "Button text for re-authenticating with Google, typically for sensitive actions." },
   "rememberMe": "Angemeldet bleiben",
   "@rememberMe": {
     "description": "Label for the 'keep me logged in' checkbox."
   },
-
+  "remove": "Entfernen",
+  "@remove": { "description": "Button text to remove an item from a list." },
   "removeCheckedItems": "Abgehakte Artikel entfernen",
   "@removeCheckedItems": {
     "description": "Button text in the finish shopping dialog to remove checked items from the list."
   },
-
+  "removedFrom": "Von \"{listName}\" entfernt",
+  "@removedFrom": {
+    "description": "Notification message when an item is removed from a specific list.",
+    "placeholders": { "listName": { "type": "String" } }
+  },
   "removedFromList": "Von der Liste entfernt",
   "@removedFromList": {
     "description": "Notification message when an item is removed from the active list."
   },
-
-  "removedFrom": "Von \"{listName}\" entfernt",
-  "@removedFrom": {
-    "description": "Notification message when an item is removed from a specific list.",
-    "placeholders": {
-      "listName": {
-        "type": "String"
-      }
-    }
-  },
-
   "removedItem": "\"{itemName}\" entfernt",
   "@removedItem": {
     "description": "Notification message shown when an item is removed from the list via double tap.",
-    "placeholders": {
-      "itemName": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "itemName": { "type": "String" } }
   },
-
+  "renameListTitle": "Liste umbenennen",
+  "@renameListTitle": { "description": "The title for the dialog where a user can rename a shopping list." },
   "reset": "ZURÜCKSETZEN",
   "@reset": {
     "description": "Button text for resetting filters to their default state."
   },
-
   "resetPassword": "Passwort zurücksetzen",
   "@resetPassword": {
     "description": "Title for the password reset dialog."
   },
-
   "resetPasswordInstructions": "Gib deine E-Mail-Adresse ein und wir senden dir einen Link, um dein Passwort zurückzusetzen.",
   "@resetPasswordInstructions": {
     "description": "Instructions in the password reset dialog."
   },
-
   "save": "Speichern",
   "@save": {
     "description": "Button text for saving changes."
   },
-
   "saveChanges": "ÄNDERUNGEN SPEICHERN",
   "@saveChanges": {
     "description": "Button text for saving changes when editing an item."
   },
-
   "saved": "Gespart",
   "@saved": {
     "description": "Label for the total amount of money saved in the shopping summary bar."
   },
-
   "search": "Suchen",
   "@search": {
     "description": "Button text to open search."
   },
-
   "searchProducts": "Produkte suchen",
   "@searchProducts": {
     "description": "Header title for the search bottom sheet."
   },
-
   "searchProductsHint": "Produkte suchen...",
   "@searchProductsHint": {
     "description": "Hint text for the search input field."
   },
-
   "selectCategory": "Kategorie auswählen",
   "@selectCategory": {
     "description": "Label for the category selection dropdown menu."
   },
-
   "selectList": "Liste auswählen",
   "@selectList": {
     "description": "Default text on the button to select a shopping list when none is active."
   },
-
   "sendEmail": "E-Mail senden",
   "@sendEmail": {
     "description": "Button text for sending a password reset email."
   },
-
   "settings": "Einstellungen",
   "@settings": {
     "description": "Title for the settings section on the account page."
   },
-
   "shop": "Einkaufen",
   "@shop": { "description": "Short button text to begin a shopping session." },
-
   "shoppingListEmpty": "Deine Einkaufsliste ist leer.",
   "@shoppingListEmpty": {
     "description": "Message shown in shopping mode when the list has no items."
   },
-
+  "shoppingListsEmpty": "Du hast noch keine eigenen Listen erstellt.",
+  "@shoppingListsEmpty": { "description": "Message displayed when the user has not created any custom shopping lists." },
   "shoppingMode": "Einkaufsmodus",
   "@shoppingMode": {
     "description": "Title for the screen where users check off items from their list."
   },
-
+  "showCheckedItems": "Abgehakte Artikel anzeigen",
+  "@showCheckedItems": { "description": "Tooltip for the visibility toggle in shopping mode to show checked items." },
   "showMore": "{count} weitere anzeigen",
   "@showMore": {
     "description": "Button text to paginate and show more items in a category.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
+    "placeholders": { "count": { "type": "int" } }
   },
-
   "signUp": "Registrieren",
   "@signUp": {
     "description": "Tab text for the sign-up form."
   },
-
   "sort": "Sortieren",
   "@sort": {
     "description": "Button text to open sorting options."
   },
-
   "sortBy": "Sortieren nach",
   "@sortBy": {
     "description": "Header title for the sorting options bottom sheet."
   },
-
   "sortDiscountHighToLow": "Rabatt: Hoch-Tief",
   "sortDiscountLowToHigh": "Rabatt: Tief-Hoch",
   "sortPriceHighToLow": "Preis: Hoch-Tief",
   "sortPriceLowToHigh": "Preis: Tief-Hoch",
   "sortProductAZ": "Produkt: A-Z",
   "sortStoreAZ": "Geschäft: A-Z",
-
   "stores": "Geschäfte",
   "@stores": {
     "description": "Tab title for the stores filter."
   },
-
   "subcategories": "Unterkategorien",
   "@subcategories": {
     "description": "Tab title for the subcategories filter."
   },
-
   "theme": "Design",
   "@theme": {
     "description": "Button text for theme settings."
   },
-
-  "tooltipShowAsList": "Als Liste anzeigen",
-  "@tooltipShowAsList": { "description": "Tooltip for the button to switch to list view." },
-
+  "tooltipCollapseList": "Lange drücken, um die Liste einzuklappen",
+  "@tooltipCollapseList": { "description": "Tooltip text for the 'show less' button, indicating that a long press will reset the list." },
+  "tooltipDeleteSelected": "Ausgewählte Artikel löschen",
+  "@tooltipDeleteSelected": { "description": "Tooltip for the button to delete multiple selected items." },
+  "tooltipManageListItems": "Listeneinträge verwalten",
+  "@tooltipManageListItems": { "description": "Tooltip for the button that opens the list management options (purge, clear all)." },
   "tooltipShowAsGrid": "Als Gitter anzeigen",
   "@tooltipShowAsGrid": { "description": "Tooltip for the button to switch to grid view." },
-
+  "tooltipShowAsList": "Als Liste anzeigen",
+  "@tooltipShowAsList": { "description": "Tooltip for the button to switch to list view." },
   "total": "Total",
   "@total": {
     "description": "Label for the total cost of items in the shopping summary bar."
   },
-
   "uncheckAllItems": "Alle Haken entfernen",
   "@uncheckAllItems": {
     "description": "Tooltip for the refresh button in shopping mode."
   },
-
   "uncheckItem": "Haken entfernen",
   "@uncheckItem": {
     "description": "Tooltip for the checkbox in shopping mode to unmark an item as found."
   },
-
   "updatePassword": "PASSWORT AKTUALISIEREN",
   "@updatePassword": {
     "description": "Button text to confirm a password update."
   },
-
+  "upgradeButton": "Jetzt upgraden",
+  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
   "upgradeNow": "Jetzt upgraden",
   "@upgradeNow": {
     "description": "Button text prompting non-premium users to upgrade."
   },
-
+  "upgradeToPremiumAction": "Auf Premium upgraden",
+  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
+  "upgradeToPremiumFeature1": "• Unbegrenzte Einkaufslisten",
+  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
+  "upgradeToPremiumFeature2": "• Unbegrenzte benutzerdefinierte Artikel",
+  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
+  "upgradeToPremiumFeature3": "• Werbefreies Erlebnis",
+  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
+  "upgradeToPremiumTitle": "Auf Premium upgraden",
+  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
   "user": "Benutzer",
   "@user": {
     "description": "Fallback display name for a user if their name is not set."
   },
-
   "usingCustomCategoryAbove": "Eigene Kategorie oben wird verwendet",
   "@usingCustomCategoryAbove": {
     "description": "Informational text shown when a user has entered a custom category, disabling the dropdown."
   },
-
   "validFrom": "Gültig ab {fromDate}",
   "@validFrom": {
     "description": "Indicates the start date of a product's sale.",
-    "placeholders": {
-      "fromDate": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "fromDate": { "type": "String" } }
   },
-
   "validFromTo": "Gültig vom {fromDate} bis {toDate}",
   "@validFromTo": {
     "description": "Indicates the start and end date of a product's sale.",
@@ -825,88 +774,22 @@
       "toDate": { "type": "String" }
     }
   },
-
   "validUntil": "Gültig bis {toDate}",
   "@validUntil": {
     "description": "Indicates the end date of a product's sale.",
-    "placeholders": {
-      "toDate": {
-        "type": "String"
-      }
-    }
+    "placeholders": { "toDate": { "type": "String" } }
   },
-
   "validityUnknown": "Gültigkeit unbekannt",
   "@validityUnknown": {
     "description": "Text shown when a product's sale period is not known."
   },
-
+  "welcome": "Willkommen!",
+  "@welcome": { "description": "A generic welcome message for a new user." },
   "welcomeToAppName": "Willkommen bei {appName}",
   "@welcomeToAppName": {
     "description": "Welcome message on the login screen.",
-    "placeholders": {
-      "appName": { "type": "String" }
-    }
+    "placeholders": { "appName": { "type": "String" } }
   },
-
-  "loadingInitializing": "Initialisiere...",
-  "@loadingInitializing": { "description": "Initial loading message." },
-
-  "loadingPreparingStorage": "Lokaler Speicher wird vorbereitet...",
-  "@loadingPreparingStorage": { "description": "Loading message when setting up Hive/local database." },
-
-  "loadingCheckingUpdates": "Suche nach Updates...",
-  "@loadingCheckingUpdates": { "description": "Loading message when checking if a sync from Firestore is needed." },
-
-  "loadingDownloadingDeals": "Neueste Angebote werden heruntergeladen...",
-  "@loadingDownloadingDeals": { "description": "Loading message during a sync from Firestore." },
-
-  "loadingFromCache": "Lade aus dem lokalen Cache...",
-  "@loadingFromCache": { "description": "Loading message when using local data instead of syncing." },
-
-  "loadingAllSet": "Alles bereit!",
-  "@loadingAllSet": { "description": "Final success message before entering the app." },
-
-  "errorCouldNotLoadData": "Fehler: Daten konnten nicht geladen werden.",
-  "@errorCouldNotLoadData": { "description": "Error message shown on the loading screen if initialization fails."},
-
-  "accountStatusFree": "Kostenloser Benutzer",
-  "@accountStatusFree": { "description": "Label indicating the user has a free account." },
-  "accountStatusPremium": "Premium-Mitglied",
-  "@accountStatusPremium": { "description": "Label indicating the user has a premium account." },
-  "upgradeToPremiumAction": "Auf Premium upgraden",
-  "@upgradeToPremiumAction": { "description": "Button text prompting a free user to upgrade their account." },
-
-  "premiumFeatureListsTitle": "Mehr Listen erstellen",
-  "@premiumFeatureListsTitle": { "description": "Title for a premium feature highlight." },
-
-  "premiumFeatureListsBody": "Schalte die Fähigkeit frei, mehrere Einkaufslisten zu erstellen und zu verwalten, indem du auf Premium upgradest.",
-  "@premiumFeatureListsBody": { "description": "Body text for a premium feature highlight." },
-
-  "upgradeToPremiumTitle": "Auf Premium upgraden",
-  "@upgradeToPremiumTitle": { "description": "Title for the upgrade to premium dialog." },
-
-  "upgradeToPremiumFeature1": "• Unbegrenzte Einkaufslisten",
-  "@upgradeToPremiumFeature1": { "description": "Feature description for premium." },
-
-  "upgradeToPremiumFeature2": "• Unbegrenzte benutzerdefinierte Artikel",
-  "@upgradeToPremiumFeature2": { "description": "Feature description for premium." },
-
-  "upgradeToPremiumFeature3": "• Werbefreies Erlebnis",
-  "@upgradeToPremiumFeature3": { "description": "Feature description for premium." },
-
-  "upgradeButton": "Jetzt upgraden",
-  "@upgradeButton": { "description": "Button text to initiate the upgrade process." },
-
-  "premiumStatus": "Premium-Status (Test)",
-  "@premiumStatus": { "description": "Text showing the user's premium status, for testing purposes." },
-
-  "organizeList": "Liste organisieren",
-  "@organizeList": { "description": "Title for the bottom sheet and tooltip for organizing a shopping list" },
-
-  "filterByStore": "Nach Geschäft filtern",
-  "@filterByStore": { "description": "Section header for filtering by store" },
-
-  "noProductsMatchFilter": "Keine Produkte entsprechen deinem aktuellen Filter",
-  "@noProductsMatchFilter": { "description": "Message shown on the shopping list when filters result in an empty list" }
+  "yourList": "deiner Liste",
+  "@yourList": { "description": "Fallback text for a shopping list's name when it cannot be found." }
 }

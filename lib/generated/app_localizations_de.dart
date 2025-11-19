@@ -32,7 +32,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get addToList => 'Add to list';
+  String get addToList => 'Zur Liste hinzufügen';
 
   @override
   String get anUnknownErrorOccurred => 'Ein unbekannter Fehler ist aufgetreten';
@@ -190,7 +190,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get checkItem => 'Artikel abhaken';
 
   @override
-  String get remove => 'Remove';
+  String get remove => 'Entfernen';
 
   @override
   String get add => 'HINZUFÜGEN';
@@ -368,7 +368,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get forgotPassword => 'Passwort vergessen?';
 
   @override
-  String get hideCheckedItems => 'Hide checked items';
+  String get hideCheckedItems => 'Abgehakte Artikel ausblenden';
 
   @override
   String get increaseQuantity => 'Menge erhöhen';
@@ -378,21 +378,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String itemAddedToList(String itemName, String listName) {
-    return '\'$itemName\' added to $listName.';
+    return '\'$itemName\' zu $listName hinzugefügt.';
   }
 
   @override
   String itemDeleted(String itemName) {
-    return '\"$itemName\" deleted.';
+    return '\"$itemName\" gelöscht.';
   }
 
   @override
   String itemLimitReachedBody(int currentItems, int limit) {
-    return 'Your list contains $currentItems items, but the maximum is $limit. Please remove some items to continue.';
+    return 'Deine Liste enthält $currentItems Artikel, das Maximum ist jedoch $limit. Bitte entferne einige Artikel, um fortzufahren.';
   }
 
   @override
-  String get itemLimitReachedTitle => 'Item Limit Reached';
+  String get itemLimitReachedTitle => 'Artikellimit erreicht';
 
   @override
   String get itemsLabel => 'Artikel';
@@ -640,7 +640,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get shoppingMode => 'Einkaufsmodus';
 
   @override
-  String get showCheckedItems => 'Show checked items';
+  String get showCheckedItems => 'Abgehakte Artikel anzeigen';
 
   @override
   String showMore(int count) {
@@ -753,115 +753,116 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get dealExpired => 'Expired';
+  String get dealExpired => 'Abgelaufen';
 
   @override
-  String get tooltipManageListItems => 'Manage list items';
+  String get tooltipManageListItems => 'Listeneinträge verwalten';
 
   @override
-  String get manageItemsTitle => 'Manage Items';
+  String get manageItemsTitle => 'Artikel verwalten';
 
   @override
-  String get purgeButtonLabel => 'Purge Expired';
+  String get purgeButtonLabel => 'Abgelaufene entfernen';
 
   @override
-  String get purgeExpiredConfirmationTitle => 'Purge Expired?';
+  String get purgeExpiredConfirmationTitle => 'Abgelaufene entfernen?';
 
   @override
   String get purgeExpiredConfirmationBody =>
-      'This will remove all expired (greyed-out) items from your list. This cannot be undone.';
+      'Dies entfernt alle abgelaufenen (ausgegrauten) Artikel aus deiner Liste. Dies kann nicht rückgängig gemacht werden.';
 
   @override
-  String get purgeButton => 'Purge';
+  String get purgeButton => 'Entfernen';
 
   @override
-  String get clearAllButtonLabel => 'Clear All Items';
+  String get clearAllButtonLabel => 'Alle Artikel löschen';
 
   @override
-  String get clearAllConfirmationTitle => 'Clear All Items?';
+  String get clearAllConfirmationTitle => 'Alle Artikel löschen?';
 
   @override
   String get clearAllConfirmationBody =>
-      'This will permanently remove ALL items from your current list. This action cannot be undone.';
+      'Dies wird ALLE Artikel dauerhaft aus deiner aktuellen Liste entfernen. Diese Aktion kann nicht rückgängig gemacht werden.';
 
   @override
-  String get clearAllButton => 'Clear All';
+  String get clearAllButton => 'Alle löschen';
 
   @override
-  String get moreOptions => 'More Options';
+  String get moreOptions => 'Weitere Optionen';
 
   @override
-  String get customItem => 'Custom Item';
+  String get customItem => 'Eigener Artikel';
 
   @override
-  String get reauthenticateWithGoogle => 'Re-authenticate with Google';
+  String get reauthenticateWithGoogle => 'Erneut mit Google authentifizieren';
 
   @override
   String get deleteAccountGooglePrompt =>
-      'To delete your account, you must re-authenticate with Google.';
+      'Um dein Konto zu löschen, musst du dich erneut mit Google authentifizieren.';
 
   @override
-  String get continueWithGoogleForDelete => 'Continue with Google';
+  String get continueWithGoogleForDelete => 'Mit Google fortfahren';
 
   @override
-  String get confirm => 'Confirm';
+  String get confirm => 'Bestätigen';
 
   @override
-  String get tooltipCollapseList => 'Long-press to collapse list';
+  String get tooltipCollapseList => 'Lange drücken, um die Liste einzuklappen';
 
   @override
-  String get availableAt => 'Available at';
+  String get availableAt => 'Erhältlich bei';
 
   @override
-  String get shoppingListsEmpty => 'You haven\'t created any custom lists yet.';
+  String get shoppingListsEmpty =>
+      'Du hast noch keine eigenen Listen erstellt.';
 
   @override
-  String get listsLabel => 'Lists';
+  String get listsLabel => 'Listen';
 
   @override
   String get createNew => 'Neu erstellen';
 
   @override
-  String get noListsExist => 'No Lists';
+  String get noListsExist => 'Keine Listen';
 
   @override
-  String get list => 'List';
+  String get list => 'Liste';
 
   @override
-  String get create => 'Create';
+  String get create => 'Erstellen';
 
   @override
-  String get welcome => 'Welcome!';
+  String get welcome => 'Willkommen!';
 
   @override
-  String get renameListTitle => 'Rename List';
+  String get renameListTitle => 'Liste umbenennen';
 
   @override
-  String get listNameLabel => 'List Name';
+  String get listNameLabel => 'Listenname';
 
   @override
   String get createFirstListPrompt =>
-      'Create your first shopping list to get started.';
+      'Erstelle deine erste Einkaufsliste, um loszulegen.';
 
   @override
-  String get createListButton => 'Create a List';
+  String get createListButton => 'Liste erstellen';
 
   @override
-  String get yourList => 'your list';
+  String get yourList => 'deiner Liste';
 
   @override
   String itemsSelected(int count) {
-    return '$count selected';
+    return '$count ausgewählt';
   }
 
   @override
-  String get tooltipDeleteSelected => 'Delete selected items';
+  String get tooltipDeleteSelected => 'Ausgewählte Artikel löschen';
 
   @override
-  String get confirmDeletionTitle => 'Confirm Deletion';
+  String get confirmDeletionTitle => 'Löschen bestätigen';
 
   @override
   String confirmDeletionMessage(int count) {
-    return 'Are you sure you want to delete $count items?';
+    return 'Möchtest du wirklich $count Artikel löschen?';
   }
 }
